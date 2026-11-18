@@ -1,35 +1,24 @@
 # Agente de WhatsApp — Picture Web Dev
 
-Contesta los WhatsApp de la agencia con GPT-5 mini (Vercel AI Gateway), manda el formulario
-"Pedí tu web 🚀" (https://forms.gle/4CQdifqFRH7pmBdU9) y te avisa cuando entra un lead.
+Contesta tus WhatsApp con GPT-5 mini (Vercel AI Gateway), manda el formulario "Pedí tu web 🚀"
+(https://forms.gle/4CQdifqFRH7pmBdU9) y te avisa cuando entra un lead. Todo en Vercel, sin servidor prendido.
 
-Hay dos formas de conectarlo a WhatsApp (el cerebro es el mismo):
-- **Baileys** (`index.js`): se vincula a tu número con QR/código, como WhatsApp Web. Corre con `npm start` en un proceso siempre prendido (tu PC, un VPS o Railway). Vercel no puede mantenerlo conectado.
-- **Cloud API de Meta** (`api/webhook.js`): corre en Vercel.
+## Cómo funciona
+- `public/index.html` → página para vincular tu WhatsApp con QR (con contraseña).
+- `api/link.js` + `api/status.js` → generan el QR y guardan la sesión de Baileys en Upstash Redis.
+- `api/cron.js` → cada 2 minutos se conecta, lee los mensajes nuevos, contesta y se desconecta.
+- `lib/prompt.js` → qué dice el bot (editá acá) · `lib/agent.js` → IA y herramientas.
 
-## Baileys rápido
-```bash
-npm install
-cp .env.example .env   # poné AI_GATEWAY_API_KEY (Vercel > AI Gateway > API Keys)
-npm start              # escaneá el QR
-```
-En cada chat: `/bot off` lo apaga, `/bot on` lo prende. Si contestás vos, el bot se calla 24 h.
-
-## Archivos
-- `lib/prompt.js` → qué sabe y cómo habla el bot (editalo acá)
-- `lib/agent.js` → modelo de IA + herramientas (registrar lead, derivar a humano)
-- `lib/whatsapp.js` → envío de mensajes
-- `lib/store.js` → memoria de cada chat (Upstash)
-
-## Configuración (una sola vez)
-1. **IA**: Vercel > AI Gateway. Usa el crédito gratis mensual; no hace falta clave.
-2. **Memoria**: Vercel > proyecto > Storage > crear/conectar **Upstash Redis**.
-3. **WhatsApp**: developers.facebook.com > Crear app (Empresa) > agregar WhatsApp.
-   - Copiá **Phone Number ID** y un **token** (temporal para probar; después uno permanente de "Usuario del sistema").
-   - En Configuración > Webhook: URL `https://agentedeia.vercel.app/api/webhook`, token de verificación = `WHATSAPP_VERIFY_TOKEN`, suscribir **messages**.
-4. Cargá las variables de `.env.example` en Vercel > Settings > Environment Variables y hacé Redeploy.
+## Configuración
+1. Vercel > proyecto > **Storage** > conectar **Upstash Redis**.
+2. Variables: `ADMIN_PASSWORD`, `CRON_SECRET` (y opcional `OWNER_PHONE`). Redeploy.
+3. Entrá a la web del proyecto, poné la contraseña, **Generar QR** y escanealo desde
+   WhatsApp > Dispositivos vinculados.
 
 ## Uso
-- Lead nuevo → te llega "🟢 Nuevo lead" a `OWNER_PHONE`.
-- Piden humano → "🙋" y el bot se pausa 24 h en ese chat.
-- Desde tu número, escribile al bot: `/bot on 549...` o `/bot off 549...`.
+- Respuestas: entre 0 y 2 minutos después de cada mensaje.
+- Si contestás vos un chat, el bot se calla 24 h ahí.
+- En cualquier chat: `/bot off` lo apaga, `/bot on` lo prende.
+- Lead nuevo o pedido de humano → aviso en "Mensaje para mí".
+
+Baileys no es oficial: no lo uses para mensajes masivos.
