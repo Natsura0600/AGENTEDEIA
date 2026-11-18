@@ -23,6 +23,7 @@ function validSignature(raw, header) {
 }
 
 async function handle(ev) {
+  console.log("Instagram evento:", JSON.stringify({ from: ev.sender?.id, to: ev.recipient?.id, echo: ev.message?.is_echo, text: ev.message?.text?.slice(0, 50) }));
   const msg = ev.message;
   if (!msg || msg.is_deleted || msg.is_unsupported) return;
   if (!(await redis.set(`igseen:${msg.mid}`, "1", { nx: true, ex: 172800 }))) return;
@@ -67,6 +68,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   const raw = await rawBody(req);
+  console.log("Instagram webhook recibido:", raw.toString("utf8").slice(0, 500));
   if (!validSignature(raw, req.headers["x-hub-signature-256"])) {
     console.error("Firma inválida: revisá que INSTAGRAM_APP_SECRET sea la clave secreta de la misma app de Meta");
     return res.status(401).end();
