@@ -73,11 +73,32 @@ async function unified(req, res, { appId, secret, configId, code }) {
   const pg = list.find((p) => p.instagram_business_account) || null;
 
   if (!pg) {
-    // Sin página: guardar el token de usuario (por si el login unificado da acceso directo) y avisar
+    // Token de usuario del sistema (login unificado sin página): probar caminos y guardar el que funcione
+    const tries = [];
+    const igApi = await (await fetch(`https://graph.instagram.com/v23.0/me?fields=user_id,username&access_token=${userToken}`)).json().catch((e) => ({ error: { message: e.message } }));
+    tries.push(["graph.instagram.com/me", igApi.username || igApi.error?.message]);
+    if (igApi.username) {
+      await redis.set("ig:token", userToken);
+      await redis.set("ig:api", "instagram");
+      await fetch(`https://graph.instagram.com/v23.0/me/subscribed_apps?subscribed_fields=messages,message_echoes&access_token=${userToken}`, { method: "POST" }).catch(() => {});
+      return res.send(page("✅ Instagram conectado", `<p>La cuenta <b>@${igApi.username}</b> quedó vinculada al agente.<br>Ya podés probar mandándole un DM desde otra cuenta.</p>`));
+    }
+    const igId = process.env.INSTAGRAM_ACCOUNT_ID;
+    for (const path of ["/me/instagram_accounts?fields=id,username", "/me/businesses?fields=id,name,instagram_accounts{id,username},owned_instagram_accounts{id,username}", igId ? `/${igId}?fields=id,username` : null].filter(Boolean)) {
+      const r = await (await fetch(`${FB}${path}${path.includes("?") ? "&" : "?"}access_token=${userToken}`)).json().catch((e) => ({ error: { message: e.message } }));
+      tries.push([path.split("?")[0], r.error ? r.error.message : JSON.stringify(r).slice(0, 300)]);
+      const acc = r.username ? r : (r.data || []).flatMap((x) => [x, ...(x.instagram_accounts?.data || []), ...(x.owned_instagram_accounts?.data || [])]).find((x) => x.username);
+      if (acc?.username) {
+        await redis.set("ig:token", userToken);
+        await redis.set("ig:api", "facebook-ig");
+        await redis.set("ig:id", acc.id);
+        await fetch(`${FB}/${acc.id}/subscribed_apps?subscribed_fields=messages,message_echoes&access_token=${userToken}`, { method: "POST" }).catch(() => {});
+        return res.send(page("✅ Instagram conectado", `<p>La cuenta <b>@${acc.username}</b> quedó vinculada al agente.<br>Ya podés probar mandándole un DM desde otra cuenta.</p>`));
+      }
+    }
     await redis.set("ig:token", userToken);
-    const names = list.map((p) => p.name).join(", ") || "ninguna";
-    return fail(`Se inició sesión, pero no encontré una página de Facebook con Instagram vinculado (páginas: ${names}).<br>` +
-      `Vinculá @picturewebdev a una página de Facebook (Instagram → Configuración → Centro de cuentas, o desde la página de Facebook → Configuración → Cuentas vinculadas) y volvé a abrir este link.`);
+    await redis.set("ig:last-auth", JSON.stringify(tries));
+    return fail(`Se inició sesión, pero el bot todavía no ve la cuenta de Instagram.<br><br><small style="color:#777">${tries.map(([a, b]) => `${a}: ${b}`).join("<br>")}</small><br><br>Mandale una captura de esta pantalla a Claude.`);
   }
 
   await redis.set("ig:token", pg.access_token); // token de página: no vence
