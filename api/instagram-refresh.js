@@ -1,6 +1,6 @@
 // Cron diario de Vercel (permitido en el plan Hobby): renueva el token de Instagram para que no venza.
 // También se puede usar para cargar un token nuevo: /api/instagram-refresh?secret=CRON_SECRET&token=NUEVO
-import { refreshToken, whoAmI } from "../lib/instagram.js";
+import { refreshToken, whoAmI, setupFromToken } from "../lib/instagram.js";
 import { redis } from "../lib/wa.js";
 
 export default async function handler(req, res) {
@@ -12,5 +12,6 @@ export default async function handler(req, res) {
     return res.json({ ok: true, saved: true });
   }
   if (req.query?.check) return res.json(await whoAmI());
+  if (req.query?.setup) return res.json(await setupFromToken());
   res.json(await refreshToken());
 }
