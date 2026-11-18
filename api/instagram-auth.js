@@ -45,7 +45,7 @@ export default async function handler(req, res) {
   await redis.set("ig:token", token);
 
   // Suscribir la cuenta a los mensajes
-  await fetch(`https://graph.instagram.com/v23.0/me/subscribed_apps?subscribed_fields=messages,message_echoes&access_token=${token}`, { method: "POST" }).catch(() => {});
+  await fetch(`https://graph.instagram.com/v23.0/me/subscribed_apps?subscribed_fields=messages,messaging_seen&access_token=${token}`, { method: "POST" }).catch(() => {});
   const me = await (await fetch(`https://graph.instagram.com/v23.0/me?fields=username&access_token=${token}`)).json().catch(() => ({}));
 
   res.send(page("✅ Instagram conectado", `<p>La cuenta <b>@${me.username || "?"}</b> quedó vinculada al agente.<br>Ya podés probar mandándole un DM desde otra cuenta.</p>`));
@@ -80,7 +80,7 @@ async function unified(req, res, { appId, secret, configId, code }) {
     if (igApi.username) {
       await redis.set("ig:token", userToken);
       await redis.set("ig:api", "instagram");
-      await fetch(`https://graph.instagram.com/v23.0/me/subscribed_apps?subscribed_fields=messages,message_echoes&access_token=${userToken}`, { method: "POST" }).catch(() => {});
+      await fetch(`https://graph.instagram.com/v23.0/me/subscribed_apps?subscribed_fields=messages,messaging_seen&access_token=${userToken}`, { method: "POST" }).catch(() => {});
       return res.send(page("✅ Instagram conectado", `<p>La cuenta <b>@${igApi.username}</b> quedó vinculada al agente.<br>Ya podés probar mandándole un DM desde otra cuenta.</p>`));
     }
     const igId = process.env.INSTAGRAM_ACCOUNT_ID;
@@ -92,7 +92,7 @@ async function unified(req, res, { appId, secret, configId, code }) {
         await redis.set("ig:token", userToken);
         await redis.set("ig:api", "facebook-ig");
         await redis.set("ig:id", acc.id);
-        await fetch(`${FB}/${acc.id}/subscribed_apps?subscribed_fields=messages,message_echoes&access_token=${userToken}`, { method: "POST" }).catch(() => {});
+        await fetch(`${FB}/${acc.id}/subscribed_apps?subscribed_fields=messages,messaging_seen&access_token=${userToken}`, { method: "POST" }).catch(() => {});
         return res.send(page("✅ Instagram conectado", `<p>La cuenta <b>@${acc.username}</b> quedó vinculada al agente.<br>Ya podés probar mandándole un DM desde otra cuenta.</p>`));
       }
     }
@@ -102,6 +102,6 @@ async function unified(req, res, { appId, secret, configId, code }) {
   }
 
   await redis.set("ig:token", pg.access_token); // token de página: no vence
-  await fetch(`${FB}/${pg.id}/subscribed_apps?subscribed_fields=messages,message_echoes&access_token=${pg.access_token}`, { method: "POST" }).catch(() => {});
+  await fetch(`${FB}/${pg.id}/subscribed_apps?subscribed_fields=messages,messaging_seen&access_token=${pg.access_token}`, { method: "POST" }).catch(() => {});
   res.send(page("✅ Instagram conectado", `<p>La cuenta <b>@${pg.instagram_business_account.username}</b> (página ${pg.name}) quedó vinculada al agente.<br>Ya podés probar mandándole un DM desde otra cuenta.</p>`));
 }
