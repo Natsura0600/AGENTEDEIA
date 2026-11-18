@@ -3,7 +3,17 @@
 Contesta los WhatsApp de la agencia con GPT-5 mini (Vercel AI Gateway), manda el formulario
 "Pedí tu web 🚀" (https://forms.gle/4CQdifqFRH7pmBdU9) y te avisa cuando entra un lead.
 
-Todo corre en Vercel: `api/webhook.js` recibe los mensajes de WhatsApp y responde.
+Hay dos formas de conectarlo a WhatsApp (el cerebro es el mismo):
+- **Baileys** (`index.js`): se vincula a tu número con QR/código, como WhatsApp Web. Corre con `npm start` en un proceso siempre prendido (tu PC, un VPS o Railway). Vercel no puede mantenerlo conectado.
+- **Cloud API de Meta** (`api/webhook.js`): corre en Vercel.
+
+## Baileys rápido
+```bash
+npm install
+cp .env.example .env   # poné AI_GATEWAY_API_KEY (Vercel > AI Gateway > API Keys)
+npm start              # escaneá el QR
+```
+En cada chat: `/bot off` lo apaga, `/bot on` lo prende. Si contestás vos, el bot se calla 24 h.
 
 ## Archivos
 - `lib/prompt.js` → qué sabe y cómo habla el bot (editalo acá)
