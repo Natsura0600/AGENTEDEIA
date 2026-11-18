@@ -27,7 +27,7 @@
   <div class="brand">Picture Web Dev</div>
   <h1>Agente de WhatsApp</h1>
 
-  <div id="login">
+  <div id="login" class="hidden">
     <input id="key" type="password" placeholder="Contraseña de admin" autocomplete="current-password">
     <button id="enter">Entrar</button>
     <p class="msg" id="loginMsg"></p>
@@ -96,7 +96,6 @@
   }
 
   async function enter() {
-    key = $("key").value.trim() || key;
     try { await api("status"); } catch { return logout(); }
     try { sessionStorage.setItem("k", key); } catch {}
     poll();
@@ -120,7 +119,7 @@
     timer = setInterval(poll, 3000);
     poll();
   };
-  if (key) enter();
+  enter();
 </script>
 </body>
 </html>
