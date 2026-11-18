@@ -1,4 +1,4 @@
-// Corre cada 2 minutos: se conecta, recibe los mensajes pendientes, responde y se desconecta.
+// Lo dispara cron-job.org cada 1-2 minutos (el plan Hobby de Vercel solo permite crons diarios): se conecta, recibe los mensajes pendientes, responde y se desconecta.
 import { isJidGroup, jidNormalizedUser } from "baileys";
 import { connect, redis, isLinked } from "../lib/wa.js";
 import { reply } from "../lib/agent.js";
@@ -13,8 +13,9 @@ function phoneOf(key) {
 }
 
 export default async function handler(req, res) {
-  if (process.env.CRON_SECRET && req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`)
-    return res.status(401).end();
+  const secret = process.env.CRON_SECRET;
+  const given = req.query?.secret || (req.headers.authorization || "").replace("Bearer ", "");
+  if (secret && given !== secret) return res.status(401).end();
   if (!(await isLinked())) return res.json({ ok: false, reason: "WhatsApp no vinculado" });
   if (!(await redis.set("cron:lock", 1, { nx: true, ex: 115 }))) return res.json({ ok: true, skipped: true });
 

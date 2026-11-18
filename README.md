@@ -6,13 +6,15 @@ Contesta tus WhatsApp con GPT-5 mini (Vercel AI Gateway), manda el formulario "P
 ## Cómo funciona
 - `public/index.html` → página para vincular tu WhatsApp con QR (con contraseña).
 - `api/link.js` + `api/status.js` → generan el QR y guardan la sesión de Baileys en Upstash Redis.
-- `api/cron.js` → cada 2 minutos se conecta, lee los mensajes nuevos, contesta y se desconecta.
+- `api/cron.js` → cada vez que lo llama cron-job.org (cada 1-2 min) se conecta, lee los mensajes nuevos, contesta y se desconecta.
 - `lib/prompt.js` → qué dice el bot (editá acá) · `lib/agent.js` → IA y herramientas.
 
 ## Configuración
 1. Vercel > proyecto > **Storage** > conectar **Upstash Redis**.
 2. Variables: `ADMIN_PASSWORD`, `CRON_SECRET` (y opcional `OWNER_PHONE`). Redeploy.
-3. Entrá a la web del proyecto, poné la contraseña, **Generar QR** y escanealo desde
+3. En **cron-job.org** (gratis) creá un cronjob cada 1 o 2 minutos a
+   `https://agentedeia.vercel.app/api/cron?secret=TU_CRON_SECRET`
+4. Entrá a la web del proyecto, poné la contraseña, **Generar QR** y escanealo desde
    WhatsApp > Dispositivos vinculados.
 
 ## Uso
