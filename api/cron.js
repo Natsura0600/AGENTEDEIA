@@ -82,6 +82,12 @@ export default async function handler(req, res) {
     while (openedAt && Date.now() - openedAt < LISTEN_MS) await sleep(500);
     await queue; // terminar de contestar lo que esté en curso
 
+    // Avisos pendientes de Instagram → tu WhatsApp
+    if (ownerJid) {
+      let n;
+      while ((n = await redis.lpop("notify:queue"))) await send(ownerJid, String(n));
+    }
+
     await sleep(3000); // deja salir los envíos
     res.json({ ok: true, received, answered });
   } finally {

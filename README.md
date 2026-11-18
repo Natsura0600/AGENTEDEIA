@@ -24,3 +24,12 @@ Contesta tus WhatsApp con GPT-5 mini (Vercel AI Gateway), manda el formulario "P
 - Lead nuevo o pedido de humano → aviso en "Mensaje para mí".
 
 Baileys no es oficial: no lo uses para mensajes masivos.
+
+## Instagram (API oficial)
+- `api/instagram.js` → webhook: Instagram avisa cada DM y el agente responde al instante.
+- `api/instagram-refresh.js` → cron diario de Vercel que renueva el token (vence cada 60 días si no).
+- Los avisos de leads de Instagram te llegan a WhatsApp (los manda el cron de WhatsApp).
+- Si contestás vos un DM, el bot se calla 24 h en esa charla. `/bot off` y `/bot on` también funcionan.
+
+Variables: `INSTAGRAM_VERIFY_TOKEN`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_TOKEN`.
+Webhook: `https://agentedeia-two.vercel.app/api/instagram`
