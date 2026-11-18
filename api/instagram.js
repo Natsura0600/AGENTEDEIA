@@ -77,7 +77,11 @@ export default async function handler(req, res) {
   let data;
   try { data = JSON.parse(raw.toString("utf8")); } catch { return res.status(400).end(); }
 
-  const events = (data.entry || []).flatMap((e) => e.messaging || []);
+  // Meta manda los DMs como entry[].messaging[] o como entry[].changes[] (field "messages")
+  const events = (data.entry || []).flatMap((e) => [
+    ...(e.messaging || []),
+    ...(e.changes || []).filter((c) => c.field === "messages" && c.value?.message).map((c) => c.value),
+  ]);
   if (events.length) {
     waitUntil(
       events.reduce((p, ev) => p.then(() => handle(ev)), Promise.resolve())
