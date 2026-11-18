@@ -67,7 +67,10 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   const raw = await rawBody(req);
-  if (!validSignature(raw, req.headers["x-hub-signature-256"])) return res.status(401).end();
+  if (!validSignature(raw, req.headers["x-hub-signature-256"])) {
+    console.error("Firma inválida: revisá que INSTAGRAM_APP_SECRET sea la clave secreta de la misma app de Meta");
+    return res.status(401).end();
+  }
 
   let data;
   try { data = JSON.parse(raw.toString("utf8")); } catch { return res.status(400).end(); }
