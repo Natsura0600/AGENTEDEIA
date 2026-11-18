@@ -84,7 +84,7 @@ async function unified(req, res, { appId, secret, configId, code }) {
       return res.send(page("✅ Instagram conectado", `<p>La cuenta <b>@${igApi.username}</b> quedó vinculada al agente.<br>Ya podés probar mandándole un DM desde otra cuenta.</p>`));
     }
     const igId = process.env.INSTAGRAM_ACCOUNT_ID;
-    for (const path of ["/me/instagram_accounts?fields=id,username", "/me/businesses?fields=id,name,instagram_accounts{id,username},owned_instagram_accounts{id,username}", igId ? `/${igId}?fields=id,username` : null].filter(Boolean)) {
+    for (const path of ["/me/assigned_instagram_accounts?fields=id,username", "/me/instagram_accounts?fields=id,username", "/me/businesses?fields=id,name,instagram_accounts{id,username},owned_instagram_accounts{id,username}", igId ? `/${igId}?fields=id,username` : null].filter(Boolean)) {
       const r = await (await fetch(`${FB}${path}${path.includes("?") ? "&" : "?"}access_token=${userToken}`)).json().catch((e) => ({ error: { message: e.message } }));
       tries.push([path.split("?")[0], r.error ? r.error.message : JSON.stringify(r).slice(0, 300)]);
       const acc = r.username ? r : (r.data || []).flatMap((x) => [x, ...(x.instagram_accounts?.data || []), ...(x.owned_instagram_accounts?.data || [])]).find((x) => x.username);
