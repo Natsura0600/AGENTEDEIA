@@ -10,9 +10,6 @@
     "@upstash/redis": "^1.35.0",
     "@vercel/functions": "^2.0.0",
     "ai": "^7.0.176",
-    "baileys": "7.0.0-rc14",
-    "pino": "^9.0.0",
-    "qrcode": "^1.5.4",
     "zod": "^3.25.0"
   }
 }

@@ -1,35 +1,21 @@
-# Agente de WhatsApp — Picture Web Dev
+# Agente de WhatsApp e Instagram — Picture Web Dev
 
-Contesta tus WhatsApp con GPT-5 mini (Vercel AI Gateway), manda el formulario "Pedí tu web 🚀"
-(https://forms.gle/4CQdifqFRH7pmBdU9) y te avisa cuando entra un lead. Todo en Vercel, sin servidor prendido.
+Contesta con GPT-5 mini (Vercel AI Gateway), manda el formulario "Pedí tu web 🚀" y avisa los leads.
+Todo con APIs oficiales de Meta: **sin cron, sin conexión abierta**. Vercel solo corre cuando llega un mensaje.
 
-## Cómo funciona
-- `public/index.html` → página para vincular tu WhatsApp con QR (con contraseña).
-- `api/link.js` + `api/status.js` → generan el QR y guardan la sesión de Baileys en Upstash Redis.
-- `api/cron.js` → cada vez que lo llama cron-job.org (cada 1-2 min) se conecta, lee los mensajes nuevos, contesta y se desconecta.
-- `lib/prompt.js` → qué dice el bot (editá acá) · `lib/agent.js` → IA y herramientas.
+## Archivos
+- `api/whatsapp.js` → webhook de WhatsApp (Cloud API)
+- `api/instagram.js` → webhook de Instagram
+- `lib/prompt.js` → qué dice el bot y cómo habla
+- `lib/agent.js` → IA y herramientas (lead, derivar a humano)
 
-## Configuración
-1. Vercel > proyecto > **Storage** > conectar **Upstash Redis**.
-2. Variables: `ADMIN_PASSWORD`, `CRON_SECRET` (y opcional `OWNER_PHONE`). Redeploy.
-3. En **cron-job.org** (gratis) creá un cronjob cada 1 o 2 minutos a
-   `https://agentedeia.vercel.app/api/cron?secret=TU_CRON_SECRET`
-4. Entrá a la web del proyecto, poné la contraseña, **Generar QR** y escanealo desde
-   WhatsApp > Dispositivos vinculados.
-
-## Uso
-- Respuestas: entre 0 y 2 minutos después de cada mensaje.
+## Desactivar el bot en chats
+- **Para siempre en un chat:** escribí `/bot off` en ese chat desde la app de WhatsApp Business (coexistencia). `/bot on` lo reactiva.
+- **Lista fija:** `BOT_OFF_NUMBERS` en Vercel, separados por coma.
+- **Desde tu número personal:** mandale al bot `/bot off 549...`.
 - Si contestás vos un chat, el bot se calla 24 h ahí.
-- En cualquier chat: `/bot off` lo apaga, `/bot on` lo prende.
-- Lead nuevo o pedido de humano → aviso en "Mensaje para mí".
 
-Baileys no es oficial: no lo uses para mensajes masivos.
-
-## Instagram (API oficial)
-- `api/instagram.js` → webhook: Instagram avisa cada DM y el agente responde al instante.
-- `api/instagram-refresh.js` → cron diario de Vercel que renueva el token (vence cada 60 días si no).
-- Los avisos de leads de Instagram te llegan a WhatsApp (los manda el cron de WhatsApp).
-- Si contestás vos un DM, el bot se calla 24 h en esa charla. `/bot off` y `/bot on` también funcionan.
-
-Variables: `INSTAGRAM_VERIFY_TOKEN`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_TOKEN`.
-Webhook: `https://agentedeia-two.vercel.app/api/instagram`
+## Webhook en Meta
+- URL: `https://TU-PROYECTO.vercel.app/api/whatsapp`
+- Token: `pictureweb-wa`
+- Campos: `messages` y `smb_message_echoes`

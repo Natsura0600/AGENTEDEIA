@@ -1,0 +1,105 @@
+// Webhook de WhatsApp (API oficial): Meta avisa cada mensaje y el bot responde al instante.
+// No hay cron ni conexión abierta: la función solo corre cuando llega un mensaje.
+import crypto from "node:crypto";
+import { waitUntil } from "@vercel/functions";
+import { reply } from "../lib/agent.js";
+import { sendText, markRead } from "../lib/whatsapp.js";
+import { isPaused, pause, resume } from "../lib/store.js";
+import { redis } from "../lib/redis.js";
+import { queueNotify } from "../lib/instagram.js";
+
+export const config = { api: { bodyParser: false }, maxDuration: 60 };
+
+const digits = (s) => String(s || "").replace(/\D/g, "");
+// Números que el bot nunca contesta (familia, amigos…), separados por coma en BOT_OFF_NUMBERS
+const blocked = () => (process.env.BOT_OFF_NUMBERS || "").split(",").map(digits).filter(Boolean);
+const isOff = async (phone) =>
+  blocked().some((b) => phone.endsWith(b.slice(-10))) || Boolean(await redis.get(`off:${phone}`));
+
+async function rawBody(req) {
+  const chunks = [];
+  for await (const c of req) chunks.push(c);
+  return Buffer.concat(chunks);
+}
+function validSignature(raw, header) {
+  const secret = process.env.WHATSAPP_APP_SECRET;
+  if (!secret) return true;
+  if (!header) return false;
+  const expected = "sha256=" + crypto.createHmac("sha256", secret).update(raw).digest("hex");
+  return header.length === expected.length && crypto.timingSafeEqual(Buffer.from(header), Buffer.from(expected));
+}
+
+// Comandos que escribís VOS (desde la app de WhatsApp Business con coexistencia, o desde OWNER_PHONE):
+//   /bot off            → en el chat de un cliente: el bot nunca más contesta ese chat
+//   /bot on             → lo vuelve a activar
+//   /bot off 549...     → desde tu número personal (OWNER_PHONE) al bot
+async function command(text, chatPhone) {
+  const [, cmd, target] = text.trim().split(/\s+/);
+  const phone = digits(target) || chatPhone;
+  if (!phone) return false;
+  if (cmd === "off") { await redis.set(`off:${phone}`, "1"); return `Bot desactivado para ${phone} ⏸️`; }
+  if (cmd === "on") { await redis.del(`off:${phone}`); await resume(phone); return `Bot activado para ${phone} ✅`; }
+  return false;
+}
+
+async function handleMessage(msg, contact) {
+  if (!(await redis.set(`waseen:${msg.id}`, "1", { nx: true, ex: 172800 }))) return;
+  const from = digits(msg.from);
+  const text = (msg.text?.body || "").trim();
+  const owner = digits(process.env.OWNER_PHONE);
+
+  if (owner && from === owner && text.startsWith("/bot ")) {
+    const r = await command(text);
+    if (r) await sendText(owner, r);
+    return;
+  }
+  if ((await isOff(from)) || (await isPaused(from))) return;
+
+  await markRead(msg.id);
+  if (msg.type !== "text") {
+    await sendText(from, "¡Gracias por tu mensaje! Por el momento solo puedo leer texto. ¿Me lo escribís así te ayudo?");
+    return;
+  }
+  const notify = async (t) => {
+    if (owner) await sendText(owner, t);
+    await queueNotify(t); // también queda guardado por si el aviso no llega
+  };
+  const answer = await reply(from, text, contact?.profile?.name, { chat: from, notify });
+  if (!(await isOff(from))) await sendText(from, answer);
+}
+
+// Coexistencia: lo que mandás vos desde la app de WhatsApp Business llega como "echo"
+async function handleEcho(echo) {
+  const to = digits(echo.to);
+  const text = (echo.text?.body || "").trim();
+  if (text.startsWith("/bot ")) return command(text, to);
+  if (to) await pause(to); // contestaste vos → el bot se calla 24 h en ese chat
+}
+
+export default async function handler(req, res) {
+  if (req.method === "GET") {
+    const { "hub.mode": mode, "hub.verify_token": token, "hub.challenge": challenge } = req.query;
+    if (mode === "subscribe" && token === process.env.WHATSAPP_VERIFY_TOKEN) return res.status(200).send(challenge);
+    return res.status(200).send("Webhook de WhatsApp activo ✅");
+  }
+  if (req.method !== "POST") return res.status(405).end();
+
+  const raw = await rawBody(req);
+  if (!validSignature(raw, req.headers["x-hub-signature-256"])) {
+    console.error("Firma inválida: revisá WHATSAPP_APP_SECRET");
+    return res.status(401).end();
+  }
+  let data;
+  try { data = JSON.parse(raw.toString("utf8")); } catch { return res.status(400).end(); }
+
+  const jobs = [];
+  for (const entry of data.entry || []) {
+    for (const ch of entry.changes || []) {
+      const v = ch.value || {};
+      if (ch.field === "messages") for (const m of v.messages || []) jobs.push(() => handleMessage(m, v.contacts?.[0]));
+      if (ch.field === "smb_message_echoes") for (const e of v.message_echoes || []) jobs.push(() => handleEcho(e));
+    }
+  }
+  if (jobs.length) waitUntil(jobs.reduce((p, j) => p.then(j), Promise.resolve()).catch((e) => console.error("WhatsApp error:", e)));
+  res.status(200).end();
+}

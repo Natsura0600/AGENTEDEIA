@@ -1,7 +1,7 @@
 // Conexión de Instagram sin copiar tokens a mano:
 // 1) /api/instagram-auth            → te manda al login de Instagram
 // 2) Instagram vuelve acá con ?code  → se canjea por un token de 60 días y se guarda en Redis
-import { redis } from "../lib/wa.js";
+import { redis } from "../lib/redis.js";
 
 const REDIRECT = "https://agentedeia-two.vercel.app/api/instagram-auth";
 const SCOPES = "instagram_business_basic,instagram_business_manage_messages";

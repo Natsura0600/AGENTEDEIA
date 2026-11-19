@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { waitUntil } from "@vercel/functions";
 import { reply } from "../lib/agent.js";
 import { isPaused, pause, resume } from "../lib/store.js";
-import { redis } from "../lib/wa.js";
+import { redis } from "../lib/redis.js";
 import { sendDM, typing, getProfile, queueNotify } from "../lib/instagram.js";
 
 export const config = { api: { bodyParser: false }, maxDuration: 60 };
