@@ -1,9 +1,14 @@
 // Configuración de WhatsApp: lista los números de la cuenta y suscribe la app a los webhooks.
 // Uso: /api/wa-setup?secret=CRON_SECRET
+import { sendEmail } from "../lib/email.js";
 const API = "https://graph.facebook.com/v23.0";
 
 export default async function handler(req, res) {
   if (process.env.CRON_SECRET && req.query.secret !== process.env.CRON_SECRET) return res.status(401).end();
+  if (req.query.testmail) {
+    await sendEmail("✅ Prueba: los avisos del bot funcionan", ["Si ves este mail, los avisos de WhatsApp van a llegar acá.", "— Agente de Picture Web Dev"]);
+    return res.json({ ok: true, sent: true });
+  }
   const token = process.env.WHATSAPP_TOKEN;
   const waba = process.env.WHATSAPP_WABA_ID;
   const auth = { Authorization: `Bearer ${token}` };
