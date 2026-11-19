@@ -15,6 +15,12 @@ export default async function handler(req, res) {
     const listed = (process.env.BOT_OFF_NUMBERS || "").split(",").some((b) => b && n.endsWith(b.slice(-10)));
     return res.json({ ok: true, number: n, before, inContactList: listed });
   }
+  // Desactivar el bot para un número: /api/wa-setup?secret=...&disable=549...
+  if (req.query.disable) {
+    const n = String(req.query.disable).replace(/\D/g, "");
+    await redis.set(`off:${n}`, "1");
+    return res.json({ ok: true, number: n, off: await redis.get(`off:${n}`) });
+  }
   if (req.query.testmail) {
     await sendEmail("✅ Prueba: los avisos del bot funcionan", ["Si ves este mail, los avisos de WhatsApp van a llegar acá.", "— Agente de Picture Web Dev"]);
     return res.json({ ok: true, sent: true });
