@@ -49,6 +49,7 @@ async function handleMessage(msg, contact) {
   if (!(await redis.set(`waseen:${msg.id}`, "1", { nx: true, ex: 172800 }))) return;
   const from = digits(msg.from);
   const text = (msg.text?.body || "").trim();
+  console.log("WA mensaje de", from, "| en lista de contactos:", blocked().some((b) => from.endsWith(b.slice(-10))), "| total lista:", blocked().length);
   const owner = digits(process.env.OWNER_PHONE);
 
   if (owner && from === owner && text.startsWith("/bot ")) {
@@ -103,6 +104,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
   const raw = await rawBody(req);
+  console.log("WA webhook:", raw.toString("utf8").slice(0, 300));
   if (!validSignature(raw, req.headers["x-hub-signature-256"])) {
     console.error("Firma inválida: revisá WHATSAPP_APP_SECRET");
     return res.status(401).end();
