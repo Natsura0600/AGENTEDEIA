@@ -7,6 +7,7 @@ import { sendText, markRead } from "../lib/whatsapp.js";
 import { isPaused, pause, resume } from "../lib/store.js";
 import { redis } from "../lib/redis.js";
 import { queueNotify } from "../lib/instagram.js";
+import { sendEmail } from "../lib/email.js";
 
 export const config = { api: { bodyParser: false }, maxDuration: 60 };
 
@@ -60,12 +61,26 @@ async function handleMessage(msg, contact) {
     await sendText(from, "¡Gracias por tu mensaje! Por el momento solo puedo leer texto. ¿Me lo escribís así te ayudo?");
     return;
   }
+  const name = contact?.profile?.name || "Sin nombre";
+  const link = `https://wa.me/${from}`;
+  // Avisos (lead nuevo / pide humano): por mail y, si está configurado, a tu WhatsApp personal
   const notify = async (t) => {
+    const human = t.startsWith("🙋");
+    await sendEmail(human ? `🙋 ${name} quiere hablar con vos` : `🟢 Nuevo lead: ${name}`, [t, `Abrir el chat: ${link}`]);
     if (owner) await sendText(owner, t);
-    await queueNotify(t); // también queda guardado por si el aviso no llega
   };
   const answer = await reply(from, text, contact?.profile?.name, { chat: from, notify });
   if (!(await isOff(from))) await sendText(from, answer);
+
+  // Mail por cada chat nuevo (una vez cada 24 h por contacto)
+  if (await redis.set(`mailchat:${from}`, "1", { nx: true, ex: 86400 })) {
+    await sendEmail(`💬 Nuevo chat de ${name} (+${from})`, [
+      `${name} (+${from}) escribió por WhatsApp:`,
+      `“${text}”`,
+      `El bot respondió:\n${answer}`,
+      `Abrir el chat: ${link}`,
+    ]);
+  }
 }
 
 // Coexistencia: lo que mandás vos desde la app de WhatsApp Business llega como "echo"
