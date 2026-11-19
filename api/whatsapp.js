@@ -38,6 +38,8 @@ async function command(text, chatPhone) {
   const [, cmd, target] = text.trim().split(/\s+/);
   const phone = digits(target) || chatPhone;
   if (!phone) return false;
+  if (cmd === "apagar") { await redis.set("bot:global-off", "1"); return "Bot apagado para TODOS los chats ⏸️ (/bot prender para volver)"; }
+  if (cmd === "prender") { await redis.del("bot:global-off"); return "Bot prendido para todos ✅"; }
   if (cmd === "off") { await redis.set(`off:${phone}`, "1"); return `Bot desactivado para ${phone} ⏸️`; }
   if (cmd === "on") { await redis.del(`off:${phone}`); await resume(phone); return `Bot activado para ${phone} ✅`; }
   return false;
@@ -54,6 +56,7 @@ async function handleMessage(msg, contact) {
     if (r) await sendText(owner, r);
     return;
   }
+  if (process.env.BOT_DISABLED === "1" || (await redis.get("bot:global-off"))) return; // bot apagado para todos
   if ((await isOff(from)) || (await isPaused(from))) return;
 
   await markRead(msg.id);
