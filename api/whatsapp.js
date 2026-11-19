@@ -2,7 +2,7 @@
 // No hay cron ni conexión abierta: la función solo corre cuando llega un mensaje.
 import crypto from "node:crypto";
 import { waitUntil } from "@vercel/functions";
-import { reply } from "../lib/agent.js";
+import { reply, classify } from "../lib/agent.js";
 import { sendText, markRead } from "../lib/whatsapp.js";
 import { isPaused, pause, resume } from "../lib/store.js";
 import { redis } from "../lib/redis.js";
@@ -60,6 +60,17 @@ async function handleMessage(msg, contact) {
   if (process.env.BOT_DISABLED === "1" || (await redis.get("bot:global-off"))) return; // bot apagado para todos
   if ((await isOff(from)) || (await isPaused(from))) return;
 
+  // Filtro con IA: solo en el primer mensaje de cada chat
+  if (!(await redis.get(`cls:${from}`))) {
+    const kind = msg.type === "text" ? await classify(text, contact?.profile?.name) : "DUDOSO";
+    console.log("Clasificación", from, kind);
+    if (kind === "PERSONAL") {
+      await redis.set(`off:${from}`, "1"); // charla personal: el bot no contesta nunca en este chat
+      return;
+    }
+    await redis.set(`cls:${from}`, kind);
+  }
+
   await markRead(msg.id);
   if (msg.type !== "text") {
     await sendText(from, "¡Gracias por tu mensaje! Por el momento solo puedo leer texto. ¿Me lo escribís así te ayudo?");
@@ -92,7 +103,7 @@ async function handleEcho(echo) {
   const to = digits(echo.to);
   const text = (echo.text?.body || "").trim();
   if (text.startsWith("/bot ")) return command(text, to);
-  if (to) await pause(to); // contestaste vos → el bot se calla 24 h en ese chat
+  if (to) await redis.set(`off:${to}`, "1"); // contestaste vos → el bot no contesta más en ese chat
 }
 
 export default async function handler(req, res) {
