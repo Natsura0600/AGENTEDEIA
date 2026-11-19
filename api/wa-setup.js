@@ -1,10 +1,20 @@
 // Configuración de WhatsApp: lista los números de la cuenta y suscribe la app a los webhooks.
 // Uso: /api/wa-setup?secret=CRON_SECRET
 import { sendEmail } from "../lib/email.js";
+import { redis } from "../lib/redis.js";
 const API = "https://graph.facebook.com/v23.0";
 
 export default async function handler(req, res) {
   if (process.env.CRON_SECRET && req.query.secret !== process.env.CRON_SECRET) return res.status(401).end();
+  // Reactivar el bot para un número: /api/wa-setup?secret=...&enable=549...
+  if (req.query.enable) {
+    const n = String(req.query.enable).replace(/\D/g, "");
+    const before = { off: await redis.get(`off:${n}`), cls: await redis.get(`cls:${n}`), pause: await redis.get(`pause:${n}`) };
+    await redis.del(`off:${n}`, `pause:${n}`);
+    await redis.set(`cls:${n}`, "CLIENTE"); // no volver a filtrarlo como personal
+    const listed = (process.env.BOT_OFF_NUMBERS || "").split(",").some((b) => b && n.endsWith(b.slice(-10)));
+    return res.json({ ok: true, number: n, before, inContactList: listed });
+  }
   if (req.query.testmail) {
     await sendEmail("✅ Prueba: los avisos del bot funcionan", ["Si ves este mail, los avisos de WhatsApp van a llegar acá.", "— Agente de Picture Web Dev"]);
     return res.json({ ok: true, sent: true });
