@@ -19,7 +19,8 @@ export default async function handler(req, res) {
   if (!(await isLinked())) return res.json({ ok: false, reason: "WhatsApp no vinculado" });
   if (!(await redis.set("cron:lock", 1, { nx: true, ex: 55 }))) return res.json({ ok: true, skipped: true });
 
-  const LISTEN_MS = 30000; // se queda escuchando 30 s y contesta en vivo lo que llegue
+  // Cuánto se queda conectado escuchando. Menos tiempo = menos CPU en Vercel.
+  const LISTEN_MS = Number(process.env.WA_LISTEN_MS || 8000);
   let queue = Promise.resolve();
   let received = 0, answered = 0;
   let sock, me, ownerJid;
@@ -80,6 +81,7 @@ export default async function handler(req, res) {
     const t0 = Date.now();
     while (!openedAt && Date.now() - t0 < 15000) await sleep(250);
     while (openedAt && Date.now() - openedAt < LISTEN_MS) await sleep(500);
+    // si llegaron mensajes al final, dar unos segundos más para contestarlos
     await queue; // terminar de contestar lo que esté en curso
 
     // Avisos pendientes de Instagram → tu WhatsApp
