@@ -98,6 +98,18 @@ async function handleMessage(msg, contact) {
   }
 }
 
+// Estado de un mensaje enviado desde tu número: si no lo mandó el bot, lo escribiste vos → el bot se apaga en ese chat
+async function handleStatus(st) {
+  if (st.status !== "sent" && st.status !== "delivered") return;
+  if (!(await redis.set(`stseen:${st.id}`, "1", { nx: true, ex: 172800 }))) return;
+  await new Promise((r) => setTimeout(r, 4000)); // dar tiempo a que el bot anote sus propios envíos
+  if (await redis.get(`botmsg:${st.id}`)) return;
+  const to = digits(st.recipient_id);
+  if (!to) return;
+  await redis.set(`off:${to}`, "1");
+  console.log("Respondiste vos a", to, "→ bot desactivado en ese chat");
+}
+
 // Coexistencia: lo que mandás vos desde la app de WhatsApp Business llega como "echo"
 async function handleEcho(echo) {
   const to = digits(echo.to);
@@ -127,7 +139,10 @@ export default async function handler(req, res) {
   for (const entry of data.entry || []) {
     for (const ch of entry.changes || []) {
       const v = ch.value || {};
-      if (ch.field === "messages") for (const m of v.messages || []) jobs.push(() => handleMessage(m, v.contacts?.[0]));
+      if (ch.field === "messages") {
+        for (const m of v.messages || []) jobs.push(() => handleMessage(m, v.contacts?.[0]));
+        for (const st of v.statuses || []) jobs.push(() => handleStatus(st));
+      }
       if (ch.field === "smb_message_echoes") for (const e of v.message_echoes || []) jobs.push(() => handleEcho(e));
     }
   }
