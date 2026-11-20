@@ -66,10 +66,9 @@ function render() {
     const s = document.createElement("div"); s.className = "sub"; s.textContent = `${fmt(c.phone)} · ${ago(c.at)} · ${c.last}`;
     info.append(n, s);
     const st = document.createElement("span"); st.className = "state " + (c.on ? "on" : "off");
-    st.textContent = c.contact ? "Contacto" : c.on ? "Bot activo" : "Apagado";
+    st.textContent = c.on ? "Bot activo" : c.contact ? "Contacto" : "Apagado";
     const sw = document.createElement("button"); sw.className = "sw"; sw.setAttribute("role", "switch");
     sw.setAttribute("aria-checked", String(c.on)); sw.setAttribute("aria-label", `Bot en el chat de ${c.name || fmt(c.phone)}`);
-    if (c.contact) { sw.disabled = true; sw.title = "Está en tu lista de contactos"; }
     sw.onclick = () => api(`&phone=${c.phone}&on=${c.on ? 0 : 1}`, "POST");
     row.append(info, st, sw); list.append(row);
   }

@@ -15,8 +15,10 @@ export const config = { api: { bodyParser: false }, maxDuration: 60 };
 const digits = (s) => String(s || "").replace(/\D/g, "");
 // Números que el bot nunca contesta (familia, amigos…), separados por coma en BOT_OFF_NUMBERS
 const blocked = () => (process.env.BOT_OFF_NUMBERS || "").split(",").map(digits).filter(Boolean);
+// "allow:<número>" (desde el panel) permite que el bot atienda a un contacto de la lista fija
 const isOff = async (phone) =>
-  blocked().some((b) => phone.endsWith(b.slice(-10))) || Boolean(await redis.get(`off:${phone}`));
+  Boolean(await redis.get(`off:${phone}`)) ||
+  (blocked().some((b) => phone.endsWith(b.slice(-10))) && !(await redis.get(`allow:${phone}`)));
 
 async function rawBody(req) {
   const chunks = [];

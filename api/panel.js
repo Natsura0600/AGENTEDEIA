@@ -23,8 +23,10 @@ export default async function handler(req, res) {
       if (req.query.on === "1") {
         await redis.del(`off:${p}`, `pause:${p}`);
         await redis.set(`cls:${p}`, "CLIENTE");
+        if (inContacts(p)) await redis.set(`allow:${p}`, "1"); // contacto: permitir igual
       } else {
         await redis.set(`off:${p}`, "1");
+        await redis.del(`allow:${p}`);
       }
     }
   }
@@ -34,7 +36,8 @@ export default async function handler(req, res) {
   for (const c of chats) {
     const contact = inContacts(c.phone);
     const off = Boolean(await redis.get(`off:${c.phone}`));
-    out.push({ ...c, contact, on: !contact && !off });
+    const allow = Boolean(await redis.get(`allow:${c.phone}`));
+    out.push({ ...c, contact, on: !off && (!contact || allow) });
   }
   const globalOn = process.env.BOT_DISABLED !== "1" && !(await redis.get("bot:global-off"));
   res.json({ globalOn, chats: out });
