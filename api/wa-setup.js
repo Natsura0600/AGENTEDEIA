@@ -21,6 +21,22 @@ export default async function handler(req, res) {
     await redis.set(`off:${n}`, "1");
     return res.json({ ok: true, number: n, off: await redis.get(`off:${n}`) });
   }
+  // Activar en la app de Meta los avisos de lo que escribís desde el celular (smb_message_echoes)
+  if (req.query.echoes) {
+    const appId = process.env.INSTAGRAM_APP_ID;
+    const appToken = `${appId}|${process.env.INSTAGRAM_APP_SECRET}`;
+    const form = new URLSearchParams({
+      object: "whatsapp_business_account",
+      callback_url: "https://agentedeia-two.vercel.app/api/whatsapp",
+      verify_token: process.env.WHATSAPP_VERIFY_TOKEN,
+      fields: "messages,smb_message_echoes,history,smb_app_state_sync",
+      access_token: appToken,
+    });
+    const set = await (await fetch(`https://graph.facebook.com/v23.0/${appId}/subscriptions`, { method: "POST", body: form })).json().catch((e) => ({ error: e.message }));
+    const get = await (await fetch(`https://graph.facebook.com/v23.0/${appId}/subscriptions?access_token=${encodeURIComponent(appToken)}`)).json().catch(() => ({}));
+    const phone = await (await fetch(`https://graph.facebook.com/v23.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}?fields=display_phone_number,platform_type,is_on_biz_app,status`, { headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` } })).json().catch(() => ({}));
+    return res.json({ set, subscriptions: get.data, phone });
+  }
   if (req.query.testmail) {
     await sendEmail("✅ Prueba: los avisos del bot funcionan", ["Si ves este mail, los avisos de WhatsApp van a llegar acá.", "— Agente de Picture Web Dev"]);
     return res.json({ ok: true, sent: true });

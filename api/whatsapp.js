@@ -8,6 +8,7 @@ import { isPaused, pause, resume } from "../lib/store.js";
 import { redis } from "../lib/redis.js";
 import { queueNotify } from "../lib/instagram.js";
 import { sendEmail } from "../lib/email.js";
+import { recordChat } from "../lib/chats.js";
 
 export const config = { api: { bodyParser: false }, maxDuration: 60 };
 
@@ -51,6 +52,7 @@ async function handleMessage(msg, contact) {
   const text = (msg.text?.body || "").trim();
   console.log("WA mensaje de", from, "| en lista de contactos:", blocked().some((b) => from.endsWith(b.slice(-10))), "| total lista:", blocked().length);
   const owner = digits(process.env.OWNER_PHONE);
+  await recordChat(from, contact?.profile?.name, text || `[${msg.type}]`).catch(() => {});
 
   if (owner && from === owner && text.startsWith("/bot ")) {
     const r = await command(text);

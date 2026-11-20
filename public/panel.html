@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel del agente · Picture Web Dev</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0a0a0a;color:#e7e3dd;font-family:'Open Sans',system-ui,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:24px 16px 64px}
+.brand{font-size:13px;line-height:14px;font-weight:700;letter-spacing:-.02em}
+h1{font-size:28px;line-height:32px;font-weight:800;letter-spacing:-.03em;margin:24px 0 4px}
+.muted{color:#9b978f;font-size:14px}
+.card{background:#151515;border:1px solid #2b2b29;padding:16px;display:flex;align-items:center;gap:12px}
+.global{border-radius:24px 0 24px 0;margin:24px 0}
+.list{display:flex;flex-direction:column;gap:8px}
+.info{flex:1;min-width:0}
+.name{font-weight:700}
+.sub{color:#9b978f;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button.sw{width:56px;height:32px;border-radius:999px;border:1px solid #2b2b29;background:#2b2b29;position:relative;cursor:pointer;flex:none}
+button.sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:999px;background:#9b978f;transition:left .15s}
+button.sw[aria-checked="true"]{background:#e7e3dd;border-color:#e7e3dd}
+button.sw[aria-checked="true"]::after{left:27px;background:#0a0a0a}
+button.sw:disabled{opacity:.4;cursor:not-allowed}
+button.sw:focus-visible{outline:2px solid #e7e3dd;outline-offset:2px}
+.state{font-size:12px;font-weight:700;width:68px;text-align:right;flex:none}
+.on{color:#5fd69a}.off{color:#9b978f}
+input{width:100%;margin:16px 0 8px;padding:12px;border-radius:4px;border:1px solid #2b2b29;background:#151515;color:#e7e3dd;font:inherit}
+.refresh{background:none;border:1px solid #e7e3dd;color:#e7e3dd;border-radius:12px;min-height:44px;padding:0 16px;font:inherit;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="brand">PICTURE<br>WEB DEV</div>
+<h1>Panel del agente</h1>
+<p class="muted">Prendé o apagá el bot en cada chat. Los chats aparecen acá cuando te escriben.</p>
+<div class="card global"><div class="info"><div class="name">Bot para todos los chats</div><div class="sub" id="gsub">Cargando…</div></div><button class="sw" id="gsw" role="switch" aria-checked="false" aria-label="Bot para todos los chats"></button></div>
+<label class="muted" for="q">Buscar por nombre o número</label>
+<input id="q" type="search" placeholder="Ej: Diego o 2323…">
+<div class="list" id="list"></div>
+<p style="margin-top:24px"><button class="refresh" id="refresh">Actualizar</button></p>
+</div>
+<script>
+const key = new URLSearchParams(location.search).get("key") || "";
+let data = { chats: [] };
+const $ = (id) => document.getElementById(id);
+const fmt = (p) => "+" + p;
+const ago = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "recién" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m/60)} h` : `hace ${Math.round(m/1440)} d`; };
+async function api(qs, method = "GET") {
+  const r = await fetch(`/api/panel?key=${encodeURIComponent(key)}${qs}`, { method });
+  if (r.status === 401) { $("list").textContent = "Link inválido: falta la clave."; throw new Error("auth"); }
+  data = await r.json(); render();
+}
+function render() {
+  $("gsw").setAttribute("aria-checked", String(data.globalOn));
+  $("gsub").textContent = data.globalOn ? "Prendido" : "Apagado para todos";
+  const q = $("q").value.toLowerCase().replace(/\s/g, "");
+  const list = $("list"); list.replaceChildren();
+  const rows = data.chats.filter((c) => !q || (c.name || "").toLowerCase().replace(/\s/g, "").includes(q) || c.phone.includes(q.replace(/\D/g, "") || "~"));
+  if (!rows.length) { const p = document.createElement("p"); p.className = "muted"; p.textContent = "Todavía no hay chats."; list.append(p); return; }
+  for (const c of rows) {
+    const row = document.createElement("div"); row.className = "card";
+    const info = document.createElement("div"); info.className = "info";
+    const n = document.createElement("div"); n.className = "name"; n.textContent = c.name || fmt(c.phone);
+    const s = document.createElement("div"); s.className = "sub"; s.textContent = `${fmt(c.phone)} · ${ago(c.at)} · ${c.last}`;
+    info.append(n, s);
+    const st = document.createElement("span"); st.className = "state " + (c.on ? "on" : "off");
+    st.textContent = c.contact ? "Contacto" : c.on ? "Bot activo" : "Apagado";
+    const sw = document.createElement("button"); sw.className = "sw"; sw.setAttribute("role", "switch");
+    sw.setAttribute("aria-checked", String(c.on)); sw.setAttribute("aria-label", `Bot en el chat de ${c.name || fmt(c.phone)}`);
+    if (c.contact) { sw.disabled = true; sw.title = "Está en tu lista de contactos"; }
+    sw.onclick = () => api(`&phone=${c.phone}&on=${c.on ? 0 : 1}`, "POST");
+    row.append(info, st, sw); list.append(row);
+  }
+}
+$("gsw").onclick = () => api(`&global=${data.globalOn ? 0 : 1}`, "POST");
+$("q").oninput = render;
+$("refresh").onclick = () => api("");
+api("");
+</script>
+</body>
+</html>
