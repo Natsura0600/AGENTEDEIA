@@ -58,7 +58,7 @@ export async function verificarComprobante(order, imageBase64, mediaType) {
 // ---------- Conversación ----------
 export async function reply({ chat, text, image, mediaType, name }) {
   const history = await getHistory(chat);
-  const isOpen = abierto();
+  const isOpen = process.env.RESPETAR_HORARIO === "1" ? abierto() : true; // demo: siempre abierto
   let order = await activeOrder(chat);
   let nota = "";
 

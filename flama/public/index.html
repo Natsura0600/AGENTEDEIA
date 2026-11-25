@@ -70,7 +70,7 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 /* SECTION HEAD */
 .sec{padding:130px 0}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:56px;flex-wrap:wrap}
-.head h2{font-size:clamp(64px,10vw,150px)}
+.head h2{font-size:clamp(56px,8vw,120px)}
 .head .mono{color:var(--y);display:block;margin-bottom:14px}
 .head p{max-width:340px;color:var(--mut);line-height:1.55;margin:0}
 
@@ -78,24 +78,22 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .tabs{display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap}
 .tab{background:transparent;border:1.5px solid var(--line);color:var(--w);padding:10px 18px;font-weight:800;text-transform:uppercase;font-size:13px;letter-spacing:.08em;min-height:44px}
 .tab[aria-selected="true"]{background:var(--w);color:var(--k);border-color:var(--w)}
-.menu{border-top:1.5px solid var(--line)}
-.item{display:grid;grid-template-columns:70px 1fr auto;gap:24px;align-items:center;padding:26px 0;border-bottom:1.5px solid var(--line);position:relative;transition:background .3s}
-.item::before{content:"";position:absolute;inset:0 -24px;background:var(--k2);opacity:0;transition:opacity .3s;z-index:-1}
-.item:hover::before{opacity:1}
-.item .n{font-family:'JetBrains Mono';color:var(--mut);font-size:14px}
-.item h3{font-family:Anton;font-size:clamp(30px,4vw,46px);text-transform:uppercase;margin:0 0 6px;line-height:1;transition:color .2s}
-.item:hover h3{color:var(--y)}
-.item p{margin:0;color:var(--mut);font-size:15px;line-height:1.45}
-.opts{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
-.chip{background:transparent;border:1.5px solid var(--line);color:var(--mut);padding:6px 12px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;min-height:36px;transition:all .15s}
+.menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.item{display:flex;flex-direction:column;gap:12px;padding:20px;background:var(--k2);border:1.5px solid var(--line);transition:border-color .2s,transform .2s}
+.item:hover{border-color:var(--y);transform:translateY(-3px)}
+.item .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.item h3{font-family:Anton;font-size:26px;text-transform:uppercase;margin:0;line-height:1;letter-spacing:.01em}
+.item .price{font-family:'JetBrains Mono';font-weight:700;color:var(--y);font-size:15px;white-space:nowrap}
+.item p{margin:0;color:var(--mut);font-size:14px;line-height:1.45;flex:1}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:transparent;border:1.5px solid var(--line);color:var(--mut);padding:5px 10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;min-height:32px}
 .chip[aria-pressed="true"]{border-color:var(--y);color:var(--y)}
-.buy{display:flex;align-items:center;gap:16px}
-.size{display:flex;border:1.5px solid var(--line)}
-.size button{background:transparent;border:0;color:var(--mut);padding:10px 14px;min-height:48px;font-weight:800;font-size:13px;text-transform:uppercase;line-height:1.1;text-align:left}
-.size button small{display:block;font-family:'JetBrains Mono';font-size:14px;color:inherit;letter-spacing:0;margin-top:3px}
+.buy{display:flex;align-items:center;gap:10px;margin-top:2px}
+.size{display:flex;border:1.5px solid var(--line);flex:1}
+.size button{flex:1;background:transparent;border:0;color:var(--mut);padding:8px;min-height:44px;font-weight:800;font-size:12px;text-transform:uppercase}
+.size button small{display:block;font-family:'JetBrains Mono';font-size:12px;margin-top:2px}
 .size button[aria-pressed="true"]{background:var(--w);color:var(--k)}
-.add{width:56px;height:56px;border-radius:50%;border:0;background:var(--y);color:var(--k);font-size:28px;font-weight:900;display:grid;place-items:center;transition:transform .2s}
-.add:hover{transform:rotate(90deg) scale(1.06)}
+.add{flex:none;height:46px;padding:0 16px;border:0;background:var(--y);color:var(--k);font-weight:900;font-size:13px;text-transform:uppercase;letter-spacing:.05em}
 .add.ok{background:#5ad67d}
 .extras-note{margin-top:28px;color:var(--mut)}
 @media(max-width:760px){.item{grid-template-columns:1fr}.item .n{display:none}.buy{justify-content:space-between}}
@@ -314,8 +312,9 @@ function renderMenu() {
   MENU.filter((m) => m[5] === cat).forEach(([id, name, desc, s, d], idx) => {
     let size = "simple"; const ext = new Set(); let veg = false;
     const row = mk("article", "item reveal");
-    row.append(mk("span", "n", String(idx + 1).padStart(2, "0")));
-    const mid = mk("div"); mid.append(mk("h3", null, name), mk("p", null, desc));
+    const top = mk("div", "top"); top.append(mk("h3", null, name), mk("span", "price", "desde " + money(s)));
+    row.append(top, mk("p", null, desc));
+    const mid = row;
     const buy = mk("div", "buy");
     const sz = mk("div", "size"); sz.setAttribute("role", "group"); sz.setAttribute("aria-label", "Tamaño de " + name);
     const sizes = d ? [["simple", s], ["doble", d]] : [["x3", s]];
@@ -334,16 +333,16 @@ function renderMenu() {
       });
       mid.append(op);
     }
-    const add = mk("button", "add", "+"); add.type = "button"; add.setAttribute("aria-label", "Agregar " + name);
+    const add = mk("button", "add", "Agregar"); add.type = "button"; add.setAttribute("aria-label", "Agregar " + name);
     add.onclick = () => {
       const price = (d ? (size === "simple" ? s : d) : s) + ext.size * EXTRA;
       const label = d ? `${name} ${size}${veg ? " veggie" : ""}${ext.size ? " + " + [...ext].map((e) => e.replace("extra-", "")).join(" + ") : ""}` : name;
       const f = cart.find((x) => x.label === label); f ? f.qty++ : cart.push({ label, price, qty: 1 });
-      add.textContent = "✓"; add.classList.add("ok"); setTimeout(() => { add.textContent = "+"; add.classList.remove("ok"); }, 900);
+      add.textContent = "✓ Listo"; add.classList.add("ok"); setTimeout(() => { add.textContent = "Agregar"; add.classList.remove("ok"); }, 900);
       updateCart(true);
     };
     buy.append(sz, add);
-    row.append(mid, buy); list.append(row);
+    row.append(buy); list.append(row);
   });
   observe();
 }
