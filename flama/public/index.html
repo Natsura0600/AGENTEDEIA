@@ -53,12 +53,9 @@ nav::before{content:"";position:absolute;inset:0;background:linear-gradient(#0c0
 .hero-meta{display:flex;gap:36px;margin-top:56px;padding-top:24px;border-top:1px solid var(--line);color:var(--mut);flex-wrap:wrap;animation:fade 1s .8s both}
 .hero-meta b{display:block;color:var(--w);font-size:15px;letter-spacing:.02em;font-family:Archivo;text-transform:none;margin-top:6px}
 .hero-r{position:relative;margin:96px 24px 24px 0;border-radius:4px;overflow:hidden;background:var(--y)}
-.hero-r img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:60% 70%;animation:zoom 1.6s cubic-bezier(.2,.8,.2,1) both}
+.hero-r img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:60% 70%;animation:zoom 1.6s cubic-bezier(.2,.8,.2,1) both,kb 14s 1.6s ease-in-out infinite alternate}
+@keyframes kb{to{transform:scale(1.07) translate(-1.5%,1.5%)}}
 @keyframes zoom{from{transform:scale(1.12);filter:saturate(.4)}}
-.drip{position:absolute;top:0;left:0;width:100%;height:150px;pointer-events:none;z-index:2;filter:drop-shadow(0 4px 6px #0005)}
-.drip .d{transform-box:fill-box;transform-origin:top;animation:pour 2.4s cubic-bezier(.5,0,.25,1) both,ooze 5s 2.6s ease-in-out infinite alternate}
-@keyframes pour{from{transform:scaleY(0)}}
-@keyframes ooze{to{transform:scaleY(1.18)}}
 .stamp{position:absolute;left:24px;bottom:24px;z-index:3;width:116px;height:116px;animation:spin 18s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .stamp text{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:3px;fill:var(--k);font-weight:700}
@@ -206,7 +203,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 </div>
 <div class="hero-r">
 <img src="/img/burger.jpg" alt="Hamburguesa doble con cheddar sobre papel con el logo de Flama">
-<svg class="drip" viewBox="0 0 400 150" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="kg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#c41b0e"/><stop offset="1" stop-color="#e8321e"/></linearGradient></defs><g fill="url(#kg)"><rect width="400" height="10"/><path class="d" style="animation-delay:0.00s" d="M11 0 v21 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.12s" d="M53 0 v58 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.24s" d="M101 0 v32 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.36s" d="M141 0 v88 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.48s" d="M196 0 v43 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.60s" d="M241 0 v69 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.72s" d="M291 0 v24 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.84s" d="M331 0 v54 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.96s" d="M376 0 v36 a9 9 0 0 0 18 0 V0z"/></g></svg>
 <svg class="stamp" viewBox="0 0 130 130" aria-hidden="true"><circle cx="65" cy="65" r="64" fill="#f6c91c" stroke="#0c0b0a" stroke-width="2"/><defs><path id="c" d="M65,65 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs><text><textPath href="#c">FLAMA · BIRRA · BURGERS · LUJÁN · </textPath></text><image href="/img/logo.png" x="40" y="40" width="50" height="50"/></svg>
 </div>
 </header>
