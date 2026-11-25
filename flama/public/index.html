@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flama · Pedí tu burger</title>
+<meta name="description" content="Flama, birra y burgers en Luján desde 2017. Armá tu pedido y mandalo por WhatsApp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--y:#f2cf4c;--y2:#ffd84d;--brown:#2a1408;--brown2:#3b1d0c;--ink:#fff6df;--muted:#d8c49c;--line:#53301a;--orange:#ff8a1f}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--brown);color:var(--ink);font-family:Archivo,system-ui,sans-serif;overflow-x:hidden}
+a{color:inherit}
+button{font:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--y);outline-offset:3px}
+.demo{position:fixed;top:12px;left:-40px;transform:rotate(-35deg);background:var(--orange);color:var(--brown);font-weight:800;font-size:12px;letter-spacing:.1em;padding:4px 48px;z-index:50}
+/* HERO */
+.hero{min-height:100vh;background:var(--y);color:var(--brown);display:grid;place-items:center;text-align:center;position:relative;overflow:hidden;padding:80px 20px}
+.hero .rays{position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg,#ffffff22 0 6deg,transparent 6deg 18deg);animation:spin 40s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.logo{position:relative;font-family:'Archivo Black';font-size:clamp(84px,18vw,220px);line-height:.85;letter-spacing:-.03em;color:var(--y);-webkit-text-stroke:4px var(--brown);text-shadow:6px 6px 0 var(--brown),12px 12px 0 #2a140833;animation:pop .9s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes pop{from{transform:scale(.4) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
+.since{position:relative;font-weight:800;font-size:clamp(18px,3vw,28px);letter-spacing:.05em;margin-top:14px;animation:up .8s .3s both}
+.tag{position:relative;font-size:clamp(18px,2.6vw,24px);font-weight:600;max-width:640px;margin:22px auto 0;animation:up .8s .45s both}
+@keyframes up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.cta{position:relative;display:inline-flex;align-items:center;gap:10px;margin-top:34px;background:var(--brown);color:var(--y);border:0;border-radius:999px;padding:18px 30px;font-size:18px;font-weight:800;text-decoration:none;box-shadow:0 6px 0 #00000055;transition:transform .15s,box-shadow .15s;animation:up .8s .6s both}
+.cta:hover{transform:translateY(-3px);box-shadow:0 9px 0 #00000055}
+.flames{position:absolute;bottom:-10px;left:0;right:0;height:120px;display:flex;justify-content:center;gap:6px;pointer-events:none}
+.flames span{width:46px;height:100px;background:radial-gradient(circle at 50% 80%,var(--orange),#ff4d1f 60%,transparent 62%);border-radius:50% 50% 45% 45%/60% 60% 40% 40%;transform-origin:bottom;animation:flick 1.2s ease-in-out infinite alternate;opacity:.9}
+.flames span:nth-child(odd){animation-duration:.9s;height:80px}
+.flames span:nth-child(3n){animation-delay:.3s;height:120px}
+@keyframes flick{0%{transform:scaleY(.8) skewX(-4deg)}100%{transform:scaleY(1.1) skewX(5deg)}}
+.addr{position:absolute;bottom:24px;left:0;right:0;display:flex;justify-content:space-around;font-weight:800;font-size:14px;z-index:2;flex-wrap:wrap;gap:8px}
+/* SECTIONS */
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+section.menu{padding:100px 0 160px}
+.h2{font-family:'Archivo Black';font-size:clamp(44px,8vw,96px);line-height:.9;color:var(--y);margin:0 0 8px;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:18px;margin:0 0 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px}
+.card{background:var(--brown2);border:2px solid var(--line);border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;opacity:0;transform:translateY(30px);transition:opacity .6s,transform .6s,border-color .2s}
+.card.in{opacity:1;transform:none}
+.card:hover{border-color:var(--y)}
+.card h3{font-family:'Archivo Black';font-size:26px;margin:0;line-height:1;color:var(--ink)}
+.card p{margin:0;color:var(--muted);font-size:15px;line-height:21px;flex:1}
+.burger{font-size:0;height:84px;display:flex;align-items:flex-end;justify-content:center}
+.burger svg{width:110px;transition:transform .3s}
+.card:hover .burger svg{transform:rotate(-6deg) scale(1.08)}
+.size{display:flex;gap:8px}
+.size button{flex:1;border:2px solid var(--line);background:transparent;color:var(--ink);border-radius:12px;padding:10px 6px;font-weight:700;min-height:44px}
+.size button[aria-pressed="true"]{background:var(--y);color:var(--brown);border-color:var(--y)}
+.size small{display:block;font-weight:600;opacity:.8}
+.add{background:var(--y);color:var(--brown);border:0;border-radius:12px;min-height:48px;font-weight:800;font-size:16px;transition:transform .1s}
+.add:active{transform:scale(.96)}
+.extras{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;min-height:36px}
+.chip[aria-pressed="true"]{border-color:var(--y);color:var(--y)}
+.note{margin-top:28px;text-align:center;color:var(--y);font-weight:700}
+/* CART */
+.cartbtn{position:fixed;right:20px;bottom:20px;z-index:40;background:var(--y);color:var(--brown);border:0;border-radius:999px;padding:16px 22px;font-weight:800;font-size:16px;box-shadow:0 8px 24px #0008;display:flex;align-items:center;gap:10px;transform:translateY(140%);transition:transform .35s cubic-bezier(.2,1.4,.4,1)}
+.cartbtn.show{transform:none}
+.cartbtn .count{background:var(--brown);color:var(--y);border-radius:999px;min-width:28px;height:28px;display:grid;place-items:center;font-size:14px}
+.bump{animation:bump .4s}
+@keyframes bump{50%{transform:scale(1.15)}}
+.drawer{position:fixed;inset:0;z-index:60;display:none}
+.drawer.open{display:block}
+.backdrop{position:absolute;inset:0;background:#000a;animation:fade .25s}
+@keyframes fade{from{opacity:0}}
+.panel{position:absolute;right:0;top:0;bottom:0;width:min(460px,100%);background:var(--brown2);border-left:3px solid var(--y);padding:24px;overflow:auto;animation:slide .3s cubic-bezier(.2,1,.3,1)}
+@keyframes slide{from{transform:translateX(100%)}}
+.panel h2{font-family:'Archivo Black';color:var(--y);margin:0 0 16px;font-size:34px}
+.line{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.line .q{display:flex;align-items:center;gap:6px}
+.line .q button{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);font-weight:800}
+fieldset{border:0;padding:0;margin:18px 0 0}
+legend{font-weight:800;margin-bottom:8px;color:var(--y)}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;background:var(--brown);color:var(--ink);border:1.5px solid var(--line);border-radius:10px;padding:12px;font:inherit}
+.opts{display:flex;gap:8px}
+.opts label{flex:1;margin:0;display:flex;gap:8px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:12px;color:var(--ink);cursor:pointer}
+.opts input{width:auto}
+.sum{display:flex;justify-content:space-between;font-size:20px;font-weight:800;margin-top:18px}
+.send{width:100%;margin-top:16px;border:0;border-radius:14px;min-height:56px;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px}
+.wa{background:#25d366;color:#05260f}
+.try{background:var(--y);color:var(--brown)}
+.close{position:absolute;right:16px;top:16px;background:transparent;border:0;color:var(--ink);font-size:28px;width:44px;height:44px}
+.hint{color:var(--muted);font-size:13px;margin-top:10px;text-align:center}
+footer{background:#170a03;color:var(--muted);text-align:center;padding:40px 20px;font-size:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.card{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="demo" aria-hidden="true">DEMO</div>
+
+<header class="hero">
+<div class="rays" aria-hidden="true"></div>
+<div>
+<h1 class="logo">FLAMA</h1>
+<div class="since">· DESDE 2017 ·</div>
+<p class="tag">Birra y burgers en Luján. Armá tu pedido acá y te lo confirmamos por WhatsApp en segundos.</p>
+<a class="cta" href="#menu">Armar mi pedido 🔥</a>
+</div>
+<div class="flames" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+<div class="addr"><span>MITRE 670</span><span>@FLAMA_BIRRA_BURGERS</span><span>LUJÁN, BUENOS AIRES</span></div>
+</header>
+
+<section class="menu" id="menu">
+<div class="wrap">
+<h2 class="h2">HAMBURGUESAS</h2>
+<p class="sub">Todas vienen con papas y todas pueden ser veggies.</p>
+<div class="grid" id="grid"></div>
+<p class="note">Extra carne $2.000 · Extra bacon $2.000</p>
+</div>
+</section>
+
+<footer>Flama · Mitre 670, Luján · Demo de pedidos por WhatsApp hecha por Picture Web Dev</footer>
+
+<button class="cartbtn" id="cartbtn" type="button" aria-label="Ver mi pedido"><span>Ver mi pedido</span><span class="count" id="count">0</span><span id="carttotal"></span></button>
+
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dtitle">
+<div class="backdrop" id="backdrop"></div>
+<div class="panel">
+<button class="close" id="close" type="button" aria-label="Cerrar">×</button>
+<h2 id="dtitle">Tu pedido</h2>
+<div id="lines"></div>
+<fieldset>
+<legend>¿Cómo lo querés?</legend>
+<div class="opts">
+<label><input type="radio" name="entrega" value="retiro" checked> Retiro en Mitre 670</label>
+<label><input type="radio" name="entrega" value="envio"> Envío</label>
+</div>
+<div id="envio" hidden>
+<label for="zona">Zona</label>
+<select id="zona"></select>
+<label for="dir">Dirección</label>
+<input id="dir" autocomplete="street-address" placeholder="Calle, número, piso">
+</div>
+<label for="nombre">Tu nombre</label>
+<input id="nombre" autocomplete="name" placeholder="Para saber de quién es el pedido">
+<label for="coment">Comentarios (opcional)</label>
+<textarea id="coment" rows="2" placeholder="Sin cebolla, bien cocida, etc."></textarea>
+</fieldset>
+<div class="sum"><span>Total</span><span id="total">$0</span></div>
+<button class="send wa" id="sendwa" type="button">Enviar pedido por WhatsApp</button>
+<button class="send try" id="sendtry" type="button">Probar con el bot acá (demo)</button>
+<p class="hint">El bot te confirma el pedido y te pasa el alias para transferir.</p>
+</div>
+</div>
+
+<script>
+// Número de WhatsApp del local (cuando el bot esté conectado a ese número)
+const WA_NUMBER = new URLSearchParams(location.search).get("wa") || "5491132513683";
+const MENU = [
+  ["cheese-burger","Cheese Burger","carne, cheddar",13500,15000],
+  ["cheese-2","Cheese 2.0","carne, cheddar, cebolla crispy, bacon, barbacoa, alioli",14500,16000],
+  ["all-american","All American","carne, cheddar, mayonesa ahumada, bacon, tomate, cebolla, pepinillos, lechuga",14500,16000],
+  ["cuarto-de-kilo","Cuarto de Kilo","carne, doble cheddar, relish, mostaza, ketchup, cebolla picada",14500,16000],
+  ["big-magia","Big Magia","carne, cheddar, pepinillos, lechuga, cebolla, salsa mil islas",14500,16000],
+  ["oklahoma","Oklahoma","carne smash, cheddar, bacon, cebolla grillada",14500,16000],
+  ["rocket","Rocket","carne, roquefort, bacon, cebolla caramelizada",14500,16000],
+  ["anderson","Anderson","carne, cheddar, dambo, bacon, huevo, champi, alioli",15500,17000],
+  ["sliders","Sliders x3","carne 80 g, pan de papa, cheddar, manteca de ajo",19500,null],
+];
+const ZONAS = [["centro","Centro (hasta 15 cuadras)",1500],["cercana","Barrios cercanos",2500],["lejana","Barrios alejados",4000]];
+const EXTRA = 2000;
+const money = (n) => "$" + n.toLocaleString("es-AR");
+const cart = [];
+const $ = (id) => document.getElementById(id);
+const BURGER = `<svg viewBox="0 0 120 80" aria-hidden="true"><path d="M10 38C10 14 32 4 60 4s50 10 50 34z" fill="#e9a23b"/><circle cx="40" cy="20" r="2" fill="#fff3"/><circle cx="62" cy="14" r="2" fill="#fff3"/><circle cx="80" cy="24" r="2" fill="#fff3"/><path d="M6 40h108l-8 8H14z" fill="#7cc24a"/><rect x="8" y="46" width="104" height="10" rx="4" fill="#ffcc00"/><rect x="6" y="54" width="108" height="12" rx="6" fill="#5a2a0e"/><path d="M12 66h96c0 8-6 12-14 12H26c-8 0-14-4-14-12z" fill="#d98a2b"/></svg>`;
+
+function render() {
+  const grid = $("grid");
+  MENU.forEach(([id, name, desc, s, d]) => {
+    const c = document.createElement("article"); c.className = "card";
+    let size = "simple"; const ext = new Set(); let veg = false;
+    c.innerHTML = `<div class="burger">${BURGER}</div><h3></h3><p></p>`;
+    c.querySelector("h3").textContent = name; c.querySelector("p").textContent = desc;
+    if (d) {
+      const sz = document.createElement("div"); sz.className = "size"; sz.setAttribute("role","group"); sz.setAttribute("aria-label","Tamaño de " + name);
+      [["simple", s], ["doble", d]].forEach(([k, p]) => {
+        const b = document.createElement("button"); b.type = "button"; b.setAttribute("aria-pressed", String(k === size));
+        b.innerHTML = `${k[0].toUpperCase() + k.slice(1)}<small>${money(p)}</small>`;
+        b.onclick = () => { size = k; sz.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); };
+        sz.append(b);
+      });
+      c.append(sz);
+      const ex = document.createElement("div"); ex.className = "extras";
+      [["extra-carne","+ carne"],["extra-bacon","+ bacon"],["veggie","Veggie"]].forEach(([k, l]) => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = l; b.setAttribute("aria-pressed","false");
+        b.onclick = () => { const on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", String(on)); if (k === "veggie") veg = on; else on ? ext.add(k) : ext.delete(k); };
+        ex.append(b);
+      });
+      c.append(ex);
+    } else { const p = document.createElement("div"); p.className = "size"; p.innerHTML = `<button type="button" aria-pressed="true">3 unidades<small>${money(s)}</small></button>`; c.append(p); }
+    const add = document.createElement("button"); add.type = "button"; add.className = "add"; add.textContent = "Agregar al pedido";
+    add.onclick = () => {
+      const price = (d ? (size === "simple" ? s : d) : s) + ext.size * EXTRA;
+      const label = d ? `${name} ${size}${veg ? " veggie" : ""}${ext.size ? " + " + [...ext].map((e) => e.replace("extra-", "")).join(" + ") : ""}` : name;
+      const found = cart.find((x) => x.label === label);
+      found ? found.qty++ : cart.push({ label, price, qty: 1 });
+      add.textContent = "¡Agregada! 🔥"; setTimeout(() => (add.textContent = "Agregar al pedido"), 900);
+      updateCart(true);
+    };
+    c.append(add); grid.append(c);
+  });
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .15 });
+  document.querySelectorAll(".card").forEach((c, i) => { c.style.transitionDelay = (i % 3) * 80 + "ms"; io.observe(c); });
+  $("zona").innerHTML = ZONAS.map(([id, n, p]) => `<option value="${id}">${n} · ${money(p)}</option>`).join("");
+}
+function subtotal() { return cart.reduce((s, x) => s + x.price * x.qty, 0); }
+function envio() { return document.querySelector('[name=entrega]:checked').value === "envio" ? ZONAS.find((z) => z[0] === $("zona").value)[2] : 0; }
+function updateCart(bump) {
+  const n = cart.reduce((s, x) => s + x.qty, 0);
+  $("count").textContent = n; $("carttotal").textContent = n ? money(subtotal()) : "";
+  $("cartbtn").classList.toggle("show", n > 0);
+  if (bump) { $("cartbtn").classList.remove("bump"); void $("cartbtn").offsetWidth; $("cartbtn").classList.add("bump"); }
+  const lines = $("lines"); lines.replaceChildren();
+  cart.forEach((x, i) => {
+    const r = document.createElement("div"); r.className = "line";
+    const left = document.createElement("div"); left.textContent = x.label;
+    const q = document.createElement("div"); q.className = "q";
+    const minus = document.createElement("button"); minus.type = "button"; minus.textContent = "−"; minus.setAttribute("aria-label", "Quitar uno de " + x.label);
+    minus.onclick = () => { x.qty--; if (!x.qty) cart.splice(i, 1); updateCart(); };
+    const plus = document.createElement("button"); plus.type = "button"; plus.textContent = "+"; plus.setAttribute("aria-label", "Agregar uno de " + x.label);
+    plus.onclick = () => { x.qty++; updateCart(); };
+    const qty = document.createElement("span"); qty.textContent = x.qty;
+    q.append(minus, qty, plus, document.createTextNode(" " + money(x.price * x.qty)));
+    r.append(left, q); lines.append(r);
+  });
+  $("total").textContent = money(subtotal() + envio());
+}
+function message() {
+  const entrega = document.querySelector('[name=entrega]:checked').value;
+  const z = ZONAS.find((x) => x[0] === $("zona").value);
+  const lines = cart.map((x) => `• ${x.qty}x ${x.label}`).join("\n");
+  let m = `Hola Flama! Quiero hacer este pedido:\n${lines}\n\n`;
+  m += entrega === "envio" ? `Envío a: ${$("dir").value || "(completar)"} (${z[1]})\n` : "Retiro en el local\n";
+  if ($("nombre").value) m += `A nombre de: ${$("nombre").value}\n`;
+  if ($("coment").value) m += `Comentarios: ${$("coment").value}\n`;
+  m += `Total estimado: ${money(subtotal() + envio())}`;
+  return m;
+}
+function validate() {
+  if (!cart.length) { alert("Agregá al menos una hamburguesa."); return false; }
+  if (document.querySelector('[name=entrega]:checked').value === "envio" && !$("dir").value.trim()) { $("dir").focus(); alert("Poné la dirección de envío."); return false; }
+  if (!$("nombre").value.trim()) { $("nombre").focus(); alert("Poné tu nombre."); return false; }
+  return true;
+}
+$("cartbtn").onclick = () => { $("drawer").classList.add("open"); $("close").focus(); };
+$("close").onclick = $("backdrop").onclick = () => $("drawer").classList.remove("open");
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("drawer").classList.remove("open"); });
+document.querySelectorAll('[name=entrega]').forEach((r) => (r.onchange = () => { $("envio").hidden = r.value !== "envio" || !r.checked; updateCart(); }));
+$("zona").onchange = () => updateCart();
+$("sendwa").onclick = () => { if (validate()) location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message())}`; };
+$("sendtry").onclick = () => { if (validate()) location.href = `/chat.html?msg=${encodeURIComponent(message())}&name=${encodeURIComponent($("nombre").value)}`; };
+render();
+</script>
+</body>
+</html>

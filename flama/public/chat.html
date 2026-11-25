@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flama · Chat</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:#0b141a;color:#e9edef;height:100dvh;display:flex;flex-direction:column}
+header{background:#202c33;padding:10px 14px;display:flex;align-items:center;gap:12px}
+.av{width:40px;height:40px;border-radius:50%;background:#f2cf4c;color:#2a1408;display:grid;place-items:center;font-weight:900}
+.n{font-weight:600}.s{font-size:13px;color:#8696a0}
+.tag{margin-left:auto;font-size:11px;background:#ff8a1f;color:#2a1408;padding:3px 8px;border-radius:6px;font-weight:800}
+#msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:6px;background:#0b141a}
+.m{max-width:80%;padding:8px 10px;border-radius:8px;white-space:pre-wrap;line-height:1.35;font-size:15px;animation:in .2s}
+@keyframes in{from{opacity:0;transform:translateY(6px)}}
+.me{align-self:flex-end;background:#005c4b}.bot{align-self:flex-start;background:#202c33}
+.m img{max-width:220px;border-radius:6px;display:block}
+.typing{color:#8696a0;font-size:13px;padding:0 14px 6px}
+form{display:flex;gap:8px;padding:8px;background:#202c33;align-items:center}
+input[type=text]{flex:1;background:#2a3942;border:0;border-radius:20px;padding:12px 14px;color:#e9edef;font:inherit}
+button,label.att{background:#00a884;border:0;color:#0b141a;border-radius:50%;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;font-size:18px;flex:none}
+label.att{background:#2a3942;color:#8696a0}
+</style>
+</head>
+<body>
+<header><div class="av">F</div><div><div class="n">Flama Burgers</div><div class="s">Asistente de pedidos</div></div><span class="tag">DEMO</span></header>
+<div id="msgs" aria-live="polite"></div>
+<div class="typing" id="typing" hidden>Flama está escribiendo…</div>
+<form id="f">
+<label class="att" title="Mandar comprobante" aria-label="Adjuntar comprobante">📎<input type="file" id="file" accept="image/*" hidden></label>
+<input type="text" id="t" placeholder="Escribí un mensaje" autocomplete="off" aria-label="Mensaje">
+<button aria-label="Enviar">➤</button>
+</form>
+<script>
+const q = new URLSearchParams(location.search);
+let session = localStorage.getItem("flama_s");
+try { if (!session) { session = Math.random().toString(36).slice(2, 12); localStorage.setItem("flama_s", session); } } catch { session = session || Math.random().toString(36).slice(2, 12); }
+const name = q.get("name") || "";
+const box = document.getElementById("msgs");
+function add(text, who, img) {
+  const d = document.createElement("div"); d.className = "m " + who;
+  if (img) { const i = document.createElement("img"); i.src = img; i.alt = "Imagen enviada"; d.append(i); }
+  if (text) d.append(document.createTextNode(text));
+  box.append(d); box.scrollTop = box.scrollHeight;
+}
+async function send(body, shown, img) {
+  add(shown, "me", img);
+  document.getElementById("typing").hidden = false;
+  try {
+    const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session, name, ...body }) });
+    const d = await r.json(); add(d.reply || "Error", "bot");
+  } catch { add("No pude conectarme, probá de nuevo.", "bot"); }
+  document.getElementById("typing").hidden = true;
+}
+document.getElementById("f").onsubmit = (e) => { e.preventDefault(); const t = document.getElementById("t"); if (!t.value.trim()) return; send({ text: t.value }, t.value); t.value = ""; };
+document.getElementById("file").onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image(); const url = URL.createObjectURL(f);
+  img.onload = () => {
+    const s = Math.min(1, 1400 / Math.max(img.width, img.height));
+    const c = document.createElement("canvas"); c.width = img.width * s; c.height = img.height * s;
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    const data = c.toDataURL("image/jpeg", .8);
+    send({ image: data.split(",")[1], mediaType: "image/jpeg" }, "", data);
+  };
+  img.src = url; e.target.value = "";
+};
+setInterval(async () => {
+  try { const d = await (await fetch("/api/chat?session=" + session)).json(); (d.messages || []).forEach((m) => add(m, "bot")); } catch {}
+}, 4000);
+if (q.get("msg")) send({ text: q.get("msg") }, q.get("msg"));
+else add("¡Hola! Soy el asistente de Flama 🍔 Contame qué querés pedir.", "bot");
+</script>
+</body>
+</html>

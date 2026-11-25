@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos · Flama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--y:#f2cf4c;--y2:#ffd84d;--brown:#2a1408;--brown2:#3b1d0c;--card:#1d0f06;--ink:#fff6df;--muted:#cdb994;--line:#4a2a14;--ok:#7ddc8e;--warn:#ffb547;--bad:#ff7a6b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--brown);color:var(--ink);font-family:Archivo,system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--y);color:var(--brown);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 0 #00000033}
+.logo{font-family:'Archivo Black';font-size:26px;letter-spacing:-.02em}
+.logo small{font-family:Archivo;font-size:12px;font-weight:700;display:block;letter-spacing:.08em}
+.live{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+.dot{width:10px;height:10px;border-radius:50%;background:#1f8a3b;animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 #1f8a3b88}70%{box-shadow:0 0 0 10px #1f8a3b00}100%{box-shadow:0 0 0 0 #1f8a3b00}}
+.board{display:grid;grid-template-columns:repeat(4,minmax(260px,1fr));gap:16px;padding:20px;overflow-x:auto}
+.col h2{font-family:'Archivo Black';font-size:16px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;color:var(--y)}
+.col h2 span{background:var(--y);color:var(--brown);border-radius:999px;font-family:Archivo;font-size:13px;padding:2px 10px}
+.list{display:flex;flex-direction:column;gap:12px;min-height:80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;animation:in .35s ease}
+@keyframes in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.num{font-family:'Archivo Black';font-size:20px}
+.time{color:var(--muted);font-size:13px}
+.who{font-weight:700;margin:4px 0 2px}
+.meta{color:var(--muted);font-size:13px;line-height:18px}
+ul{margin:10px 0;padding-left:18px;font-size:14px;line-height:20px}
+.total{display:flex;justify-content:space-between;font-weight:700;border-top:1px dashed var(--line);padding-top:8px}
+.badge{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;margin-top:8px}
+.b-ok{background:#1f8a3b33;color:var(--ok)}.b-warn{background:#ffb54722;color:var(--warn)}.b-bad{background:#ff7a6b22;color:var(--bad)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;min-height:44px;padding:0 14px;cursor:pointer}
+.primary{background:var(--y);color:var(--brown)}
+.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:focus-visible{outline:2px solid var(--y);outline-offset:2px}
+.receipt{margin-top:10px}
+.receipt summary{cursor:pointer;color:var(--muted);font-size:13px}
+.receipt img{width:100%;border-radius:10px;margin-top:8px}
+.empty{color:var(--muted);font-size:14px;border:1px dashed var(--line);border-radius:14px;padding:16px;text-align:center}
+.later{background:#ffd84d22;color:var(--y2)}
+@media (max-width:900px){.board{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">FLAMA<small>PANEL DE PEDIDOS</small></div>
+<div class="live"><span class="dot" aria-hidden="true"></span><span id="status">En vivo</span></div>
+</header>
+<main class="board" id="board" aria-live="polite"></main>
+<audio id="ding" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
+<script>
+const key = new URLSearchParams(location.search).get("key") || "flama2026";
+const COLS = [
+  { id: "pago", title: "Pagos", estados: ["pago_pendiente", "pago_a_verificar"] },
+  { id: "cocina", title: "En preparación", estados: ["en_preparacion", "programado"] },
+  { id: "listos", title: "Listos / en camino", estados: ["listo", "en_camino"] },
+  { id: "fin", title: "Entregados", estados: ["entregado", "cancelado"] },
+];
+const money = (n) => "$" + Number(n).toLocaleString("es-AR");
+const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+let known = new Set(), first = true;
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function btn(label, cls, onClick) { const b = el("button", cls, label); b.type = "button"; b.onclick = onClick; return b; }
+
+async function load() {
+  try {
+    const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}`);
+    if (!r.ok) throw new Error();
+    const d = await r.json(); render(d); document.getElementById("status").textContent = "En vivo";
+  } catch { document.getElementById("status").textContent = "Sin conexión"; }
+}
+async function setEstado(id, estado) {
+  await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, estado }) });
+  load();
+}
+function card(o, estados) {
+  const c = el("article", "card");
+  const top = el("div", "top"); top.append(el("span", "num", "#" + o.id), el("span", "time", hhmm(o.createdAt)));
+  c.append(top, el("div", "who", o.nombre));
+  c.append(el("div", "meta", o.entrega === "envio" ? `Envío · ${o.direccion || ""}` : "Retiro en el local"));
+  if (o.telefono) c.append(el("div", "meta", "+" + o.telefono));
+  const ul = el("ul"); o.lineas.forEach((l) => ul.append(el("li", null, l.texto))); c.append(ul);
+  if (o.comentarios) c.append(el("div", "meta", "Nota: " + o.comentarios));
+  if (o.envio) c.append(el("div", "meta", "Envío " + money(o.envio)));
+  const t = el("div", "total"); t.append(el("span", null, "Total"), el("span", null, money(o.total))); c.append(t);
+  const b = el("span", "badge");
+  if (o.estado === "pago_pendiente") { b.className += " b-warn"; b.textContent = "Esperando comprobante"; }
+  else if (o.estado === "pago_a_verificar") { b.className += " b-bad"; b.textContent = "Revisar pago: " + (o.comprobante?.motivos || []).join(", "); }
+  else if (o.pagoVerificadoPor === "bot") { b.className += " b-ok"; b.textContent = "Pago verificado por el bot"; }
+  else if (o.pagoVerificadoPor === "local") { b.className += " b-ok"; b.textContent = "Pago verificado por el local"; }
+  if (b.textContent) c.append(b);
+  if (o.paraMasTarde && ["programado","pago_pendiente"].includes(o.estado)) c.append(el("span", "badge later", "Pedido para más tarde"));
+  if (o.comprobante?.imagen) {
+    const d = el("details", "receipt"); d.append(el("summary", null, "Ver comprobante"));
+    const img = el("img"); img.src = o.comprobante.imagen; img.alt = "Comprobante de transferencia del pedido " + o.id; d.append(img); c.append(d);
+  }
+  const a = el("div", "actions");
+  const next = {
+    pago_pendiente: [["Marcar pagado", "en_preparacion", "primary"]],
+    pago_a_verificar: [["Pago OK → cocina", "en_preparacion", "primary"]],
+    programado: [["Empezar a preparar", "en_preparacion", "primary"]],
+    en_preparacion: o.entrega === "envio" ? [["Salió el delivery", "en_camino", "primary"]] : [["Listo para retirar", "listo", "primary"]],
+    listo: [["Entregado", "entregado", "primary"]],
+    en_camino: [["Entregado", "entregado", "primary"]],
+  }[o.estado] || [];
+  next.forEach(([label, e, cls]) => a.append(btn(label, cls, () => setEstado(o.id, e))));
+  if (!["entregado", "cancelado"].includes(o.estado)) a.append(btn("Cancelar", "ghost", () => { if (confirm(`¿Cancelar el pedido #${o.id}?`)) setEstado(o.id, "cancelado"); }));
+  if (a.children.length) c.append(a);
+  return c;
+}
+function render(d) {
+  const board = document.getElementById("board"); board.replaceChildren();
+  let nuevo = false;
+  for (const col of COLS) {
+    const items = d.orders.filter((o) => col.estados.includes(o.estado));
+    const s = el("section", "col"); const h = el("h2", null, col.title); h.append(el("span", null, String(items.length))); s.append(h);
+    const list = el("div", "list");
+    if (!items.length) list.append(el("div", "empty", "Sin pedidos"));
+    items.forEach((o) => { if (!known.has(o.id)) { nuevo = true; known.add(o.id); } list.append(card(o)); });
+    s.append(list); board.append(s);
+  }
+  if (nuevo && !first) document.title = "🔔 Nuevo pedido · Flama";
+  first = false;
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) document.title = "Pedidos · Flama"; });
+load(); setInterval(load, 5000);
+</script>
+</body>
+</html>

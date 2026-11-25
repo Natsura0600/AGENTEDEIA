@@ -1,0 +1,13 @@
+{
+  "name": "flama-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "ai": "^7.0.176",
+    "zod": "^3.25.0",
+    "@upstash/redis": "^1.35.0",
+    "@vercel/functions": "^2.0.0"
+  }
+}
