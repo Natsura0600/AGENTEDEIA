@@ -420,13 +420,14 @@ $("close").onclick = $("backdrop").onclick = () => $("drawer").classList.remove(
 addEventListener("keydown", (e) => { if (e.key === "Escape") $("drawer").classList.remove("open"); });
 document.querySelectorAll("[name=entrega]").forEach((r) => (r.onchange = () => { $("envio").hidden = entrega() !== "envio"; updateCart(); }));
 $("zona").onchange = () => updateCart();
-$("sendwa").onclick = () => { if (validate()) location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message())}`; };
+function vaciar() { cart.length = 0; ["dir", "nombre", "coment"].forEach((i) => ($(i).value = "")); $("drawer").classList.remove("open"); updateCart(); }
+$("sendwa").onclick = () => { if (!validate()) return; const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message())}`; vaciar(); window.open(url, "_blank") || (location.href = url); };
 function openChat(q) {
   const w = $("wawin"); w.replaceChildren(); const f = document.createElement("iframe"); f.title = "Chat con Flama";
   f.src = "/chat.html?embed=1" + (q || ""); w.append(f); w.classList.add("open"); $("wab").classList.add("open"); $("wab").setAttribute("aria-expanded","true");
 }
 $("wab").onclick = () => { if ($("wawin").classList.contains("open")) { $("wawin").classList.remove("open"); $("wab").classList.remove("open"); $("wab").setAttribute("aria-expanded","false"); } else if (!$("wawin").firstChild) openChat(); else { $("wawin").classList.add("open"); $("wab").classList.add("open"); } };
-$("sendtry").onclick = () => { if (validate()) { $("drawer").classList.remove("open"); openChat(`&msg=${encodeURIComponent(message())}&name=${encodeURIComponent($("nombre").value)}`); } };
+$("sendtry").onclick = () => { if (validate()) { const q = `&msg=${encodeURIComponent(message())}&name=${encodeURIComponent($("nombre").value)}`; vaciar(); openChat(q); } };
 renderMenu(); observe(); updateCart();
 </script>
 </body>
