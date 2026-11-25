@@ -24,7 +24,8 @@ label.att{background:#2a3942;color:#8696a0}
 </style>
 </head>
 <body>
-<header><div class="av">F</div><div><div class="n">Flama Burgers</div><div class="s">Asistente de pedidos</div></div><span class="tag">DEMO</span></header>
+<header><div class="av">F</div><div><div class="n">Flama Burgers</div><div class="s">Asistente de pedidos</div></div><span class="tag">DEMO</span>
+<button id="x" aria-label="Cerrar chat" style="background:none;color:#8696a0;width:36px;height:36px;font-size:22px" hidden>×</button></header>
 <div id="msgs" aria-live="polite"></div>
 <div class="typing" id="typing" hidden>Flama está escribiendo…</div>
 <form id="f">
@@ -36,6 +37,7 @@ label.att{background:#2a3942;color:#8696a0}
 const q = new URLSearchParams(location.search);
 let session = localStorage.getItem("flama_s");
 try { if (!session) { session = Math.random().toString(36).slice(2, 12); localStorage.setItem("flama_s", session); } } catch { session = session || Math.random().toString(36).slice(2, 12); }
+if (q.get('embed')) { const x = document.getElementById('x'); x.hidden = false; x.onclick = () => parent.document.getElementById('wab').click(); }
 const name = q.get("name") || "";
 const box = document.getElementById("msgs");
 function add(text, who, img) {

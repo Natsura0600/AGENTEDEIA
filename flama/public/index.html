@@ -170,6 +170,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 .demo{position:fixed;left:16px;bottom:16px;z-index:44;background:var(--k3);border:1px solid var(--line);color:var(--mut);padding:6px 10px}
 @media(max-width:600px){.demo{display:none}}
 @media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+
+.wab{position:fixed;right:20px;bottom:20px;z-index:55;width:64px;height:64px;border-radius:50%;background:#25d366;border:0;display:grid;place-items:center;box-shadow:0 10px 30px #0009;transition:transform .2s}
+.wab:hover{transform:scale(1.08)}
+.wab svg{width:34px;height:34px}
+.wab .dot{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:var(--red);border:2px solid var(--k);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{transform:scale(1.25)}}
+.wab .tip{position:absolute;right:76px;white-space:nowrap;background:var(--w);color:var(--k);font-weight:800;font-size:14px;padding:10px 14px;border-radius:14px 14px 2px 14px;box-shadow:0 8px 24px #0007;animation:fade .5s 2s both}
+.wab.open .tip,.wab.open .dot{display:none}
+.wawin{position:fixed;right:20px;bottom:96px;z-index:56;width:min(380px,calc(100vw - 24px));height:min(600px,calc(100svh - 120px));border-radius:18px;overflow:hidden;box-shadow:0 20px 60px #000c;transform-origin:bottom right;transform:scale(.6);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.2,1.3,.4,1),opacity .2s}
+.wawin.open{transform:none;opacity:1;pointer-events:auto}
+.wawin iframe{width:100%;height:100%;border:0;background:#0b141a}
+@media(max-width:600px){.wawin{right:12px;bottom:92px}.cartbtn{left:20px;transform:translate(0,200%);min-width:0;right:96px}.cartbtn.show{transform:none}}
 </style>
 </head>
 <body>
@@ -267,11 +279,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 </fieldset>
 <div class="sum"><span class="mono">Total</span><b id="total">$0</b></div>
 <button class="send wa" id="sendwa" type="button">Enviar por WhatsApp</button>
-<button class="send try" id="sendtry" type="button">Probar el bot acá (demo)</button>
+<button class="send try" id="sendtry" type="button">Pedir por el chat de la web</button>
 <p class="hint">El bot te confirma el pedido y te pasa el alias para transferir.</p>
 </div>
 </div>
 
+<button class="wab" id="wab" type="button" aria-label="Abrir chat de pedidos por WhatsApp" aria-expanded="false"><span class="tip">¿Pedimos? 🍔</span><span class="dot" aria-hidden="true"></span><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16 3a13 13 0 0 0-11.2 19.6L3 29l6.6-1.7A13 13 0 1 0 16 3zm0 23.6c-2 0-3.9-.5-5.6-1.5l-.4-.2-3.9 1 1-3.8-.3-.4A10.6 10.6 0 1 1 16 26.6zm5.8-7.9c-.3-.2-1.9-.9-2.2-1s-.5-.2-.7.2-.8 1-1 1.2-.4.2-.7 0a8.7 8.7 0 0 1-4.3-3.8c-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.5l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4s-1.1 1.1-1.1 2.7 1.2 3.1 1.3 3.3c.2.2 2.3 3.5 5.5 4.9 2 .9 2.8 1 3.8.8.6-.1 1.9-.8 2.2-1.5s.3-1.4.2-1.5c-.1-.2-.3-.2-.7-.4z"/></svg></button>
+<div class="wawin" id="wawin" role="dialog" aria-label="Chat con Flama"></div>
 <script>
 const WA_NUMBER = new URLSearchParams(location.search).get("wa") || "5491132513683";
 const MENU = [
@@ -383,7 +397,12 @@ addEventListener("keydown", (e) => { if (e.key === "Escape") $("drawer").classLi
 document.querySelectorAll("[name=entrega]").forEach((r) => (r.onchange = () => { $("envio").hidden = entrega() !== "envio"; updateCart(); }));
 $("zona").onchange = () => updateCart();
 $("sendwa").onclick = () => { if (validate()) location.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message())}`; };
-$("sendtry").onclick = () => { if (validate()) location.href = `/chat.html?msg=${encodeURIComponent(message())}&name=${encodeURIComponent($("nombre").value)}`; };
+function openChat(q) {
+  const w = $("wawin"); w.replaceChildren(); const f = document.createElement("iframe"); f.title = "Chat con Flama";
+  f.src = "/chat.html?embed=1" + (q || ""); w.append(f); w.classList.add("open"); $("wab").classList.add("open"); $("wab").setAttribute("aria-expanded","true");
+}
+$("wab").onclick = () => { if ($("wawin").classList.contains("open")) { $("wawin").classList.remove("open"); $("wab").classList.remove("open"); $("wab").setAttribute("aria-expanded","false"); } else if (!$("wawin").firstChild) openChat(); else { $("wawin").classList.add("open"); $("wab").classList.add("open"); } };
+$("sendtry").onclick = () => { if (validate()) { $("drawer").classList.remove("open"); openChat(`&msg=${encodeURIComponent(message())}&name=${encodeURIComponent($("nombre").value)}`); } };
 renderMenu(); observe(); updateCart();
 </script>
 </body>
