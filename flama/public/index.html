@@ -7,7 +7,7 @@
 <meta name="description" content="Flama, birra y burgers en Luján desde 2017. Mitre 670. Armá tu pedido y mandalo por WhatsApp.">
 <link rel="icon" href="/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&family=Archivo:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{--y:#f6c91c;--k:#0c0b0a;--k2:#161412;--k3:#211e1b;--w:#f4efe6;--mut:#9b948a;--red:#e8321e;--line:#2c2824}
 *{box-sizing:border-box}
@@ -18,7 +18,7 @@ a{color:inherit;text-decoration:none}
 button{font:inherit;cursor:pointer}
 :focus-visible{outline:3px solid var(--y);outline-offset:3px}
 .mono{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
-.display{font-family:Anton,Impact,sans-serif;text-transform:uppercase;line-height:.88;letter-spacing:.005em;margin:0}
+.display{font-family:Oswald,Impact,sans-serif;font-weight:600;text-transform:uppercase;line-height:1;letter-spacing:-.005em;margin:0}
 .wrap{max-width:1280px;margin:0 auto;padding:0 24px}
 .reveal{opacity:0;transform:translateY(40px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
@@ -28,7 +28,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;align-items:cent
 nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:12px}
 .brand img{width:42px;height:42px;border-radius:50%}
-.brand b{font-family:Anton;font-size:26px;letter-spacing:.04em}
+.brand b{font-family:Oswald;font-weight:600;font-size:26px;letter-spacing:.04em}
 .links{display:flex;gap:28px;align-items:center}
 .links a.l{font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;transition:opacity .2s}
 .links a.l:hover{opacity:1}
@@ -63,7 +63,7 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 /* MARQUEE */
 .marquee{background:var(--y);color:var(--k);overflow:hidden;border-block:3px solid var(--k);transform:rotate(-1.5deg);margin:-14px -20px 0;position:relative;z-index:3}
 .track{display:flex;width:max-content;animation:mq 28s linear infinite}
-.track span{font-family:Anton;font-size:44px;text-transform:uppercase;padding:12px 28px;white-space:nowrap;display:flex;align-items:center;gap:28px}
+.track span{font-family:Oswald;font-weight:600;font-size:44px;text-transform:uppercase;padding:12px 28px;white-space:nowrap;display:flex;align-items:center;gap:28px}
 .track span::after{content:"✦";font-size:26px}
 @keyframes mq{to{transform:translateX(-50%)}}
 
@@ -82,7 +82,7 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .item{display:flex;flex-direction:column;gap:12px;padding:20px;background:var(--k2);border:1.5px solid var(--line);transition:border-color .2s,transform .2s}
 .item:hover{border-color:var(--y);transform:translateY(-3px)}
 .item .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.item h3{font-family:Anton;font-size:26px;text-transform:uppercase;margin:0;line-height:1;letter-spacing:.01em}
+.item h3{font-family:Oswald;font-weight:600;font-size:26px;text-transform:uppercase;margin:0;line-height:1;letter-spacing:.01em}
 .item .price{font-family:'JetBrains Mono';font-weight:700;color:var(--y);font-size:15px;white-space:nowrap}
 .item p{margin:0;color:var(--mut);font-size:14px;line-height:1.45;flex:1}
 .opts{display:flex;gap:6px;flex-wrap:wrap}
@@ -107,7 +107,7 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .split .tx p{font-size:19px;line-height:1.55;max-width:480px;margin:28px 0 0;font-weight:500}
 .split .tx .mono{margin-bottom:20px}
 .stats{display:flex;gap:40px;margin-top:44px;flex-wrap:wrap}
-.stats b{font-family:Anton;font-size:56px;display:block;line-height:1}
+.stats b{font-family:Oswald;font-weight:600;font-size:56px;display:block;line-height:1}
 @media(max-width:900px){.split{grid-template-columns:1fr}.split .ph{min-height:60vh}}
 
 /* NIGHT */
@@ -125,14 +125,14 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .info>div:not(:first-child){padding-left:32px}
 .info>div:last-child{border-right:0}
 .info .mono{color:var(--y)}
-.info h3{font-family:Anton;font-size:42px;text-transform:uppercase;margin:16px 0 10px;line-height:1}
+.info h3{font-family:Oswald;font-weight:600;font-size:42px;text-transform:uppercase;margin:16px 0 10px;line-height:1}
 .info p,.info li{color:#cfc7bb;line-height:1.7;margin:0}
 .info ul{list-style:none;padding:0;margin:0}
 .info li{display:flex;justify-content:space-between;gap:20px;border-bottom:1px dashed var(--line);padding:4px 0}
 @media(max-width:900px){.info{grid-template-columns:1fr}.info>div{border-right:0;border-bottom:1.5px solid var(--line);padding:36px 0!important}}
 
 footer{border-top:1.5px solid var(--line);padding:0 0 32px;overflow:hidden}
-.big{font-family:Anton;font-size:clamp(120px,29vw,440px);line-height:.8;color:var(--y);text-align:center;margin:40px 0 24px;letter-spacing:-.01em}
+.big{font-family:Oswald;font-weight:600;font-size:clamp(120px,29vw,440px);line-height:.8;color:var(--y);text-align:center;margin:40px 0 24px;letter-spacing:-.01em}
 .foot{display:flex;justify-content:space-between;color:var(--mut);flex-wrap:wrap;gap:12px}
 
 /* CART */
@@ -146,7 +146,7 @@ footer{border-top:1.5px solid var(--line);padding:0 0 32px;overflow:hidden}
 .bd{position:absolute;inset:0;background:#000b;backdrop-filter:blur(4px);animation:fade .25s}
 .panel{position:absolute;right:0;top:0;bottom:0;width:min(500px,100%);background:var(--k2);border-left:1.5px solid var(--line);padding:28px;overflow:auto;animation:slide .4s cubic-bezier(.2,1,.3,1)}
 @keyframes slide{from{transform:translateX(100%)}}
-.panel h2{font-family:Anton;font-size:54px;text-transform:uppercase;margin:0 0 20px}
+.panel h2{font-family:Oswald;font-weight:600;font-size:54px;text-transform:uppercase;margin:0 0 20px}
 .line{display:flex;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-weight:700}
 .q{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono';white-space:nowrap}
 .q button{width:34px;height:34px;border:1.5px solid var(--line);background:transparent;color:var(--w);font-weight:900}
@@ -160,7 +160,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 .seg label:has(input:checked){background:var(--w);color:var(--k)}
 .seg input{width:auto;accent-color:var(--k)}
 .sum{display:flex;justify-content:space-between;align-items:baseline;margin-top:26px;padding-top:18px;border-top:1.5px solid var(--line)}
-.sum b{font-family:Anton;font-size:44px}
+.sum b{font-family:Oswald;font-weight:600;font-size:44px}
 .send{width:100%;margin-top:12px;border:0;min-height:60px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;gap:10px}
 .wa{background:#25d366;color:#04210c}.try{background:var(--y);color:var(--k)}
 .close{position:absolute;right:18px;top:18px;background:transparent;border:1.5px solid var(--line);color:var(--w);font-size:24px;width:48px;height:48px}
@@ -231,7 +231,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 <div class="c reveal">
 <span class="mono" style="color:var(--y)">03 — De noche</span>
 <h2 class="display">Venite a <em>Flama</em></h2>
-<p>Neones, arcades y la barra prendida. Mitre 670, Luján.</p>
+<p>Neones, birra fría y la barra prendida toda la noche. Mitre 670, Luján.</p>
 <a class="btn" href="https://maps.google.com/?q=Mitre+670+Lujan+Buenos+Aires" target="_blank" rel="noopener">Cómo llegar →</a>
 </div>
 </section>
