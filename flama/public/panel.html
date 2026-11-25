@@ -42,11 +42,16 @@ button:focus-visible{outline:2px solid var(--y);outline-offset:2px}
 .empty{color:var(--muted);font-size:14px;border:1px dashed var(--line);border-radius:14px;padding:16px;text-align:center}
 .later{background:#ffd84d22;color:var(--y2)}
 @media (max-width:900px){.board{grid-template-columns:1fr}}
+.tools{display:flex;gap:8px;margin-left:auto}
+.tbtn{background:var(--brown);color:var(--y);min-height:40px;font-size:14px}
+.tbtn.off{background:#b3261e;color:#fff}
+header{flex-wrap:wrap}
 </style>
 </head>
 <body>
 <header>
 <div class="logo">FLAMA<small>PANEL DE PEDIDOS</small></div>
+<div class="tools"><button type="button" id="botbtn" class="tbtn">Bot: …</button><button type="button" id="sndbtn" class="tbtn">🔇 Activar sonido</button></div>
 <div class="live"><span class="dot" aria-hidden="true"></span><span id="status">En vivo</span></div>
 </header>
 <main class="board" id="board" aria-live="polite"></main>
@@ -61,7 +66,21 @@ const COLS = [
 ];
 const money = (n) => "$" + Number(n).toLocaleString("es-AR");
 const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-let known = new Set(), first = true;
+let known = new Set(), first = true, sound = false, botOn = true, actx;
+function ding() {
+  if (!sound) return;
+  actx = actx || new AudioContext();
+  [0, .18, .36].forEach((t, i) => { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = [880, 1175, 1568][i]; o.type = "triangle";
+    g.gain.setValueAtTime(.0001, actx.currentTime + t); g.gain.exponentialRampToValueAtTime(.4, actx.currentTime + t + .02); g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + t + .3);
+    o.connect(g).connect(actx.destination); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + .32); });
+}
+document.getElementById("sndbtn").onclick = (e) => { sound = !sound; e.target.textContent = sound ? "🔔 Sonido activado" : "🔇 Activar sonido"; if (sound) { actx = actx || new AudioContext(); ding(); } };
+function paintBot() { const b = document.getElementById("botbtn"); b.textContent = botOn ? "🤖 Bot prendido" : "⛔ Bot apagado"; b.classList.toggle("off", !botOn); }
+document.getElementById("botbtn").onclick = async () => {
+  if (botOn && !confirm("¿Apagar el bot? Los clientes van a recibir: 'En un ratito te responde alguien del local'.")) return;
+  await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bot: botOn ? "off" : "on" }) });
+  botOn = !botOn; paintBot();
+};
 
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function btn(label, cls, onClick) { const b = el("button", cls, label); b.type = "button"; b.onclick = onClick; return b; }
@@ -70,7 +89,7 @@ async function load() {
   try {
     const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}`);
     if (!r.ok) throw new Error();
-    const d = await r.json(); render(d); document.getElementById("status").textContent = "En vivo";
+    const d = await r.json(); botOn = d.botOn !== false; paintBot(); render(d); document.getElementById("status").textContent = "En vivo";
   } catch { document.getElementById("status").textContent = "Sin conexión"; }
 }
 async function setEstado(id, estado) {
@@ -123,7 +142,7 @@ function render(d) {
     items.forEach((o) => { if (!known.has(o.id)) { nuevo = true; known.add(o.id); } list.append(card(o)); });
     s.append(list); board.append(s);
   }
-  if (nuevo && !first) document.title = "🔔 Nuevo pedido · Flama";
+  if (nuevo && !first) { document.title = "🔔 Nuevo pedido · Flama"; ding(); }
   first = false;
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) document.title = "Pedidos · Flama"; });

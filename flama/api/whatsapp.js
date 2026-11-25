@@ -1,6 +1,6 @@
 // Webhook de WhatsApp (API oficial). Listo para cuando se conecte el número de Flama.
 import { waitUntil } from "@vercel/functions";
-import { reply } from "../lib/agent.js";
+import { reply, botApagado } from "../lib/agent.js";
 import { sendToClient } from "../lib/notify.js";
 import { redis } from "../lib/redis.js";
 
@@ -15,6 +15,7 @@ async function mediaBase64(id) {
 
 async function handle(m, contact) {
   if (!(await redis.set(`flama:seen:${m.id}`, "1", { nx: true, ex: 172800 }))) return;
+  if (await botApagado()) return;
   const chat = `wa:${m.from}`;
   let text = m.text?.body || m.image?.caption || "";
   let image, mediaType;

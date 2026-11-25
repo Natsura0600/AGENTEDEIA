@@ -1,7 +1,7 @@
 // Chat de prueba web (simula WhatsApp para la demo)
 // POST {session, text?, image? (base64), mediaType?} → {reply}
 // GET  ?session=... → mensajes nuevos del local (cambios de estado)
-import { reply } from "../lib/agent.js";
+import { reply, botApagado } from "../lib/agent.js";
 import { takeOutbox } from "../lib/notify.js";
 
 export const config = { maxDuration: 60 };
@@ -14,6 +14,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
   const { text, image, mediaType, name } = req.body || {};
   if (!text && !image) return res.status(400).json({ error: "Mensaje vacío" });
+  if (await botApagado()) return res.json({ reply: "¡Gracias por escribir! En un ratito te responde alguien del local 🙌" });
   try {
     const answer = await reply({ chat, text: String(text || "").slice(0, 2000), image, mediaType, name });
     res.json({ reply: answer });

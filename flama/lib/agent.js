@@ -58,6 +58,8 @@ export async function verificarComprobante(order, imageBase64, mediaType) {
 }
 
 // ---------- Conversación ----------
+export const botApagado = async () => (await redis.get("flama:bot_off")) === "1";
+
 export async function reply({ chat, text, image, mediaType, name }) {
   const history = await getHistory(chat);
   const isOpen = process.env.RESPETAR_HORARIO === "1" ? abierto() : true; // demo: siempre abierto
