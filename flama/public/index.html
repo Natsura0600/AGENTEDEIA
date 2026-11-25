@@ -7,7 +7,7 @@
 <meta name="description" content="Flama, birra y burgers en Luján desde 2017. Mitre 670. Armá tu pedido y mandalo por WhatsApp.">
 <link rel="icon" href="/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Archivo:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root{--y:#f6c91c;--k:#0c0b0a;--k2:#161412;--k3:#211e1b;--w:#f4efe6;--mut:#9b948a;--red:#e8321e;--line:#2c2824}
 *{box-sizing:border-box}
@@ -18,7 +18,7 @@ a{color:inherit;text-decoration:none}
 button{font:inherit;cursor:pointer}
 :focus-visible{outline:3px solid var(--y);outline-offset:3px}
 .mono{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
-.display{font-family:Oswald,Impact,sans-serif;font-weight:700;text-transform:uppercase;line-height:1;letter-spacing:-.005em;margin:0}
+.display{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.98;letter-spacing:.01em;margin:0}
 .wrap{max-width:1280px;margin:0 auto;padding:0 24px}
 .reveal{opacity:0;transform:translateY(40px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
@@ -28,7 +28,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;align-items:cent
 nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:12px}
 .brand img{width:42px;height:42px;border-radius:50%}
-.brand b{font-family:Oswald;font-weight:700;font-size:26px;letter-spacing:.04em}
+.brand b{font-family:Anton;font-size:26px;letter-spacing:.04em}
 .links{display:flex;gap:28px;align-items:center}
 .links a.l{font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;transition:opacity .2s}
 .links a.l:hover{opacity:1}
@@ -38,32 +38,35 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 @media(max-width:820px){.links a.l{display:none}}
 
 /* HERO */
-.hero{min-height:100svh;display:grid;grid-template-columns:1.05fr 1fr;position:relative;overflow:hidden}
-.hero-l{display:flex;flex-direction:column;justify-content:flex-end;padding:120px 24px 64px max(24px,calc((100vw - 1280px)/2 + 24px));position:relative;z-index:2}
-.hero h1{font-size:clamp(64px,9.5vw,168px)}
+nav::before{content:"";position:absolute;inset:0;background:linear-gradient(#0c0b0acc,#0c0b0a00);z-index:-1;pointer-events:none}
+.hero{min-height:100svh;display:grid;grid-template-columns:1.15fr 1fr;position:relative;overflow:hidden}
+.hero-l{display:flex;flex-direction:column;justify-content:center;padding:130px 56px 80px max(24px,calc((100vw - 1280px)/2 + 24px));position:relative;z-index:2}
+.hero h1{font-size:clamp(50px,6vw,96px)}
 .hero h1 .y{color:var(--y)}
-.hero h1 span{display:block;overflow:hidden}
+.hero h1 span{display:block;overflow:hidden;padding-bottom:.04em}
 .hero h1 span i{display:block;font-style:normal;animation:rise 1s cubic-bezier(.2,.8,.2,1) both}
-.hero h1 span:nth-child(2) i{animation-delay:.12s}.hero h1 span:nth-child(3) i{animation-delay:.24s}
+.hero h1 span:nth-child(2) i{animation-delay:.12s}
 @keyframes rise{from{transform:translateY(105%)}}
-.hero p{max-width:460px;font-size:19px;line-height:1.5;color:#d9d2c6;margin:28px 0 32px;animation:fade 1s .5s both}
-.hero .row{display:flex;gap:14px;flex-wrap:wrap;animation:fade 1s .65s both}
+.hero p{max-width:440px;font-size:17px;line-height:1.6;color:#cfc7bb;margin:26px 0 30px;animation:fade 1s .5s both}
+.hero .row{display:flex;gap:12px;flex-wrap:wrap;animation:fade 1s .65s both}
 @keyframes fade{from{opacity:0;transform:translateY(16px)}}
-.hero-meta{display:flex;gap:28px;margin-top:48px;color:var(--mut);flex-wrap:wrap;animation:fade 1s .8s both}
-.hero-meta b{display:block;color:var(--w);font-size:15px;letter-spacing:.02em;font-family:Archivo;text-transform:none;margin-top:4px}
-.hero-r{position:relative;background:var(--y)}
-.hero-r img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:zoom 1.6s cubic-bezier(.2,.8,.2,1) both}
-@keyframes zoom{from{transform:scale(1.15);filter:saturate(.4)}}
-.hero-r::before{content:"";position:absolute;left:-1px;top:0;bottom:0;width:120px;background:linear-gradient(90deg,var(--k),transparent);z-index:1}
-.stamp{position:absolute;right:28px;bottom:28px;z-index:2;width:130px;height:130px;animation:spin 18s linear infinite}
+.hero-meta{display:flex;gap:36px;margin-top:56px;padding-top:24px;border-top:1px solid var(--line);color:var(--mut);flex-wrap:wrap;animation:fade 1s .8s both}
+.hero-meta b{display:block;color:var(--w);font-size:15px;letter-spacing:.02em;font-family:Archivo;text-transform:none;margin-top:6px}
+.hero-r{position:relative;margin:96px 24px 24px 0;border-radius:4px;overflow:hidden;background:var(--y)}
+.hero-r img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:60% 70%;animation:zoom 1.6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes zoom{from{transform:scale(1.12);filter:saturate(.4)}}
+.drip{position:absolute;top:0;left:0;width:100%;height:150px;pointer-events:none;z-index:2;filter:drop-shadow(0 4px 6px #0005)}
+.drip .d{transform-box:fill-box;transform-origin:top;animation:pour 2.4s cubic-bezier(.5,0,.25,1) both,ooze 5s 2.6s ease-in-out infinite alternate}
+@keyframes pour{from{transform:scaleY(0)}}
+@keyframes ooze{to{transform:scaleY(1.18)}}
+.stamp{position:absolute;left:24px;bottom:24px;z-index:3;width:116px;height:116px;animation:spin 18s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .stamp text{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:3px;fill:var(--k);font-weight:700}
-@media(max-width:900px){.hero{grid-template-columns:1fr}.hero-r{height:58vh;order:-1}.hero-r::before{display:none}.hero-l{padding-top:40px}}
-
+@media(max-width:900px){.hero{grid-template-columns:1fr}.hero-r{height:52vh;order:-1;margin:80px 16px 0}.hero-l{padding:40px 24px 60px}}
 /* MARQUEE */
 .marquee{background:var(--y);color:var(--k);overflow:hidden;border-block:3px solid var(--k);transform:rotate(-1.5deg);margin:-14px -20px 0;position:relative;z-index:3}
 .track{display:flex;width:max-content;animation:mq 28s linear infinite}
-.track span{font-family:Oswald;font-weight:700;font-size:44px;text-transform:uppercase;padding:12px 28px;white-space:nowrap;display:flex;align-items:center;gap:28px}
+.track span{font-family:Anton;font-size:44px;text-transform:uppercase;padding:12px 28px;white-space:nowrap;display:flex;align-items:center;gap:28px}
 .track span::after{content:"✦";font-size:26px}
 @keyframes mq{to{transform:translateX(-50%)}}
 
@@ -82,7 +85,7 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .item{display:flex;flex-direction:column;gap:12px;padding:20px;background:var(--k2);border:1.5px solid var(--line);transition:border-color .2s,transform .2s}
 .item:hover{border-color:var(--y);transform:translateY(-3px)}
 .item .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.item h3{font-family:Oswald;font-weight:700;font-size:26px;text-transform:uppercase;margin:0;line-height:1;letter-spacing:.01em}
+.item h3{font-family:Anton;font-size:26px;text-transform:uppercase;margin:0;line-height:1;letter-spacing:.01em}
 .item .price{font-family:'JetBrains Mono';font-weight:700;color:var(--y);font-size:15px;white-space:nowrap}
 .item p{margin:0;color:var(--mut);font-size:14px;line-height:1.45;flex:1}
 .opts{display:flex;gap:6px;flex-wrap:wrap}
@@ -112,7 +115,7 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .split .tx p{font-size:19px;line-height:1.55;max-width:480px;margin:28px 0 0;font-weight:500}
 .split .tx .mono{margin-bottom:20px}
 .stats{display:flex;gap:40px;margin-top:44px;flex-wrap:wrap}
-.stats b{font-family:Oswald;font-weight:700;font-size:56px;display:block;line-height:1}
+.stats b{font-family:Anton;font-size:56px;display:block;line-height:1}
 @media(max-width:900px){.split{grid-template-columns:1fr}.split .ph{min-height:60vh}}
 
 /* NIGHT */
@@ -130,14 +133,14 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .info>div:not(:first-child){padding-left:32px}
 .info>div:last-child{border-right:0}
 .info .mono{color:var(--y)}
-.info h3{font-family:Oswald;font-weight:700;font-size:42px;text-transform:uppercase;margin:16px 0 10px;line-height:1}
+.info h3{font-family:Anton;font-size:42px;text-transform:uppercase;margin:16px 0 10px;line-height:1}
 .info p,.info li{color:#cfc7bb;line-height:1.7;margin:0}
 .info ul{list-style:none;padding:0;margin:0}
 .info li{display:flex;justify-content:space-between;gap:20px;border-bottom:1px dashed var(--line);padding:4px 0}
 @media(max-width:900px){.info{grid-template-columns:1fr}.info>div{border-right:0;border-bottom:1.5px solid var(--line);padding:36px 0!important}}
 
 footer{border-top:1.5px solid var(--line);padding:0 0 32px;overflow:hidden}
-.big{font-family:Oswald;font-weight:700;font-size:clamp(120px,29vw,440px);line-height:.8;color:var(--y);text-align:center;margin:40px 0 24px;letter-spacing:-.01em}
+.big{font-family:Anton;font-size:clamp(120px,29vw,440px);line-height:.8;color:var(--y);text-align:center;margin:40px 0 24px;letter-spacing:-.01em}
 .foot{display:flex;justify-content:space-between;color:var(--mut);flex-wrap:wrap;gap:12px}
 
 /* CART */
@@ -151,7 +154,7 @@ footer{border-top:1.5px solid var(--line);padding:0 0 32px;overflow:hidden}
 .bd{position:absolute;inset:0;background:#000b;backdrop-filter:blur(4px);animation:fade .25s}
 .panel{position:absolute;right:0;top:0;bottom:0;width:min(500px,100%);background:var(--k2);border-left:1.5px solid var(--line);padding:28px;overflow:auto;animation:slide .4s cubic-bezier(.2,1,.3,1)}
 @keyframes slide{from{transform:translateX(100%)}}
-.panel h2{font-family:Oswald;font-weight:700;font-size:54px;text-transform:uppercase;margin:0 0 20px}
+.panel h2{font-family:Anton;font-size:54px;text-transform:uppercase;margin:0 0 20px}
 .line{display:flex;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-weight:700}
 .q{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono';white-space:nowrap}
 .q button{width:34px;height:34px;border:1.5px solid var(--line);background:transparent;color:var(--w);font-weight:900}
@@ -165,7 +168,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 .seg label:has(input:checked){background:var(--w);color:var(--k)}
 .seg input{width:auto;accent-color:var(--k)}
 .sum{display:flex;justify-content:space-between;align-items:baseline;margin-top:26px;padding-top:18px;border-top:1.5px solid var(--line)}
-.sum b{font-family:Oswald;font-weight:700;font-size:44px}
+.sum b{font-family:Anton;font-size:44px}
 .send{width:100%;margin-top:12px;border:0;min-height:60px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;gap:10px}
 .wa{background:#25d366;color:#04210c}.try{background:var(--y);color:var(--k)}
 .close{position:absolute;right:18px;top:18px;background:transparent;border:1.5px solid var(--line);color:var(--w);font-size:24px;width:48px;height:48px}
@@ -196,13 +199,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 <header class="hero" id="top">
 <div class="hero-l">
 <span class="mono" style="color:var(--y);margin-bottom:22px">Luján · Buenos Aires · Desde 2017</span>
-<h1 class="display"><span><i>Birra</i></span><span><i class="y">&amp; burgers</i></span><span><i>sin vueltas.</i></span></h1>
+<h1 class="display"><span><i>Birra <b class="y" style="font-weight:inherit">&amp; burgers</b></i></span><span><i>sin vueltas.</i></span></h1>
 <p>Smash, cheddar que chorrea y papas que vienen con todo. Armá tu pedido en dos minutos y te lo confirmamos por WhatsApp.</p>
 <div class="row"><a class="btn" href="#menu">Armar mi pedido →</a><a class="btn ghost" href="#local">Conocé el local</a></div>
 <div class="hero-meta mono"><div>Dirección<b>Mitre 670</b></div><div>Instagram<b>@flama_birra_burgers</b></div><div>Pedidos<b>Retiro o delivery</b></div></div>
 </div>
 <div class="hero-r">
 <img src="/img/burger.jpg" alt="Hamburguesa doble con cheddar sobre papel con el logo de Flama">
+<svg class="drip" viewBox="0 0 400 150" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="kg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#c41b0e"/><stop offset="1" stop-color="#e8321e"/></linearGradient></defs><g fill="url(#kg)"><rect width="400" height="10"/><path class="d" style="animation-delay:0.00s" d="M11 0 v21 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.12s" d="M53 0 v58 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.24s" d="M101 0 v32 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.36s" d="M141 0 v88 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.48s" d="M196 0 v43 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.60s" d="M241 0 v69 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.72s" d="M291 0 v24 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.84s" d="M331 0 v54 a9 9 0 0 0 18 0 V0z"/><path class="d" style="animation-delay:0.96s" d="M376 0 v36 a9 9 0 0 0 18 0 V0z"/></g></svg>
 <svg class="stamp" viewBox="0 0 130 130" aria-hidden="true"><circle cx="65" cy="65" r="64" fill="#f6c91c" stroke="#0c0b0a" stroke-width="2"/><defs><path id="c" d="M65,65 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs><text><textPath href="#c">FLAMA · BIRRA · BURGERS · LUJÁN · </textPath></text><image href="/img/logo.png" x="40" y="40" width="50" height="50"/></svg>
 </div>
 </header>
