@@ -23,6 +23,18 @@ export const HAMBURGUESAS = [
 ];
 export const SLIDERS = { id: "sliders", nombre: "Sliders (3 unidades)", desc: "carne 80 g, pan de papa, cheddar, manteca de ajo", precio: 19500 };
 export const EXTRAS = { "extra-carne": { nombre: "Extra carne", precio: 2000 }, "extra-bacon": { nombre: "Extra bacon", precio: 2000 } };
+// Bebidas (precios de ejemplo para la demo)
+export const BEBIDAS = [
+  { id: "coca", nombre: "Coca-Cola 500 ml", precio: 2500 },
+  { id: "coca-zero", nombre: "Coca-Cola Zero 500 ml", precio: 2500 },
+  { id: "sprite", nombre: "Sprite 500 ml", precio: 2500 },
+  { id: "fanta", nombre: "Fanta 500 ml", precio: 2500 },
+  { id: "agua", nombre: "Agua sin gas 500 ml", precio: 2000 },
+  { id: "agua-gas", nombre: "Agua con gas 500 ml", precio: 2000 },
+  { id: "saborizada", nombre: "Agua saborizada 500 ml", precio: 2300 },
+  { id: "limonada", nombre: "Limonada casera 500 ml", precio: 3500 },
+  { id: "coca-15", nombre: "Coca-Cola 1,5 L", precio: 4500 },
+];
 export const NOTAS_MENU = "Todas las hamburguesas vienen con papas y todas pueden ser veggies.";
 
 // Zonas de delivery (precios de ejemplo para la demo)
@@ -36,7 +48,8 @@ export function menuTexto() {
   const hs = HAMBURGUESAS.map((h) => `- ${h.nombre} (${h.desc}): simple $${h.simple} / doble $${h.doble}`).join("\n");
   const ex = Object.values(EXTRAS).map((e) => `- ${e.nombre}: $${e.precio}`).join("\n");
   const zs = ZONAS.map((z) => `- ${z.nombre}: $${z.precio}`).join("\n");
-  return `HAMBURGUESAS\n${hs}\n- ${SLIDERS.nombre} (${SLIDERS.desc}): $${SLIDERS.precio}\n${NOTAS_MENU}\n\nEXTRAS\n${ex}\n\nDELIVERY\n${zs}\n- Retiro en el local (${LOCAL.direccion}): sin cargo`;
+  const bs = BEBIDAS.map((b) => `- ${b.nombre}: $${b.precio}`).join("\n");
+  return `HAMBURGUESAS\n${hs}\n- ${SLIDERS.nombre} (${SLIDERS.desc}): $${SLIDERS.precio}\n${NOTAS_MENU}\n\nEXTRAS (por unidad, se pueden repetir: ej. 2 extra carne)\n${ex}\n\nBEBIDAS\n${bs}\n\nDELIVERY\n${zs}\n- Retiro en el local (${LOCAL.direccion}): sin cargo`;
 }
 
 // ¿Está abierto ahora? (hora Argentina)
@@ -57,7 +70,9 @@ export function calcular(items, entrega, zonaId) {
   for (const it of items) {
     const cant = Math.max(1, Number(it.cantidad) || 1);
     let precio, nombre;
-    if (it.id === "sliders") { precio = SLIDERS.precio; nombre = SLIDERS.nombre; }
+    const beb = BEBIDAS.find((b) => b.id === it.id);
+    if (beb) { precio = beb.precio; nombre = beb.nombre; }
+    else if (it.id === "sliders") { precio = SLIDERS.precio; nombre = SLIDERS.nombre; }
     else {
       const h = HAMBURGUESAS.find((x) => x.id === it.id);
       if (!h) throw new Error(`No existe el producto ${it.id}`);
@@ -66,7 +81,8 @@ export function calcular(items, entrega, zonaId) {
     }
     const extras = (it.extras || []).filter((e) => EXTRAS[e]);
     precio += extras.reduce((s, e) => s + EXTRAS[e].precio, 0);
-    const ext = extras.length ? ` + ${extras.map((e) => EXTRAS[e].nombre.toLowerCase()).join(", ")}` : "";
+    const cnt = {}; extras.forEach((e) => (cnt[e] = (cnt[e] || 0) + 1));
+    const ext = extras.length ? ` + ${Object.entries(cnt).map(([e, n]) => `${n > 1 ? n + " " : ""}${EXTRAS[e].nombre.toLowerCase()}`).join(", ")}` : "";
     const nota = it.nota ? ` (${it.nota})` : "";
     lineas.push({ texto: `${cant}x ${nombre}${ext}${nota}`, subtotal: precio * cant });
     total += precio * cant;

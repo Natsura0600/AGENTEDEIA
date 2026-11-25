@@ -2,7 +2,7 @@ import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { redis } from "./redis.js";
 import { systemPrompt } from "./prompt.js";
-import { LOCAL, ZONAS, abierto, calcular } from "./menu.js";
+import { LOCAL, ZONAS, BEBIDAS, abierto, calcular } from "./menu.js";
 import { nextId, saveOrder, activeOrder, claimOperation, ESTADOS } from "./orders.js";
 
 const MODEL = process.env.AI_MODEL || "openai/gpt-5-mini";
@@ -99,10 +99,10 @@ export async function reply({ chat, text, image, mediaType, name }) {
         description: "Crea o actualiza el pedido del cliente con todos los ítems y calcula el total real. Usar cuando ya están los productos, el tipo de entrega (y zona/dirección si es envío) y el nombre.",
         inputSchema: z.object({
           items: z.array(z.object({
-            id: z.enum(["cheese-burger", "cheese-2", "all-american", "cuarto-de-kilo", "big-magia", "oklahoma", "rocket", "anderson", "sliders"]),
+            id: z.enum(["cheese-burger", "cheese-2", "all-american", "cuarto-de-kilo", "big-magia", "oklahoma", "rocket", "anderson", "sliders", ...BEBIDAS.map((b) => b.id)]),
             tamano: z.enum(["simple", "doble"]).optional(),
             cantidad: z.number().int().min(1).default(1),
-            extras: z.array(z.enum(["extra-carne", "extra-bacon"])).optional(),
+            extras: z.array(z.enum(["extra-carne", "extra-bacon"])).optional().describe("Un elemento por unidad: 2 extra carne = ['extra-carne','extra-carne']"),
             veggie: z.boolean().optional(),
             nota: z.string().optional(),
           })),

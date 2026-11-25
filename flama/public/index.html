@@ -93,6 +93,11 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .size button{flex:1;background:transparent;border:0;color:var(--mut);padding:8px;min-height:44px;font-weight:800;font-size:12px;text-transform:uppercase}
 .size button small{display:block;font-family:'JetBrains Mono';font-size:12px;margin-top:2px}
 .size button[aria-pressed="true"]{background:var(--w);color:var(--k)}
+.step{display:flex;align-items:center;border:1.5px solid var(--line);color:var(--mut);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.step span{padding:0 8px}
+.step button{width:30px;height:30px;border:0;background:transparent;color:var(--w);font-weight:900;font-size:15px}
+.step b{min-width:16px;text-align:center;font-family:'JetBrains Mono';color:var(--w)}
+.step.on{border-color:var(--y);color:var(--y)}
 .add{flex:none;height:46px;padding:0 16px;border:0;background:var(--y);color:var(--k);font-weight:900;font-size:13px;text-transform:uppercase;letter-spacing:.05em}
 .add.ok{background:#5ad67d}
 .extras-note{margin-top:28px;color:var(--mut)}
@@ -210,9 +215,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 <div class="tabs reveal" role="tablist" aria-label="Categorías">
 <button class="tab" role="tab" aria-selected="true" data-cat="burger">Hamburguesas</button>
 <button class="tab" role="tab" aria-selected="false" data-cat="sliders">Sliders</button>
+<button class="tab" role="tab" aria-selected="false" data-cat="bebidas">Bebidas</button>
 </div>
 <div class="menu" id="list"></div>
-<p class="extras-note mono reveal">Extra carne +$2.000 · Extra bacon +$2.000</p>
+<p class="extras-note mono reveal">Extra carne +$2.000 c/u · Extra bacon +$2.000 c/u · Bebidas: precios de ejemplo</p>
 </div>
 </section>
 
@@ -296,6 +302,15 @@ const MENU = [
   ["rocket","Rocket","Carne, roquefort, bacon, cebolla caramelizada.",14500,16000,"burger"],
   ["anderson","Anderson","Carne, cheddar, dambo, bacon, huevo, champi, alioli.",15500,17000,"burger"],
   ["sliders","Sliders x3","Tres mini burgers: carne 80 g, pan de papa, cheddar, manteca de ajo.",19500,null,"sliders"],
+  ["coca","Coca-Cola","Lata o botella 500 ml.",2500,null,"bebidas"],
+  ["coca-zero","Coca-Cola Zero","Botella 500 ml.",2500,null,"bebidas"],
+  ["sprite","Sprite","Botella 500 ml.",2500,null,"bebidas"],
+  ["fanta","Fanta","Botella 500 ml.",2500,null,"bebidas"],
+  ["agua","Agua sin gas","Botella 500 ml.",2000,null,"bebidas"],
+  ["agua-gas","Agua con gas","Botella 500 ml.",2000,null,"bebidas"],
+  ["saborizada","Agua saborizada","Pomelo, naranja o manzana. 500 ml.",2300,null,"bebidas"],
+  ["limonada","Limonada casera","Con menta y jengibre. 500 ml.",3500,null,"bebidas"],
+  ["coca-15","Coca-Cola 1,5 L","Para compartir.",4500,null,"bebidas"],
 ];
 const ZONAS = [["centro","Centro (hasta 15 cuadras)",1500],["cercana","Barrios cercanos",2500],["lejana","Barrios alejados",4000]];
 const EXTRA = 2000;
@@ -310,14 +325,14 @@ let cat = "burger";
 function renderMenu() {
   const list = $("list"); list.replaceChildren();
   MENU.filter((m) => m[5] === cat).forEach(([id, name, desc, s, d], idx) => {
-    let size = "simple"; const ext = new Set(); let veg = false;
+    let size = "simple"; const ext = { carne: 0, bacon: 0 }; let veg = false;
     const row = mk("article", "item reveal");
-    const top = mk("div", "top"); top.append(mk("h3", null, name), mk("span", "price", "desde " + money(s)));
+    const top = mk("div", "top"); top.append(mk("h3", null, name), mk("span", "price", (d ? "desde " : "") + money(s)));
     row.append(top, mk("p", null, desc));
     const mid = row;
     const buy = mk("div", "buy");
     const sz = mk("div", "size"); sz.setAttribute("role", "group"); sz.setAttribute("aria-label", "Tamaño de " + name);
-    const sizes = d ? [["simple", s], ["doble", d]] : [["x3", s]];
+    const sizes = d ? [["simple", s], ["doble", d]] : [[id === "sliders" ? "x3" : "unidad", s]];
     sizes.forEach(([k, p]) => {
       const b = mk("button"); b.type = "button"; b.setAttribute("aria-pressed", String(k === sizes[0][0]));
       b.append(document.createTextNode(k), mk("small", null, money(p)));
@@ -326,22 +341,32 @@ function renderMenu() {
     });
     if (d) {
       const op = mk("div", "opts");
-      [["extra-carne","+ Carne"],["extra-bacon","+ Bacon"],["veggie","Veggie"]].forEach(([k, l]) => {
-        const c = mk("button", "chip", l); c.type = "button"; c.setAttribute("aria-pressed", "false");
-        c.onclick = () => { const on = c.getAttribute("aria-pressed") !== "true"; c.setAttribute("aria-pressed", String(on)); if (k === "veggie") veg = on; else on ? ext.add(k) : ext.delete(k); };
-        op.append(c);
+      ["carne", "bacon"].forEach((k) => {
+        const st = mk("div", "step"); const lab = mk("span", null, "+ " + k);
+        const mi = mk("button", null, "−"); mi.type = "button"; mi.setAttribute("aria-label", "Quitar extra " + k);
+        const n = mk("b", null, "0");
+        const pl = mk("button", null, "+"); pl.type = "button"; pl.setAttribute("aria-label", "Sumar extra " + k);
+        const upd = () => { n.textContent = ext[k]; st.classList.toggle("on", ext[k] > 0); };
+        mi.onclick = () => { ext[k] = Math.max(0, ext[k] - 1); upd(); };
+        pl.onclick = () => { ext[k] = Math.min(5, ext[k] + 1); upd(); };
+        st.append(lab, mi, n, pl); op.append(st);
       });
+      const vg = mk("button", "chip", "Veggie"); vg.type = "button"; vg.setAttribute("aria-pressed", "false");
+      vg.onclick = () => { veg = !veg; vg.setAttribute("aria-pressed", String(veg)); };
+      op.append(vg);
       mid.append(op);
     }
     const add = mk("button", "add", "Agregar"); add.type = "button"; add.setAttribute("aria-label", "Agregar " + name);
     add.onclick = () => {
-      const price = (d ? (size === "simple" ? s : d) : s) + ext.size * EXTRA;
-      const label = d ? `${name} ${size}${veg ? " veggie" : ""}${ext.size ? " + " + [...ext].map((e) => e.replace("extra-", "")).join(" + ") : ""}` : name;
+      const nExt = ext.carne + ext.bacon;
+      const price = (d ? (size === "simple" ? s : d) : s) + nExt * EXTRA;
+      const exTxt = ["carne", "bacon"].filter((k) => ext[k]).map((k) => `${ext[k] > 1 ? ext[k] + " " : ""}extra ${k}`).join(" + ");
+      const label = d ? `${name} ${size}${veg ? " veggie" : ""}${exTxt ? " + " + exTxt : ""}` : name;
       const f = cart.find((x) => x.label === label); f ? f.qty++ : cart.push({ label, price, qty: 1 });
       add.textContent = "✓ Listo"; add.classList.add("ok"); setTimeout(() => { add.textContent = "Agregar"; add.classList.remove("ok"); }, 900);
       updateCart(true);
     };
-    buy.append(sz, add);
+    if (id !== "sliders" && !d) { buy.style.justifyContent = "flex-end"; buy.append(add); } else buy.append(sz, add);
     row.append(buy); list.append(row);
   });
   observe();
