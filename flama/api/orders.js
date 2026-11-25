@@ -1,5 +1,5 @@
 // Panel de pedidos: GET lista, POST cambia estado y avisa al cliente
-import { listOrders, getOrder, saveOrder, ESTADOS } from "../lib/orders.js";
+import { listOrders, getOrder, saveOrder, panelState, ESTADOS } from "../lib/orders.js";
 import { sendToClient, STATUS_MSG } from "../lib/notify.js";
 import { redis } from "../lib/redis.js";
 
@@ -8,6 +8,7 @@ export default async function handler(req, res) {
   if (req.query.key !== key) return res.status(401).json({ error: "Clave incorrecta" });
   if (req.method === "POST" && req.body?.bot) {
     await redis.set("flama:bot_off", req.body.bot === "off" ? "1" : "0");
+    return res.json(await panelState());
   } else if (req.method === "POST") {
     const { id, estado } = req.body || {};
     const o = await getOrder(String(id));
@@ -18,5 +19,8 @@ export default async function handler(req, res) {
     await saveOrder(o);
     if (STATUS_MSG[estado]) await sendToClient(o.chat, STATUS_MSG[estado](o));
   }
-  res.json({ estados: ESTADOS, orders: await listOrders(), botOn: (await redis.get("flama:bot_off")) !== "1" });
+  const st = await panelState();
+  // Si el panel ya tiene esta versión, no se releen los pedidos (1 comando por consulta)
+  if (req.method === "GET" && req.query.v === st.ver) return res.json({ ...st, same: true });
+  res.json({ ...st, estados: ESTADOS, orders: await listOrders() });
 }

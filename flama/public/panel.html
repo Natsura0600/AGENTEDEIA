@@ -66,7 +66,7 @@ const COLS = [
 ];
 const money = (n) => "$" + Number(n).toLocaleString("es-AR");
 const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-let known = new Set(), first = true, sound = false, botOn = true, actx;
+let ver = "", known = new Set(), first = true, sound = false, botOn = true, actx;
 function ding() {
   if (!sound) return;
   actx = actx || new AudioContext();
@@ -87,13 +87,14 @@ function btn(label, cls, onClick) { const b = el("button", cls, label); b.type =
 
 async function load() {
   try {
-    const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}`);
+    const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}&v=${ver}`);
     if (!r.ok) throw new Error();
-    const d = await r.json(); botOn = d.botOn !== false; paintBot(); render(d); document.getElementById("status").textContent = "En vivo";
+    const d = await r.json(); botOn = d.botOn !== false; paintBot(); if (!d.same) { ver = d.ver; render(d); } document.getElementById("status").textContent = "En vivo";
   } catch { document.getElementById("status").textContent = "Sin conexión"; }
 }
 async function setEstado(id, estado) {
   await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, estado }) });
+  ver = "";
   load();
 }
 function card(o, estados) {
@@ -146,7 +147,8 @@ function render(d) {
   first = false;
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden) document.title = "Pedidos · Flama"; });
-load(); setInterval(load, 5000);
+load(); setInterval(() => { if (!document.hidden) load(); }, 8000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 </script>
 </body>
 </html>

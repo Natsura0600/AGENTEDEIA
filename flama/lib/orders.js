@@ -14,21 +14,24 @@ export const ESTADOS = {
 };
 
 export async function nextId() {
-  const n = Number((await redis.get(K("seq"))) || 100) + 1;
-  await redis.set(K("seq"), String(n));
-  return String(n);
+  return String(100 + Number(await redis.incr(K("seq"))));
 }
 export async function saveOrder(o) {
   o.updatedAt = Date.now();
-  await redis.set(K(`order:${o.id}`), JSON.stringify(o));
-  let ids = [];
-  try { ids = JSON.parse((await redis.get(K("orders"))) || "[]"); } catch {}
-  if (!ids.includes(o.id)) { ids.unshift(o.id); await redis.set(K("orders"), JSON.stringify(ids.slice(0, 300))); }
-  await redis.set(K(`active:${o.chat}`), o.id);
+  const nuevo = !o._saved; delete o._saved;
+  await redis.set(K(`order:${o.id}`), JSON.stringify(o), { ex: 60 * 60 * 24 * 30 });
+  if (nuevo) {
+    let ids = [];
+    try { ids = JSON.parse((await redis.get(K("orders"))) || "[]"); } catch {}
+    if (!ids.includes(o.id)) { ids.unshift(o.id); await redis.set(K("orders"), JSON.stringify(ids.slice(0, 200))); }
+    await redis.set(K(`active:${o.chat}`), o.id, { ex: 60 * 60 * 24 * 2 });
+  }
+  await redis.incr(K("ver"));
+  o._saved = true;
   return o;
 }
 export async function getOrder(id) {
-  try { return JSON.parse((await redis.get(K(`order:${id}`))) || "null"); } catch { return null; }
+  try { const o = JSON.parse((await redis.get(K(`order:${id}`))) || "null"); if (o) o._saved = true; return o; } catch { return null; }
 }
 export async function activeOrder(chat) {
   const id = await redis.get(K(`active:${chat}`));
@@ -37,9 +40,15 @@ export async function activeOrder(chat) {
 export async function listOrders() {
   let ids = [];
   try { ids = JSON.parse((await redis.get(K("orders"))) || "[]"); } catch {}
-  const out = [];
-  for (const id of ids.slice(0, 80)) { const o = await getOrder(id); if (o) out.push(o); }
-  return out;
+  ids = ids.slice(0, 60);
+  if (!ids.length) return [];
+  const vals = await redis.mget(...ids.map((id) => K(`order:${id}`)));
+  return vals.map((v) => { try { return JSON.parse(v); } catch { return null; } }).filter(Boolean);
+}
+// Estado barato para el panel: versión de pedidos + bot apagado, en 1 solo comando
+export async function panelState() {
+  const [ver, off] = await redis.mget(K("ver"), K("bot_off"));
+  return { ver: String(ver || 0), botOn: off !== "1" };
 }
 // Número de operación ya usado (evita comprobantes repetidos)
 export async function claimOperation(op, orderId) {

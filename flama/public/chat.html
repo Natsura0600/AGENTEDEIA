@@ -52,6 +52,7 @@ async function send(body, shown, img) {
   try {
     const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session, name, ...body }) });
     const d = await r.json(); add(d.reply || "Error", "bot");
+    if (/alias|#\d{3}/i.test(d.reply || "")) { try { localStorage.setItem("flama_order", "1"); } catch {} startPoll(); }
   } catch { add("No pude conectarme, probá de nuevo.", "bot"); }
   document.getElementById("typing").hidden = true;
 }
@@ -68,9 +69,13 @@ document.getElementById("file").onchange = (e) => {
   };
   img.src = url; e.target.value = "";
 };
-setInterval(async () => {
+// Solo consulta avisos del local cuando ya hay un pedido, cada 10 s y con la pestaña visible
+let polling = false;
+function startPoll() { if (polling) return; polling = true; setInterval(async () => {
+  if (document.hidden) return;
   try { const d = await (await fetch("/api/chat?session=" + session)).json(); (d.messages || []).forEach((m) => add(m, "bot")); } catch {}
-}, 4000);
+}, 10000); }
+try { if (localStorage.getItem("flama_order")) startPoll(); } catch {}
 if (q.get("msg")) send({ text: q.get("msg") }, q.get("msg"));
 else add("¡Hola! Soy el asistente de Flama 🍔 Contame qué querés pedir.", "bot");
 </script>
