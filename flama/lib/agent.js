@@ -48,7 +48,9 @@ export async function verificarComprobante(order, imageBase64, mediaType) {
   if (!c.es_comprobante) motivos.push("la imagen no parece un comprobante");
   if (c.es_comprobante && !(Number(c.monto) >= order.total)) motivos.push(`el monto (${c.monto ? money(c.monto) : "no se ve"}) no cubre el total ${money(order.total)}`);
   const dest = norm(c.destinatario) + norm(c.alias_o_cvu);
-  if (c.es_comprobante && !(dest.includes(norm(LOCAL.titular)) || dest.includes(norm(LOCAL.alias)))) motivos.push("el destinatario no coincide con el alias o titular de Flama");
+  const titulares = [LOCAL.titular, ...(process.env.TITULARES_EXTRA || "").split("|")].filter(Boolean);
+  const okTitular = titulares.some((t) => t.split(/\s+/).every((w) => dest.includes(norm(w))));
+  if (c.es_comprobante && !(okTitular || dest.includes(norm(LOCAL.alias)))) motivos.push("el destinatario no coincide con el alias o titular de Flama");
   if (c.es_comprobante && c.fecha && c.fecha !== hoy) motivos.push(`la fecha (${c.fecha}) no es de hoy`);
   if (c.es_comprobante && !c.numero_operacion) motivos.push("no se ve el número de operación");
   if (!motivos.length && !(await claimOperation(c.numero_operacion, order.id))) motivos.push("ese comprobante ya se usó en otro pedido");
