@@ -73,7 +73,7 @@ document.getElementById("file").onchange = (e) => {
 let polling = false;
 function startPoll() { if (polling) return; polling = true; setInterval(async () => {
   if (document.hidden) return;
-  try { const d = await (await fetch("/api/chat?session=" + session)).json(); (d.messages || []).forEach((m) => add(m, "bot")); } catch {}
+  try { const d = await (await fetch("/api/chat?session=" + session)).json(); (d.messages || []).forEach((m) => add(typeof m === "string" ? m : m.text, "bot")); } catch {}
 }, 10000); }
 try { if (localStorage.getItem("flama_order")) startPoll(); } catch {}
 if (q.get("msg")) send({ text: q.get("msg") }, q.get("msg"));
