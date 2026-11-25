@@ -42,6 +42,8 @@ button:focus-visible{outline:2px solid var(--y);outline-offset:2px}
 .empty{color:var(--muted);font-size:14px;border:1px dashed var(--line);border-radius:14px;padding:16px;text-align:center}
 .later{background:#ffd84d22;color:var(--y2)}
 @media (max-width:900px){.board{grid-template-columns:1fr}}
+.caja{font-weight:800;font-size:15px;background:#00000014;border-radius:10px;padding:8px 12px}
+.mes{display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:10px;font-weight:700}.mes input{background:transparent;border:0;color:inherit;font:inherit}
 .tools{display:flex;gap:8px;margin-left:auto}
 .tbtn{background:var(--brown);color:var(--y);min-height:40px;font-size:14px}
 .tbtn.off{background:#b3261e;color:#fff}
@@ -51,7 +53,8 @@ header{flex-wrap:wrap}
 <body>
 <header>
 <div class="logo">FLAMA<small>PANEL DE PEDIDOS</small></div>
-<div class="tools"><button type="button" id="botbtn" class="tbtn">Bot: …</button><button type="button" id="sndbtn" class="tbtn">🔇 Activar sonido</button></div>
+<div class="caja" id="caja" aria-live="polite"></div>
+<div class="tools"><label class="tbtn mes">Mes <input type="month" id="mes"></label><button type="button" id="expbtn" class="tbtn">⬇ Excel del mes</button><button type="button" id="botbtn" class="tbtn">Bot: …</button><button type="button" id="sndbtn" class="tbtn">🔇 Activar sonido</button></div>
 <div class="live"><span class="dot" aria-hidden="true"></span><span id="status">En vivo</span></div>
 </header>
 <main class="board" id="board" aria-live="polite"></main>
@@ -75,6 +78,10 @@ function ding() {
     o.connect(g).connect(actx.destination); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + .32); });
 }
 document.getElementById("sndbtn").onclick = (e) => { sound = !sound; e.target.textContent = sound ? "🔔 Sonido activado" : "🔇 Activar sonido"; if (sound) { actx = actx || new AudioContext(); ding(); } };
+const mesI = document.getElementById("mes");
+mesI.value = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).slice(0, 7);
+document.getElementById("expbtn").onclick = () => { location.href = `/api/export?key=${encodeURIComponent(key)}&mes=${mesI.value}`; };
+function paintCaja(c) { if (!c) return; document.getElementById("caja").textContent = `Hoy: ${c.pedidos} entregados · Caja ${money(c.ventas)}`; }
 function paintBot() { const b = document.getElementById("botbtn"); b.textContent = botOn ? "🤖 Bot prendido" : "⛔ Bot apagado"; b.classList.toggle("off", !botOn); }
 document.getElementById("botbtn").onclick = async () => {
   if (botOn && !confirm("¿Apagar el bot? Los clientes van a recibir: 'En un ratito te responde alguien del local'.")) return;
@@ -89,7 +96,7 @@ async function load() {
   try {
     const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}&v=${ver}`);
     if (!r.ok) throw new Error();
-    const d = await r.json(); botOn = d.botOn !== false; paintBot(); if (!d.same) { ver = d.ver; render(d); } document.getElementById("status").textContent = "En vivo";
+    const d = await r.json(); botOn = d.botOn !== false; paintBot(); if (!d.same) { ver = d.ver; render(d); paintCaja(d.caja); } document.getElementById("status").textContent = "En vivo";
   } catch { document.getElementById("status").textContent = "Sin conexión"; }
 }
 async function setEstado(id, estado) {
