@@ -3,7 +3,7 @@ import { z } from "zod";
 import { redis } from "./redis.js";
 import { systemPrompt } from "./prompt.js";
 import { LOCAL, ZONAS, BEBIDAS, abierto, calcular } from "./menu.js";
-import { nextId, saveOrder, activeOrder, claimOperation, ESTADOS } from "./orders.js";
+import { nextId, saveOrder, activeOrder, claimOperation, jornada, ESTADOS } from "./orders.js";
 
 const MODEL = process.env.AI_MODEL || "openai/gpt-5-mini";
 const fast = { openai: { reasoningEffort: "minimal" } };
@@ -31,7 +31,7 @@ export async function leerComprobante(imageBase64, mediaType = "image/jpeg") {
  "alias_o_cvu": string (alias, CVU o CBU destino si aparece; null si no),
  "fecha": "YYYY-MM-DD" (fecha de la operación; null si no se ve),
  "numero_operacion": string (número de operación, transacción o comprobante; null si no se ve)}` },
-        { type: "image", image: imageBase64, mediaType },
+        { type: "file", data: imageBase64, mediaType: mediaType || "image/jpeg" },
       ],
     }],
   });
@@ -63,7 +63,15 @@ export const botApagado = async () => (await redis.get("flama:bot_off")) === "1"
 export async function reply({ chat, text, image, mediaType, name }) {
   const history = await getHistory(chat);
   const isOpen = process.env.RESPETAR_HORARIO === "1" ? abierto() : true; // demo: siempre abierto
+  const VIEJO = 3 * 3600e3;
+  const esPedidoWeb = /quiero hacer este pedido:/i.test(text || "");
   let order = await activeOrder(chat);
+  // Un pedido que quedó esperando pago hace horas no se mezcla con uno nuevo
+  if (order && order.estado === "pago_pendiente" && Date.now() - (order.updatedAt || order.createdAt) > VIEJO) order = null;
+  // Pedido nuevo armado en la web: arranca una conversación limpia
+  let historial = history;
+  if (esPedidoWeb) historial = [];
+  const detalle = (o) => `Pedido #${o.id}: ${o.lineas.map((l) => l.texto).join(", ")}. ${o.entrega === "envio" ? "Delivery" : "Retiro en el local"}. Total ${money(o.total)}.`;
   let nota = "";
 
   // Si manda una imagen y hay un pedido esperando pago → verificar comprobante
@@ -74,11 +82,11 @@ export async function reply({ chat, text, image, mediaType, name }) {
       order.estado = isOpen ? "en_preparacion" : "programado";
       order.pagoVerificadoPor = "bot";
       nota = isOpen
-        ? `[SISTEMA: comprobante APROBADO por el bot. El pedido #${order.id} pasó a cocina. Confirmalo al cliente con la demora (${order.entrega === "envio" ? LOCAL.demoras.envio : LOCAL.demoras.retiro}).]`
-        : `[SISTEMA: comprobante APROBADO. El local está cerrado: el pedido #${order.id} queda confirmado para cuando abra (${LOCAL.horarioTexto}). Avisale al cliente.]`;
+        ? `[SISTEMA: comprobante APROBADO por el bot. ${detalle(order)} Pasó a cocina. Confirmalo al cliente nombrando EXACTAMENTE estos productos (no otros de mensajes anteriores) y la demora (${order.entrega === "envio" ? LOCAL.demoras.envio : LOCAL.demoras.retiro}).]`
+        : `[SISTEMA: comprobante APROBADO. ${detalle(order)} El local está cerrado: queda confirmado para cuando abra (${LOCAL.horarioTexto}). Avisale al cliente nombrando exactamente estos productos.]`;
     } else {
       order.estado = "pago_a_verificar";
-      nota = `[SISTEMA: el comprobante quedó para revisión manual del local (${v.motivos.join("; ")}). Decile al cliente, amablemente, que el local lo revisa y le confirma en unos minutos. Si el problema es claro (por ejemplo el monto), explicáselo.]`;
+      nota = `[SISTEMA: ${detalle(order)} El comprobante quedó para revisión manual del local (${v.motivos.join("; ")}). Decile al cliente, amablemente, que el local lo revisa y le confirma en unos minutos. Si el problema es claro (por ejemplo el monto), explicáselo.]`;
     }
     await saveOrder(order);
   } else if (image) {
@@ -86,11 +94,11 @@ export async function reply({ chat, text, image, mediaType, name }) {
   }
 
   const userContent = [
-    history.length === 0 && name ? `[Nombre de perfil: ${name}]` : "",
+    historial.length === 0 && name ? `[Nombre de perfil: ${name}]` : "",
     text || (image ? "(envió una imagen)" : ""),
     nota,
   ].filter(Boolean).join("\n");
-  const messages = [...history, { role: "user", content: userContent }];
+  const messages = [...historial, { role: "user", content: userContent }];
 
   const result = await generateText({
     model: MODEL,
@@ -98,6 +106,7 @@ export async function reply({ chat, text, image, mediaType, name }) {
     instructions: systemPrompt(isOpen),
     messages,
     stopWhen: stepCountIs(4),
+    prepareStep: ({ stepNumber }) => (esPedidoWeb && stepNumber === 0 ? { toolChoice: { type: "tool", toolName: "crear_pedido" } } : {}),
     tools: {
       crear_pedido: tool({
         description: "Crea o actualiza el pedido del cliente con todos los ítems y calcula el total real. Usar cuando ya están los productos, el tipo de entrega (y zona/dirección si es envío) y el nombre.",
@@ -119,10 +128,11 @@ export async function reply({ chat, text, image, mediaType, name }) {
         execute: async (i) => {
           const calc = calcular(i.items, i.entrega, i.zona);
           const prev = await activeOrder(chat);
-          const reuse = prev && prev.estado === "pago_pendiente";
+          const reuse = prev && prev.estado === "pago_pendiente" && Date.now() - (prev.updatedAt || prev.createdAt) < VIEJO && prev.jornada === jornada();
           const o = {
             id: reuse ? prev.id : await nextId(),
-            chat, createdAt: reuse ? prev.createdAt : Date.now(),
+            chat, createdAt: reuse ? prev.createdAt : Date.now(), updatedAt: Date.now(), jornada: reuse ? prev.jornada : jornada(),
+            ...(reuse ? { _saved: true } : {}),
             nombre: i.nombre, telefono: chat.startsWith("wa:") ? chat.slice(3) : null,
             entrega: i.entrega, zona: i.zona || null, direccion: i.direccion || null,
             lineas: calc.lineas, envio: calc.envio, total: calc.total,
