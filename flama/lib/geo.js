@@ -8,6 +8,8 @@ import { LOCAL } from "./menu.js";
 const CAJA = { latMin: -34.8, latMax: -34.35, lngMin: -59.45, lngMax: -58.9 };
 const CENTRO_LUJAN = { lat: -34.5636, lng: -59.1208, aprox: true }; // si no se pudo ubicar el local
 const LOCALIDADES = ["Jáuregui", "Open Door", "Olivera", "Torres", "Carlos Keen", "Cortínez"];
+// Centro aproximado de cada localidad: Georef a veces marca sus calles como "Luján", así que también se mira la cercanía
+const CENTROS = { "Jáuregui": [-34.602, -59.174], "Open Door": [-34.489, -59.079], "Olivera": [-34.629, -59.253], "Torres": [-34.432, -59.129], "Carlos Keen": [-34.487, -59.218], "Cortínez": [-34.553, -59.208] };
 const dentro = (p) => p && p.lat >= CAJA.latMin && p.lat <= CAJA.latMax && p.lng >= CAJA.lngMin && p.lng <= CAJA.lngMax;
 const sinTilde = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -60,7 +62,8 @@ async function porGeoref({ calle, localidad }, diag) {
   if (diag) diag.georef = ds.map((x) => ({ calle: x.calle?.nombre, altura: x.altura?.valor, localidad: x.localidad_censal?.nombre, lat: x.ubicacion.lat, lng: x.ubicacion.lon }));
   // Si el cliente dijo la localidad, solo vale una calle de esa localidad (San Martín existe en Luján y en Jáuregui)
   const quiero = sinTilde(localidad || "lujan");
-  const d = ds.find((x) => sinTilde(x.localidad_censal?.nombre).includes(quiero)) || (localidad ? null : ds[0]);
+  const cerca = (x) => { const c = CENTROS[localidad]; return c && distanciaKm({ lat: c[0], lng: c[1] }, { lat: x.ubicacion.lat, lng: x.ubicacion.lon }) < 3; };
+  const d = ds.find((x) => sinTilde(x.localidad_censal?.nombre).includes(quiero)) || (localidad ? ds.find(cerca) : ds[0]);
   if (!d) return null;
   const nombre = d.calle?.nombre ? d.calle.nombre.replace(/^\d+\s*-\s*/, "").toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase()) : calle;
   const alt = d.altura?.valor ? ` ${d.altura.valor}` : "";
@@ -83,7 +86,8 @@ async function porOSM({ calle, localidad }, diag) {
   if (!r) return null;
   const a = r.address || {};
   const exacta = !!a.house_number;
-  const texto = [a.road ? `${a.road}${a.house_number ? " " + a.house_number : ""}` : r.name, a.city || a.town || a.village || "Luján"].filter(Boolean).join(", ");
+  const calleOSM = a.road ? a.road.replace(/^\d+\s*-\s*/, "") : r.name;
+  const texto = [calleOSM ? `${calleOSM}${a.house_number ? " " + a.house_number : ""}` : null, a.city || a.town || a.village || "Luján"].filter(Boolean).join(", ");
   return { lat: r.lat, lng: r.lng, texto, exacta, fuente: "osm" };
 }
 
