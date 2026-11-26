@@ -1,7 +1,7 @@
 // Control de stock: ingredientes, recetas por producto y movimientos.
 // Todo lo puede editar el dueño desde su panel (nombres, unidades, mínimos y recetas).
 import { redis } from "./redis.js";
-import { HAMBURGUESAS, BEBIDAS } from "./menu.js";
+import { getMenu } from "./menu.js";
 
 const K = (s) => `flama:${s}`;
 const hoyAR = () => new Date(Date.now() - 6 * 3600e3).toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
@@ -12,16 +12,16 @@ const ING_BASE = {
   carne: { nombre: "Medallones de carne", unidad: "medallones", cant: 180, min: 40 },
   cheddar: { nombre: "Cheddar", unidad: "fetas", cant: 300, min: 60 },
 };
-function recetasBase() {
+// Receta sugerida para productos nuevos (el dueño la ajusta en su panel)
+function recetasBase(carta) {
   const r = {};
-  for (const h of HAMBURGUESAS) {
-    const ch = h.id === "rocket" ? 0 : h.id === "cuarto-de-kilo" ? 2 : 1;
-    r[h.id] = { simple: { pan: 1, carne: 1, cheddar: ch }, doble: { pan: 1, carne: 2, cheddar: ch * 2 } };
+  for (const p of carta.productos) {
+    if (p.tipo === "tamanos") {
+      const ch = p.id === "rocket" ? 0 : p.id === "cuarto-de-kilo" ? 2 : 1;
+      r[p.id] = { simple: { pan: 1, carne: 1, cheddar: ch }, doble: { pan: 1, carne: 2, cheddar: ch * 2 } };
+    } else r[p.id] = { unidad: p.id === "sliders" ? { pan: 3, carne: 3, cheddar: 3 } : {} };
   }
-  r.sliders = { unidad: { pan: 3, carne: 3, cheddar: 3 } };
-  r["extra-carne"] = { unidad: { carne: 1 } };
-  r["extra-bacon"] = { unidad: {} };
-  for (const b of BEBIDAS) r[b.id] = { unidad: {} };
+  for (const e of carta.extras) r[e.id] = { unidad: e.id === "extra-carne" ? { carne: 1 } : {} };
   return r;
 }
 
@@ -31,7 +31,7 @@ export async function getStock() {
   try { ing = JSON.parse(i); } catch {}
   try { rec = JSON.parse(r); } catch {}
   if (!ing) { ing = ING_BASE; await redis.set(K("stock"), JSON.stringify(ing)); }
-  const base = recetasBase();
+  const base = recetasBase(await getMenu());
   rec = { ...base, ...(rec || {}) };
   return { ing, rec };
 }

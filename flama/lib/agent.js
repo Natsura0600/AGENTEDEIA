@@ -2,7 +2,7 @@ import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { redis } from "./redis.js";
 import { systemPrompt } from "./prompt.js";
-import { LOCAL, ZONAS, BEBIDAS, abierto, calcular, getMenu } from "./menu.js";
+import { LOCAL, abierto, calcular, getMenu } from "./menu.js";
 import { sincronizarStock } from "./stock.js";
 import { nextId, saveOrder, activeOrder, claimOperation, jornada, ESTADOS } from "./orders.js";
 
@@ -115,15 +115,15 @@ export async function reply({ chat, text, image, mediaType, name }) {
         description: "Crea o actualiza el pedido del cliente con todos los ítems y calcula el total real. Usar cuando ya están los productos, el tipo de entrega (y zona/dirección si es envío) y el nombre.",
         inputSchema: z.object({
           items: z.array(z.object({
-            id: z.enum(["cheese-burger", "cheese-2", "all-american", "cuarto-de-kilo", "big-magia", "oklahoma", "rocket", "anderson", "sliders", ...BEBIDAS.map((b) => b.id)]),
+            id: z.string().describe("El [id: ...] del producto, tal cual figura en el menú"),
             tamano: z.enum(["simple", "doble"]).optional(),
             cantidad: z.number().int().min(1).default(1),
-            extras: z.array(z.enum(["extra-carne", "extra-bacon"])).optional().describe("Un elemento por unidad: 2 extra carne = ['extra-carne','extra-carne']"),
+            extras: z.array(z.string()).optional().describe("ids de extras, uno por unidad: 2 extra carne = ['extra-carne','extra-carne']"),
             veggie: z.boolean().optional(),
             nota: z.string().optional(),
           })),
           entrega: z.enum(["retiro", "envio"]),
-          zona: z.enum(ZONAS.map((z) => z.id)).optional(),
+          zona: z.string().optional().describe("[id: ...] de la zona de delivery"),
           direccion: z.string().optional(),
           nombre: z.string(),
           comentarios: z.string().optional(),

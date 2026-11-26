@@ -132,6 +132,10 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 .stp{display:inline-flex;align-items:center;border:1.5px solid var(--line);font-size:12px;font-weight:800;color:var(--mut)}
 .stp span{padding:0 6px}.stp b{min-width:18px;text-align:center;color:var(--w);font-family:"JetBrains Mono"}
 .stp button{background:none;border:0;color:var(--w);width:32px;height:32px;font-weight:900;font-size:15px}
+.vgb{background:none;border:1.5px solid var(--line);color:var(--mut);font-weight:800;font-size:12px;min-height:34px;padding:0 10px}
+.vgb[aria-pressed="true"]{border-color:var(--ok);color:var(--ok);background:#5ad67d1a}
+.mnom{width:100%;background:var(--k);color:var(--w);border:1.5px solid var(--line);padding:11px 12px;font:inherit;margin-bottom:12px}
+.mnom:focus{border-color:var(--y);outline:0}
 .mfoot{padding:16px 18px;border-top:1.5px solid var(--line);background:var(--k3)}
 .mfoot .tot{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
 .mfoot .tot b{font-family:Anton;font-weight:400;font-size:40px;color:var(--y)}
@@ -160,6 +164,16 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
   .tbtn{flex:1 1 auto;justify-content:center}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.login{position:fixed;inset:0;z-index:100;background:#0c0b0a;display:grid;place-items:center;padding:20px}
+.login form{width:min(360px,100%);display:flex;flex-direction:column;align-items:center;gap:6px;background:#161412;border:1.5px solid #2c2824;border-top:4px solid #f6c91c;padding:28px 24px}
+.login img{width:64px;height:64px;border-radius:50%}
+.login b{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:34px;letter-spacing:.04em;line-height:1;margin-top:6px}
+.login span{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#f6c91c;margin-bottom:14px}
+.login label{align-self:flex-start;font-size:12px;font-weight:800;color:#9b948a;text-transform:uppercase;letter-spacing:.06em}
+.login input{width:100%;background:#0c0b0a;color:#f4efe6;border:1.5px solid #2c2824;padding:12px;font:inherit;font-size:16px}
+.login input:focus{border-color:#f6c91c;outline:0}
+.login button{width:100%;margin-top:10px;background:#f6c91c;color:#0c0b0a;border:0;min-height:50px;font:inherit;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+.login p{color:#ff5a47;font-weight:800;min-height:20px;margin:6px 0 0}
 </style>
 </head>
 <body>
@@ -188,12 +202,33 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 <div class="mdlg" id="mdlg" role="dialog" aria-modal="true" aria-label="Venta de mostrador"><div class="bd" id="mbd"></div>
 <div class="mbox"><div class="mcat"><h3>Venta de mostrador</h3><div id="mcat"></div></div>
 <div class="mtick"><div class="head"><h3>Ticket</h3><button class="tbtn" id="mclose" type="button" aria-label="Cerrar">✕</button></div><div class="mlines" id="mlines"></div>
-<div class="mfoot"><div class="tot"><span class="mono">Total</span><b id="mtotal">$0</b></div>
+<div class="mfoot"><input id="mnombre" class="mnom" placeholder="Nombre o número de mesa (opcional)" maxlength="40" aria-label="Nombre o mesa"><div class="tot"><span class="mono">Total</span><b id="mtotal">$0</b></div>
 <div class="pago3" role="group" aria-label="Forma de pago"><button type="button" data-pago="efectivo" aria-pressed="true">💵 Efectivo</button><button type="button" data-pago="transferencia" aria-pressed="false">🏦 Transf.</button><button type="button" data-pago="tarjeta" aria-pressed="false">💳 Tarjeta</button></div>
-<button class="go green" type="button" id="mok">Cobrar y cargar</button></div></div></div></div>
+<button class="go green" type="button" id="mok">Cobrado → mandar a cocina</button></div></div></div></div>
 
 <script>
-const key = new URLSearchParams(location.search).get("key") || "flama2026";
+let key = "";
+// ---- Ingreso con clave (se guarda en este dispositivo, así el link queda limpio) ----
+function sesion(store, probar, titulo) {
+  const qs = new URLSearchParams(location.search); let k = qs.get("key");
+  if (k) { try { localStorage.setItem(store, k); } catch {} qs.delete("key"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "") + location.hash); }
+  else { try { k = localStorage.getItem(store); } catch {} }
+  return (async () => (k && (await probar(k).catch(() => false))) ? k : pedirClave(store, probar, titulo))();
+}
+function pedirClave(store, probar, titulo) {
+  return new Promise((resolve) => {
+    const o = document.createElement("div"); o.className = "login";
+    o.innerHTML = `<form><img src="/img/logo-round.webp" alt=""><b>FLAMA</b><span>${titulo}</span><label for="lk">Clave</label><input id="lk" type="password" autocomplete="current-password" required><button type="submit">Entrar</button><p role="alert"></p></form>`;
+    document.body.append(o); const f = o.querySelector("form"), inp = o.querySelector("input"), msg = o.querySelector("p"); inp.focus();
+    f.onsubmit = async (e) => {
+      e.preventDefault(); const v = inp.value.trim(); msg.textContent = "";
+      if (await probar(v).catch(() => false)) { try { localStorage.setItem(store, v); } catch {} o.remove(); resolve(v); }
+      else { msg.textContent = "Clave incorrecta"; inp.select(); }
+    };
+  });
+}
+function salir(store) { try { localStorage.removeItem(store); } catch {} location.reload(); }
+
 const COLS = [
   { id: "pago", title: "Pagos", estados: ["pago_pendiente", "pago_a_verificar"] },
   { id: "cocina", title: "En cocina", estados: ["en_preparacion", "programado"] },
@@ -214,7 +249,7 @@ function ding() {
     o.connect(g).connect(actx.destination); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + .32); });
 }
 $("sndbtn").onclick = (e) => { sound = !sound; e.currentTarget.textContent = sound ? "🔔 Sonido activado" : "🔇 Activar sonido"; e.currentTarget.classList.toggle("on", sound); if (sound) { actx = actx || new AudioContext(); ding(); } };
-$("fichlink").href = `/fichar.html?key=${encodeURIComponent(key)}`;
+
 function paintBot() { const b = $("botbtn"); b.textContent = botOn ? "🤖 Bot prendido" : "⛔ Bot apagado"; b.classList.toggle("off", !botOn); b.classList.toggle("on", botOn); }
 $("botbtn").onclick = async () => {
   if (botOn && !confirm("¿Apagar el bot? Los clientes van a recibir: 'En un ratito te responde alguien del local'.")) return;
@@ -266,7 +301,7 @@ function card(o, nuevo) {
   chips.append(o.canal === "mostrador" ? el("span", "chip most", "🧾 Mostrador · " + (o.pago || "efectivo")) : el("span", "chip " + (o.entrega === "envio" ? "env" : "ret"), o.entrega === "envio" ? "🛵 Delivery" : "🏪 Retiro"));
   const ago = el("span", "ago"); ago.dataset.t = o.createdAt; ago.dataset.activo = ACTIVOS.includes(o.estado) ? "1" : "0"; ago.title = "Entró a las " + hhmm(o.createdAt); paintAgo(ago);
   chips.append(ago); top.append(left, chips); c.append(top);
-  if (o.canal !== "mostrador") c.append(el("div", "who", o.nombre || "Sin nombre"));
+  if (o.canal !== "mostrador" || o.nombre !== "Mostrador") c.append(el("div", "who", o.nombre || "Sin nombre"));
   if (o.entrega === "envio" && o.direccion) c.append(el("div", "meta", "📍 " + o.direccion));
   if (o.telefono) c.append(el("div", "meta", "📱 +" + o.telefono));
   const ul = el("ul", "items");
@@ -279,6 +314,7 @@ function card(o, nuevo) {
   if (o.estado === "pago_pendiente") pay = ["warn", "⏳ Esperando comprobante"];
   else if (o.estado === "pago_a_verificar") pay = ["bad", "⚠️ Revisar pago: " + (o.comprobante?.motivos || []).join(", ")];
   else if (o.pagoVerificadoPor === "bot") pay = ["ok", "✓ Pago verificado por el bot"];
+  else if (o.canal === "mostrador") pay = ["ok", "✓ Cobrado en mostrador · " + (o.pago || "efectivo")];
   else if (o.pagoVerificadoPor === "local") pay = ["ok", "✓ Pago verificado por el local"];
   if (pay || o.comprobante?.imagen) {
     const p = el("div", "pay " + (pay ? pay[0] : "ok"));
@@ -326,33 +362,40 @@ function render(d) {
 let carta = null, ticket = [], pago = "efectivo";
 function tst(msg, err) { const t = el("div", "tst" + (err ? " err" : ""), msg); document.body.append(t); setTimeout(() => t.remove(), 2600); }
 async function abrirMostrador() {
-  if (!carta) { try { carta = await (await fetch("/api/menu")).json(); } catch { return tst("No se pudo cargar el menú", 1); } }
+  try { carta = await (await fetch("/api/menu")).json(); } catch { if (!carta) return tst("No se pudo cargar el menú", 1); }
   const cat = $("mcat"); cat.replaceChildren();
-  [["burger", "Hamburguesas"], ["sliders", "Sliders"], ["bebida", "Bebidas"]].forEach(([tipo, tit]) => {
-    cat.append(el("h4", null, tit)); const g = el("div", "pgrid");
-    carta.items.filter((i) => i.tipo === tipo).forEach((i) => {
-      const b = btn("", "pbtn", () => { ticket.push({ id: i.id, nombre: i.nombre, tipo, tamano: "simple", cantidad: 1, carne: 0, bacon: 0 }); pintarTicket(); });
-      b.append(el("span", null, i.nombre), el("small", null, i.agotado ? "Agotado" : money(i.simple ?? i.precio))); b.disabled = i.agotado; g.append(b);
+  carta.categorias.forEach((c) => {
+    const ps = carta.productos.filter((p) => p.cat === c.id); if (!ps.length) return;
+    cat.append(el("h4", null, c.nombre)); const g = el("div", "pgrid");
+    ps.forEach((p) => {
+      const agot = p.estado === "agotado";
+      const b = btn("", "pbtn", () => { ticket.push({ id: p.id, nombre: p.nombre, tam: p.tipo === "tamanos", tamano: "simple", cantidad: 1, veggie: false, ext: {} }); pintarTicket(); });
+      b.append(el("span", null, p.nombre), el("small", null, agot ? "Agotado" : money(p.tipo === "tamanos" ? p.simple : p.precio))); b.disabled = agot; g.append(b);
     });
     cat.append(g);
   });
   pintarTicket(); $("mdlg").classList.add("open");
 }
+const prod = (id) => carta.productos.find((x) => x.id === id);
 function precioLinea(l) {
-  const i = carta.items.find((x) => x.id === l.id); const ex = carta.extras;
-  return ((l.tipo === "burger" ? i[l.tamano] : i.precio) + l.carne * (ex["extra-carne"]?.precio || 0) + l.bacon * (ex["extra-bacon"]?.precio || 0)) * l.cantidad;
+  const p = prod(l.id); if (!p) return 0;
+  const ex = Object.entries(l.ext).reduce((s, [id, n]) => s + n * (carta.extras.find((e) => e.id === id)?.precio || 0), 0);
+  return ((l.tam ? p[l.tamano] : p.precio) + ex) * l.cantidad;
 }
 function pintarTicket() {
   const box = $("mlines"); box.replaceChildren();
   if (!ticket.length) box.append(el("div", "mvacio", "Tocá los productos de la izquierda para armar la venta."));
   ticket.forEach((l, idx) => {
-    const r = el("div", "mline"); const r1 = el("div", "r1"); r1.append(el("span", null, l.nombre), el("span", null, money(precioLinea(l))));
+    const p = prod(l.id);
+    const r = el("div", "mline"); const r1 = el("div", "r1"); r1.append(el("span", null, l.nombre + (l.veggie ? " veggie" : "")), el("span", null, money(precioLinea(l))));
     const r2 = el("div", "r2");
-    const stp = (lab, get, set, min = 0) => { const s = el("span", "stp"); const n = el("b", null, String(get())); s.append(el("span", null, lab), btn("−", "", () => { set(Math.max(min, get() - 1)); if (!get() && lab === "Cant.") ticket.splice(idx, 1); pintarTicket(); }), n, btn("+", "", () => { set(get() + 1); pintarTicket(); })); return s; };
-    r2.append(stp("Cant.", () => l.cantidad, (v) => (l.cantidad = v)));
-    if (l.tipo === "burger") {
+    const stp = (lab, get, set, quitar) => { const s = el("span", "stp"); s.append(el("span", null, lab), btn("−", "", () => { set(Math.max(0, get() - 1)); if (quitar && !get()) ticket.splice(idx, 1); pintarTicket(); }), el("b", null, String(get())), btn("+", "", () => { set(get() + 1); pintarTicket(); })); return s; };
+    r2.append(stp("Cant.", () => l.cantidad, (v) => (l.cantidad = v), true));
+    if (l.tam) {
       const sg = el("span", "seg2"); ["simple", "doble"].forEach((t) => { const b = btn(t, "", () => { l.tamano = t; pintarTicket(); }); b.setAttribute("aria-pressed", String(l.tamano === t)); sg.append(b); });
-      r2.append(sg, stp("+carne", () => l.carne, (v) => (l.carne = v)), stp("+bacon", () => l.bacon, (v) => (l.bacon = v)));
+      r2.append(sg);
+      if (p?.veggie) { const vg = btn("🌱 Veggie", "vgb", () => { l.veggie = !l.veggie; pintarTicket(); }); vg.setAttribute("aria-pressed", String(l.veggie)); r2.append(vg); }
+      if (p?.extras) carta.extras.filter((e) => !e.agotado).forEach((e) => r2.append(stp("+" + e.nombre.replace(/^extra\s*/i, ""), () => l.ext[e.id] || 0, (v) => (l.ext[e.id] = v))));
     }
     r.append(r1, r2); box.append(r);
   });
@@ -364,18 +407,22 @@ const cerrarM = () => $("mdlg").classList.remove("open");
 $("mostbtn").onclick = abrirMostrador; $("mclose").onclick = $("mbd").onclick = cerrarM;
 $("mok").onclick = async () => {
   if (!ticket.length) return;
-  const items = ticket.map((l) => ({ id: l.id, cantidad: l.cantidad, ...(l.tipo === "burger" ? { tamano: l.tamano, extras: [...Array(l.carne).fill("extra-carne"), ...Array(l.bacon).fill("extra-bacon")] } : {}) }));
+  const items = ticket.map((l) => ({ id: l.id, cantidad: l.cantidad, ...(l.tam ? { tamano: l.tamano, veggie: l.veggie, extras: Object.entries(l.ext).flatMap(([id, n]) => Array(n).fill(id)) } : {}) }));
   $("mok").disabled = true;
   try {
-    const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mostrador: { items, pago } }) });
+    const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mostrador: { items, pago, nombre: $("mnombre").value } }) });
     const d = await r.json(); if (!r.ok) throw new Error(d.error || "Error");
-    tst(`✓ Venta #${d.id} cargada · ${money(d.total)}`); ticket = []; cerrarM(); ver = ""; load();
+    tst(`✓ Venta #${d.id} a cocina · ${money(d.total)}`); ticket = []; $("mnombre").value = ""; cerrarM(); ver = ""; load();
   } catch (e) { tst(e.message, 1); } finally { $("mok").disabled = false; }
 };
 $("lb").onclick = () => $("lb").classList.remove("open");
 addEventListener("keydown", (e) => { if (e.key === "Escape") { $("lb").classList.remove("open"); cerrarM(); } });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { document.title = "Pedidos · Flama"; load(); } });
-load(); setInterval(() => { if (!document.hidden) load(); }, 8000);
+(async () => {
+  key = await sesion("flama_local", async (k) => (await fetch(`/api/orders?key=${encodeURIComponent(k)}&v=login`)).ok, "Panel de pedidos");
+  $("fichlink").href = `/fichar?key=${encodeURIComponent(key)}`;
+  load(); setInterval(() => { if (!document.hidden) load(); }, 8000);
+})();
 </script>
 </body>
 </html>

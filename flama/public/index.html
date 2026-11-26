@@ -146,6 +146,8 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .badge.red{background:var(--red);color:var(--w)}
 .item .foto{display:block;width:calc(100% + 40px);margin:-20px -20px 4px;aspect-ratio:16/10;object-fit:cover;border-bottom:1.5px solid var(--line);background:var(--k3)}
 .item.agot,.ritem.agot{opacity:.45}.item.agot:hover{transform:none;border-color:var(--line)}
+.catnota{margin:-2px 0 18px;color:var(--mut);font-size:15px}
+.agotag.ok{color:var(--y)}
 .agotag{display:inline-block;margin-top:4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--red)}
 .add[disabled],.plus[disabled]{background:var(--k3);color:var(--mut);border-color:var(--line);cursor:not-allowed;transform:none}
 .opts{display:flex;gap:6px;flex-wrap:wrap}
@@ -324,14 +326,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 
 <section class="sec" id="menu">
 <div class="wrap">
-<div class="head reveal"><div><span class="mono">01 — La carta</span><h2 class="display">Menú</h2></div><p>Todas vienen con papas. Todas pueden ser veggies. Elegí simple o doble y sumale lo que quieras.</p></div>
-<div class="tabbar" role="tablist" aria-label="Categorías">
-<button class="tab" role="tab" aria-selected="true" data-cat="burger">Hamburguesas<small>8</small></button>
-<button class="tab" role="tab" aria-selected="false" data-cat="sliders">Sliders<small>1</small></button>
-<button class="tab" role="tab" aria-selected="false" data-cat="bebidas">Bebidas<small>9</small></button>
-</div>
+<div class="head reveal"><div><span class="mono">01 — La carta</span><h2 class="display">Menú</h2></div><p>Elegí, sumale lo que quieras y mandá el pedido en dos minutos.</p></div>
+<div class="tabbar" role="tablist" aria-label="Categorías"></div>
+<p class="catnota" id="catnota" hidden></p>
 <div class="menu" id="list"></div>
-<p class="extras-note mono">Extra carne +$2.000 c/u · Extra bacon +$2.000 c/u · Bebidas: precios de ejemplo</p>
+<p class="extras-note mono"></p>
 </div>
 </section>
 
@@ -425,31 +424,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 <div class="wawin" id="wawin" role="dialog" aria-label="Chat con Flama"></div>
 <script>
 const WA_NUMBER = new URLSearchParams(location.search).get("wa") || "5491132513683";
-const MENU = [
-  ["cheese-burger","Cheese Burger","Carne, cheddar.",13500,15000,"burger"],
-  ["cheese-2","Cheese 2.0","Carne, cheddar, cebolla crispy, bacon, barbacoa, alioli.",14500,16000,"burger"],
-  ["all-american","All American","Carne, cheddar, mayonesa ahumada, bacon, tomate, cebolla, pepinillos, lechuga.",14500,16000,"burger"],
-  ["cuarto-de-kilo","Cuarto de Kilo","Carne, doble cheddar, relish, mostaza, ketchup, cebolla picada.",14500,16000,"burger"],
-  ["big-magia","Big Magia","Carne, cheddar, pepinillos, lechuga, cebolla, salsa mil islas.",14500,16000,"burger"],
-  ["oklahoma","Oklahoma","Carne smash, cheddar, bacon, cebolla grillada.",14500,16000,"burger"],
-  ["rocket","Rocket","Carne, roquefort, bacon, cebolla caramelizada.",14500,16000,"burger"],
-  ["anderson","Anderson","Carne, cheddar, dambo, bacon, huevo, champi, alioli.",15500,17000,"burger"],
-  ["sliders","Sliders x3","Tres mini burgers, carne 80 g, pan de papa, cheddar, manteca de ajo.",19500,null,"sliders"],
-  ["coca","Coca-Cola","Lata o botella 500 ml.",2500,null,"bebidas"],
-  ["coca-zero","Coca-Cola Zero","Botella 500 ml.",2500,null,"bebidas"],
-  ["sprite","Sprite","Botella 500 ml.",2500,null,"bebidas"],
-  ["fanta","Fanta","Botella 500 ml.",2500,null,"bebidas"],
-  ["agua","Agua sin gas","Botella 500 ml.",2000,null,"bebidas"],
-  ["agua-gas","Agua con gas","Botella 500 ml.",2000,null,"bebidas"],
-  ["saborizada","Agua saborizada","Pomelo, naranja o manzana. 500 ml.",2300,null,"bebidas"],
-  ["limonada","Limonada casera","Con menta y jengibre. 500 ml.",3500,null,"bebidas"],
-  ["coca-15","Coca-Cola 1,5 L","Para compartir.",4500,null,"bebidas"],
-];
-// Etiquetas de ejemplo: confirmar con Flama cuáles son las más pedidas
-const BADGES = { "oklahoma": ["Más pedida", ""], "cheese-2": ["Nueva", "red"], "anderson": ["La más cargada", ""], "sliders": ["Para compartir", ""] };
-const ZONAS = [["centro","Centro (hasta 15 cuadras)",1500],["cercana","Barrios cercanos",2500],["lejana","Barrios alejados",4000]];
-let EXTRA = 2000, EXTRA_BACON = 2000;
-const AGOTADO = new Set(); let FOTOS = {};
+// Carta: se carga desde el panel del dueño (/api/menu). Esta copia es solo por si no hay conexión.
+let CARTA = {"categorias":[{"id":"burgers","nombre":"Hamburguesas","nota":"Todas vienen con papas. Todas pueden ser veggies."},{"id":"sliders","nombre":"Sliders","nota":""},{"id":"bebidas","nombre":"Bebidas","nota":""}],"productos":[{"id":"cheese-burger","cat":"burgers","nombre":"Cheese Burger","desc":"Carne, cheddar","tipo":"tamanos","simple":13500,"doble":15000,"precio":0,"extras":true,"veggie":true,"etiqueta":"","estado":"disponible"},{"id":"cheese-2","cat":"burgers","nombre":"Cheese 2.0","desc":"Carne, cheddar, cebolla crispy, bacon, barbacoa, alioli","tipo":"tamanos","simple":14500,"doble":16000,"precio":0,"extras":true,"veggie":true,"etiqueta":"Nueva","estado":"disponible"},{"id":"all-american","cat":"burgers","nombre":"All American","desc":"Carne, cheddar, mayonesa ahumada, bacon, tomate, cebolla, pepinillos, lechuga","tipo":"tamanos","simple":14500,"doble":16000,"precio":0,"extras":true,"veggie":true,"etiqueta":"","estado":"disponible"},{"id":"cuarto-de-kilo","cat":"burgers","nombre":"Cuarto de Kilo","desc":"Carne, doble cheddar, relish, mostaza, ketchup, cebolla picada","tipo":"tamanos","simple":14500,"doble":16000,"precio":0,"extras":true,"veggie":true,"etiqueta":"","estado":"disponible"},{"id":"big-magia","cat":"burgers","nombre":"Big Magia","desc":"Carne, cheddar, pepinillos, lechuga, cebolla, salsa mil islas","tipo":"tamanos","simple":14500,"doble":16000,"precio":0,"extras":true,"veggie":true,"etiqueta":"","estado":"disponible"},{"id":"oklahoma","cat":"burgers","nombre":"Oklahoma","desc":"Carne smash, cheddar, bacon, cebolla grillada","tipo":"tamanos","simple":14500,"doble":16000,"precio":0,"extras":true,"veggie":true,"etiqueta":"Más pedida","estado":"disponible"},{"id":"rocket","cat":"burgers","nombre":"Rocket","desc":"Carne, roquefort, bacon, cebolla caramelizada","tipo":"tamanos","simple":14500,"doble":16000,"precio":0,"extras":true,"veggie":true,"etiqueta":"","estado":"disponible"},{"id":"anderson","cat":"burgers","nombre":"Anderson","desc":"Carne, cheddar, dambo, bacon, huevo, champi, alioli","tipo":"tamanos","simple":15500,"doble":17000,"precio":0,"extras":true,"veggie":true,"etiqueta":"La más cargada","estado":"disponible"},{"id":"sliders","cat":"sliders","nombre":"Sliders x3","desc":"Tres mini burgers, carne 80 g, pan de papa, cheddar, manteca de ajo","tipo":"unico","precio":19500,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"Para compartir","estado":"disponible"},{"id":"coca","cat":"bebidas","nombre":"Coca-Cola","desc":"Botella 500 ml","tipo":"unico","precio":2500,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"","estado":"disponible"},{"id":"coca-zero","cat":"bebidas","nombre":"Coca-Cola Zero","desc":"Botella 500 ml","tipo":"unico","precio":2500,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"","estado":"disponible"},{"id":"sprite","cat":"bebidas","nombre":"Sprite","desc":"Botella 500 ml","tipo":"unico","precio":2500,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"","estado":"disponible"},{"id":"fanta","cat":"bebidas","nombre":"Fanta","desc":"Botella 500 ml","tipo":"unico","precio":2500,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"","estado":"disponible"},{"id":"agua","cat":"bebidas","nombre":"Agua sin gas","desc":"Botella 500 ml","tipo":"unico","precio":2000,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"","estado":"disponible"},{"id":"agua-gas","cat":"bebidas","nombre":"Agua con gas","desc":"Botella 500 ml","tipo":"unico","precio":2000,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"","estado":"disponible"},{"id":"saborizada","cat":"bebidas","nombre":"Agua saborizada","desc":"Pomelo, naranja o manzana. 500 ml","tipo":"unico","precio":2300,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"","estado":"disponible"},{"id":"limonada","cat":"bebidas","nombre":"Limonada casera","desc":"Con menta y jengibre. 500 ml","tipo":"unico","precio":3500,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"","estado":"disponible"},{"id":"coca-15","cat":"bebidas","nombre":"Coca-Cola 1,5 L","desc":"Para compartir","tipo":"unico","precio":4500,"simple":0,"doble":0,"extras":false,"veggie":false,"etiqueta":"","estado":"disponible"}],"extras":[{"id":"extra-carne","nombre":"Extra carne","precio":2000,"agotado":false},{"id":"extra-bacon","nombre":"Extra bacon","precio":2000,"agotado":false}],"zonas":[{"id":"centro","nombre":"Centro (hasta 15 cuadras)","precio":1500},{"id":"cercana","nombre":"Barrios cercanos (San Jorge, Padre Varela, Lanusse, El Quinto)","precio":2500},{"id":"lejana","nombre":"Barrios alejados (Jáuregui, Open Door, Olivera, Pueblo Nuevo)","precio":4000}]};
+let FOTOS = {};
+let ZONAS = CARTA.zonas.map((z) => [z.id, z.nombre, z.precio]);
+const extra = (id) => CARTA.extras.find((e) => e.id === id);
 const money = (n) => "$" + n.toLocaleString("es-AR");
 const cart = [];
 const $ = (id) => document.getElementById(id);
@@ -479,70 +458,92 @@ function agregar(label, price, btn, okText) {
   setTimeout(() => updateCart(true), 650);
 }
 
-let cat = "burger";
+let cat = CARTA.categorias[0].id;
+const etqClase = (e) => (/nueva|picante|limitada/i.test(e) ? "red" : "");
+function renderTabs() {
+  const bar = document.querySelector(".tabbar"); bar.replaceChildren();
+  if (!CARTA.categorias.some((c) => c.id === cat)) cat = CARTA.categorias[0]?.id;
+  CARTA.categorias.forEach((c) => {
+    const n = CARTA.productos.filter((p) => p.cat === c.id).length; if (!n) return;
+    const t = mk("button", "tab", c.nombre); t.type = "button"; t.setAttribute("role", "tab"); t.setAttribute("aria-selected", String(c.id === cat)); t.append(mk("small", null, String(n)));
+    t.onclick = () => {
+      cat = c.id; renderTabs(); renderMenu();
+      const top = $("list").getBoundingClientRect().top;
+      if (top < 120) scrollTo({ top: scrollY + top - 160, behavior: "smooth" });
+    };
+    bar.append(t);
+  });
+}
 function renderMenu() {
   const list = $("list"); list.replaceChildren();
-  list.className = cat === "bebidas" ? "menu rows" : "menu";
-  MENU.filter((m) => m[5] === cat).forEach(([id, name, desc, s, d]) => {
-    if (cat === "bebidas") {
+  const c = CARTA.categorias.find((x) => x.id === cat) || {};
+  $("catnota").textContent = c.nota || ""; $("catnota").hidden = !c.nota;
+  const ps = CARTA.productos.filter((p) => p.cat === cat);
+  // Si la categoría es de precio único, sin fotos ni descripciones largas, va como lista compacta
+  const lista = ps.every((p) => p.tipo === "unico" && !FOTOS[p.id] && (p.desc || "").length < 60);
+  list.className = lista ? "menu rows" : "menu";
+  ps.forEach((p) => {
+    const agot = p.estado === "agotado";
+    if (lista) {
       const r = mk("div", "ritem reveal");
-      const nm = mk("div", "nm"); nm.append(mk("h4", null, name), mk("p", null, desc));
-      const add = mk("button", "plus", "+"); add.type = "button"; add.setAttribute("aria-label", "Agregar " + name);
-      if (AGOTADO.has(id)) { r.classList.add("agot"); add.disabled = true; add.textContent = "✕"; nm.append(mk("span", "agotag", "Agotado hoy")); }
-      add.onclick = () => agregar(name, s, add, "✓");
-      r.append(nm, mk("span", "price", money(s)), add); list.append(r); return;
+      const nm = mk("div", "nm"); nm.append(mk("h4", null, p.nombre)); if (p.desc) nm.append(mk("p", null, p.desc));
+      if (p.etiqueta && !agot) nm.append(mk("span", "agotag ok", p.etiqueta));
+      const add = mk("button", "plus", "+"); add.type = "button"; add.setAttribute("aria-label", "Agregar " + p.nombre);
+      add.onclick = () => agregar(p.nombre, p.precio, add, "✓");
+      if (agot) { r.classList.add("agot"); add.disabled = true; add.textContent = "✕"; nm.append(mk("span", "agotag", "Agotado hoy")); }
+      r.append(nm, mk("span", "price", money(p.precio)), add); list.append(r); return;
     }
-    let size = "simple"; const ext = { carne: 0, bacon: 0 }; let veg = false;
+    const tam = p.tipo === "tamanos";
+    let size = "simple"; const ext = {}; let veg = false;
     const row = mk("article", "item reveal");
-    if (FOTOS[id]) { const im = mk("img", "foto"); im.src = `/api/menu?foto=${id}&v=${FOTOS[id]}`; im.alt = name; im.loading = "lazy"; row.append(im); row.classList.add("confoto"); }
-    if (AGOTADO.has(id)) { row.classList.add("agot"); row.append(mk("span", "badge red", "Agotado hoy")); }
-    else if (BADGES[id]) row.append(mk("span", "badge " + BADGES[id][1], BADGES[id][0]));
+    if (FOTOS[p.id]) { const im = mk("img", "foto"); im.src = `/api/menu?foto=${p.id}&v=${FOTOS[p.id]}`; im.alt = p.nombre; im.loading = "lazy"; row.append(im); }
+    if (agot) { row.classList.add("agot"); row.append(mk("span", "badge red", "Agotado hoy")); }
+    else if (p.etiqueta) row.append(mk("span", "badge " + etqClase(p.etiqueta), p.etiqueta));
     const top = mk("div", "top"); const pr = mk("span", "price");
-    if (d) pr.append(mk("small", null, "desde")); pr.append(document.createTextNode(money(s)));
-    top.append(mk("h3", null, name), pr);
-    row.append(top, ingredientes(desc));
+    if (tam) pr.append(mk("small", null, "desde")); pr.append(document.createTextNode(money(tam ? p.simple : p.precio)));
+    top.append(mk("h3", null, p.nombre), pr); row.append(top);
+    if (p.desc) row.append(ingredientes(p.desc)); else row.append(mk("p", "ing", ""));
     const buy = mk("div", "buy");
-    const sz = mk("div", "size"); sz.setAttribute("role", "group"); sz.setAttribute("aria-label", "Tamaño de " + name);
-    const sizes = d ? [["simple", s], ["doble", d]] : [["x3", s]];
-    sizes.forEach(([k, p]) => {
-      const b = mk("button"); b.type = "button"; b.setAttribute("aria-pressed", String(k === sizes[0][0]));
-      b.append(document.createTextNode(k), mk("small", null, money(p)));
-      b.onclick = () => { size = k; sz.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); };
-      sz.append(b);
-    });
-    if (d) {
+    if (tam) {
+      const sz = mk("div", "size"); sz.setAttribute("role", "group"); sz.setAttribute("aria-label", "Tamaño de " + p.nombre);
+      [["simple", p.simple], ["doble", p.doble]].forEach(([k, v]) => {
+        const b = mk("button"); b.type = "button"; b.setAttribute("aria-pressed", String(k === "simple"));
+        b.append(document.createTextNode(k), mk("small", null, money(v)));
+        b.onclick = () => { size = k; sz.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); };
+        sz.append(b);
+      });
+      buy.append(sz);
       const op = mk("div", "opts");
-      ["carne", "bacon"].forEach((k) => {
-        const st = mk("div", "step"); const lab = mk("span", null, "+ " + k);
-        const mi = mk("button", null, "−"); mi.type = "button"; mi.setAttribute("aria-label", "Quitar extra " + k);
+      if (p.extras) CARTA.extras.filter((e) => !e.agotado).forEach((e) => {
+        ext[e.id] = 0;
+        const st = mk("div", "step"); const lab = mk("span", null, "+ " + e.nombre.replace(/^extra\s*/i, ""));
+        const mi = mk("button", null, "−"); mi.type = "button"; mi.setAttribute("aria-label", "Quitar " + e.nombre);
         const n = mk("b", null, "0");
-        const pl = mk("button", null, "+"); pl.type = "button"; pl.setAttribute("aria-label", "Sumar extra " + k);
-        const upd = () => { n.textContent = ext[k]; st.classList.toggle("on", ext[k] > 0); };
-        mi.onclick = () => { ext[k] = Math.max(0, ext[k] - 1); upd(); };
-        pl.onclick = () => { ext[k] = Math.min(5, ext[k] + 1); upd(); };
+        const pl = mk("button", null, "+"); pl.type = "button"; pl.setAttribute("aria-label", "Sumar " + e.nombre);
+        const upd = () => { n.textContent = ext[e.id]; st.classList.toggle("on", ext[e.id] > 0); };
+        mi.onclick = () => { ext[e.id] = Math.max(0, ext[e.id] - 1); upd(); };
+        pl.onclick = () => { ext[e.id] = Math.min(5, ext[e.id] + 1); upd(); };
         st.append(lab, mi, n, pl); op.append(st);
       });
-      const vg = mk("button", "chip", "Veggie"); vg.type = "button"; vg.setAttribute("aria-pressed", "false");
-      vg.onclick = () => { veg = !veg; vg.setAttribute("aria-pressed", String(veg)); };
-      op.append(vg); row.append(op);
-    }
-    const add = mk("button", "add", "Agregar"); add.type = "button"; add.setAttribute("aria-label", "Agregar " + name);
+      if (p.veggie) { const vg = mk("button", "chip", "Veggie"); vg.type = "button"; vg.setAttribute("aria-pressed", "false"); vg.onclick = () => { veg = !veg; vg.setAttribute("aria-pressed", String(veg)); }; op.append(vg); }
+      if (op.children.length) row.insertBefore(op, null);
+    } else buy.style.justifyContent = "flex-end";
+    const add = mk("button", "add", agot ? "Agotado" : "Agregar"); add.type = "button"; add.disabled = agot; add.setAttribute("aria-label", "Agregar " + p.nombre);
     add.onclick = () => {
-      const price = (d ? (size === "simple" ? s : d) : s) + ext.carne * EXTRA + ext.bacon * EXTRA_BACON;
-      const exTxt = ["carne", "bacon"].filter((k) => ext[k]).map((k) => `${ext[k] > 1 ? ext[k] + " " : ""}extra ${k}`).join(" + ");
-      const label = d ? `${name} ${size}${veg ? " veggie" : ""}${exTxt ? " + " + exTxt : ""}` : name;
+      const exIds = Object.keys(ext).filter((k) => ext[k]);
+      const price = (tam ? p[size] : p.precio) + exIds.reduce((s, k) => s + ext[k] * (extra(k)?.precio || 0), 0);
+      const exTxt = exIds.map((k) => `${ext[k] > 1 ? ext[k] + " " : ""}${extra(k).nombre.toLowerCase()}`).join(" + ");
+      const label = tam ? `${p.nombre} ${size}${veg ? " veggie" : ""}${exTxt ? " + " + exTxt : ""}` : p.nombre;
       agregar(label, price, add, "✓ Listo");
     };
-    if (AGOTADO.has(id)) { add.disabled = true; add.textContent = "Agotado"; }
-    buy.append(sz, add); row.append(buy); list.append(row);
+    buy.append(add); row.append(buy); list.append(row);
   });
   observe();
 }
-document.querySelectorAll(".tab").forEach((t) => (t.onclick = () => {
-  cat = t.dataset.cat; document.querySelectorAll(".tab").forEach((x) => x.setAttribute("aria-selected", String(x === t))); renderMenu();
-  const top = $("list").getBoundingClientRect().top;
-  if (top < 120) scrollTo({ top: scrollY + top - 140, behavior: "smooth" });
-}));
+function pintarExtrasNota() {
+  const ex = CARTA.extras.filter((e) => !e.agotado);
+  document.querySelector(".extras-note").textContent = ex.map((e) => `${e.nombre} +${money(e.precio)} c/u`).join(" · ");
+}
 
 const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
 function observe() { document.querySelectorAll(".reveal:not(.in)").forEach((el, i) => { el.style.transitionDelay = (el.classList.contains("item") || el.classList.contains("ritem") ? i % 6 * 60 : 0) + "ms"; io.observe(el); }); }
@@ -608,21 +609,17 @@ function openChat(q) {
 }
 $("wab").onclick = () => { if ($("wawin").classList.contains("open")) { $("wawin").classList.remove("open"); $("wab").classList.remove("open"); $("wab").setAttribute("aria-expanded", "false"); } else if (!$("wawin").firstChild) openChat(); else { $("wawin").classList.add("open"); $("wab").classList.add("open"); } };
 $("sendtry").onclick = () => { if (validate()) { const q = `&msg=${encodeURIComponent(message())}&name=${encodeURIComponent($("nombre").value)}`; vaciar(); openChat(q); } };
-renderMenu(); observe(); updateCart();
-// Precios, agotados y fotos que el dueño cambia desde su panel
+function pintarZonas() {
+  ZONAS = CARTA.zonas.map((z) => [z.id, z.nombre, z.precio]);
+  const v = $("zona").value; $("zona").innerHTML = ZONAS.map(([id, n, p]) => `<option value="${id}">${n} · ${money(p)}</option>`).join(""); if (v) $("zona").value = v;
+}
+renderTabs(); renderMenu(); pintarExtrasNota(); observe(); updateCart();
+// Carta, precios, agotados y fotos que el dueño edita desde su panel
 fetch("/api/menu").then((r) => r.json()).then((m) => {
-  for (const it of m.items) {
-    const row = MENU.find((x) => x[0] === it.id); if (!row) continue;
-    if (it.simple) { row[3] = it.simple; row[4] = it.doble; } else if (it.precio) row[3] = it.precio;
-    it.agotado ? AGOTADO.add(it.id) : AGOTADO.delete(it.id);
-  }
-  FOTOS = m.fotos || {};
-  if (m.extras?.["extra-carne"]) EXTRA = m.extras["extra-carne"].precio;
-  if (m.extras?.["extra-bacon"]) EXTRA_BACON = m.extras["extra-bacon"].precio;
-  for (const z of m.zonas || []) { const zz = ZONAS.find((x) => x[0] === z.id); if (zz) zz[2] = z.precio; }
-  $("zona").innerHTML = ZONAS.map(([id, n, p]) => `<option value="${id}">${n} · ${money(p)}</option>`).join("");
-  document.querySelector(".extras-note").textContent = `Extra carne +${money(EXTRA)} c/u · Extra bacon +${money(EXTRA_BACON)} c/u`;
-  renderMenu(); document.querySelectorAll("#list .reveal").forEach((e) => e.classList.add("in")); updateCart();
+  if (!m.categorias?.length) return;
+  CARTA = { categorias: m.categorias, productos: m.productos, extras: m.extras, zonas: m.zonas }; FOTOS = m.fotos || {};
+  renderTabs(); renderMenu(); pintarExtrasNota(); pintarZonas();
+  document.querySelectorAll("#list .reveal").forEach((e) => e.classList.add("in")); updateCart();
 }).catch(() => {});
 </script>
 </body>

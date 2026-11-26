@@ -16,19 +16,19 @@ export default async function handler(req, res) {
     return res.json(await panelState());
   }
 
-  // Venta de mostrador: se carga ya entregada, suma a la caja y descuenta stock
+  // Venta de mostrador: ya está cobrada, entra directo a cocina y descuenta stock.
+  // Suma a la caja cuando la marcan como entregada, igual que el resto.
   if (req.method === "POST" && body.mostrador) {
-    const { items, pago } = body.mostrador;
+    const { items, pago, nombre } = body.mostrador;
     if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: "Agregá al menos un producto" });
     let calc;
     try { calc = calcular(items, "retiro", null, await getMenu(true)); } catch (e) { return res.status(400).json({ error: e.message }); }
     const o = {
       id: await nextId(), chat: "local:mostrador", canal: "mostrador", createdAt: Date.now(), jornada: jornada(),
-      nombre: "Mostrador", entrega: "local", lineas: calc.lineas, envio: 0, total: calc.total, items,
-      pago: ["efectivo", "transferencia", "tarjeta"].includes(pago) ? pago : "efectivo", estado: "entregado", enCaja: true,
+      nombre: String(nombre || "").trim().slice(0, 40) || "Mostrador", entrega: "local", lineas: calc.lineas, envio: 0, total: calc.total, items,
+      pago: ["efectivo", "transferencia", "tarjeta"].includes(pago) ? pago : "efectivo", estado: "en_preparacion", pagoVerificadoPor: "local",
     };
     await sincronizarStock(o);
-    await sumarCaja(o, 1);
     await saveOrder(o);
     return res.json({ ok: true, id: o.id, total: o.total });
   }

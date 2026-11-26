@@ -100,9 +100,38 @@ td.n{font-family:"JetBrains Mono";text-align:right;white-space:nowrap}
 .tog button[aria-pressed="true"].si{background:var(--ok);color:var(--k)}
 .tog button[aria-pressed="true"].no{background:var(--bad);color:#fff}
 .savebar{position:sticky;bottom:0;background:#0c0b0af2;border-top:1.5px solid var(--line);padding:12px 0;display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.crow{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.crow input{flex:1;min-width:140px}.crow input[type=number]{flex:none;width:110px;min-width:0}
+.crow .nm,.pcard .nm{font-weight:800}
+.sp{flex:1}
+.inl{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase}
+.ck{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer}
+.ck input{width:18px;height:18px;min-height:0;accent-color:var(--y)}
+.plist{display:flex;flex-direction:column;gap:10px}
+.pcard{display:grid;grid-template-columns:110px 1fr;gap:14px;background:var(--k2);border:1.5px solid var(--line);border-left:5px solid var(--ok);padding:14px}
+.pcard.est-agotado{border-left-color:var(--bad)}.pcard.est-oculto{border-left-color:var(--mut);opacity:.7}
+.pcard .ph{width:110px;height:110px;background:var(--k3) center/cover;border:1.5px dashed var(--line);display:grid;place-items:center;color:var(--mut);font-size:12px;font-weight:800;position:relative;cursor:pointer}
+.pcard .ph.has{border-style:solid}.pcard .ph input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.pf{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pf .r{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.pf .r.sm{align-items:center}
+.pf .r label:not(.ck):not(.inl){display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.pf .r input[type=number]{width:110px}
+.pf .nm{flex:1;min-width:180px;font-size:16px}
+.pf textarea{background:var(--k);color:var(--w);border:1.5px solid var(--line);padding:9px 10px;font:inherit;font-size:14px;resize:vertical;width:100%}
+.pf textarea:focus{border-color:var(--y);outline:0}
+.tog3{display:inline-flex;border:1.5px solid var(--line)}
+.tog3 button{background:none;border:0;color:var(--mut);padding:8px 10px;font-weight:800;font-size:12px;min-height:38px}
+.tog3 button[aria-pressed="true"]{background:var(--w);color:var(--k)}
+.tog3 button[data-v="disponible"][aria-pressed="true"]{background:var(--ok)}
+.tog3 button[data-v="agotado"][aria-pressed="true"]{background:var(--bad);color:#fff}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+@media(max-width:700px){.pcard{grid-template-columns:1fr}.pcard .ph{width:100%;height:150px}}
 .links{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .links .card b{display:block;font-size:16px;margin-bottom:4px}
 .links .card p{color:var(--mut);font-size:13px;margin:0 0 12px}
+.links .url{display:block;font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--y);background:var(--k);border:1px solid var(--line);padding:8px 10px;margin-bottom:10px;word-break:break-all}
+.links .acts{display:flex;gap:6px;flex-wrap:wrap}
 .big-tog{display:flex;align-items:center;gap:16px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--w);color:var(--k);font-weight:800;padding:12px 18px;z-index:60;box-shadow:0 10px 30px #000a;animation:tin .25s}
 .toast.err{background:var(--bad);color:#fff}
@@ -115,13 +144,23 @@ dialog label{display:block;font-size:12px;color:var(--mut);font-weight:800;text-
 dialog input,dialog select{width:100%}
 dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.prod{grid-template-columns:60px 1fr;}.prod .ph{width:60px;height:60px}.prod .pr,.prod .tog{grid-column:2}.top{padding:10px 14px}main{padding:18px 14px 80px}.tabs{padding:0 10px}}
+.login{position:fixed;inset:0;z-index:100;background:#0c0b0a;display:grid;place-items:center;padding:20px}
+.login form{width:min(360px,100%);display:flex;flex-direction:column;align-items:center;gap:6px;background:#161412;border:1.5px solid #2c2824;border-top:4px solid #f6c91c;padding:28px 24px}
+.login img{width:64px;height:64px;border-radius:50%}
+.login b{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:34px;letter-spacing:.04em;line-height:1;margin-top:6px}
+.login span{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#f6c91c;margin-bottom:14px}
+.login label{align-self:flex-start;font-size:12px;font-weight:800;color:#9b948a;text-transform:uppercase;letter-spacing:.06em}
+.login input{width:100%;background:#0c0b0a;color:#f4efe6;border:1.5px solid #2c2824;padding:12px;font:inherit;font-size:16px}
+.login input:focus{border-color:#f6c91c;outline:0}
+.login button{width:100%;margin-top:10px;background:#f6c91c;color:#0c0b0a;border:0;min-height:50px;font:inherit;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+.login p{color:#ff5a47;font-weight:800;min-height:20px;margin:6px 0 0}
 </style>
 </head>
 <body>
 <header>
 <div class="top">
 <div class="brand"><img src="/img/logo-round.webp" alt=""><div><b>FLAMA</b><span class="mono">Panel del dueño</span></div></div>
-<a class="btn sm" id="topPanel" href="#" target="_blank" rel="noopener">Pedidos ↗</a>
+<a class="btn sm" id="topPanel" href="/pedidos" target="_blank" rel="noopener">Pedidos ↗</a><button class="btn sm" type="button" onclick="salir('flama_dueno')">Salir</button>
 </div>
 <nav class="tabs" role="tablist">
 <button role="tab" data-t="resumen" aria-selected="true">📊 Caja</button>
@@ -141,7 +180,28 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 <dialog id="dlg"><form method="dialog" id="dlgf"></form></dialog>
 
 <script>
-const KEY = new URLSearchParams(location.search).get("key") || "";
+let KEY = "";
+// ---- Ingreso con clave (se guarda en este dispositivo, así el link queda limpio) ----
+function sesion(store, probar, titulo) {
+  const qs = new URLSearchParams(location.search); let k = qs.get("key");
+  if (k) { try { localStorage.setItem(store, k); } catch {} qs.delete("key"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "") + location.hash); }
+  else { try { k = localStorage.getItem(store); } catch {} }
+  return (async () => (k && (await probar(k).catch(() => false))) ? k : pedirClave(store, probar, titulo))();
+}
+function pedirClave(store, probar, titulo) {
+  return new Promise((resolve) => {
+    const o = document.createElement("div"); o.className = "login";
+    o.innerHTML = `<form><img src="/img/logo-round.webp" alt=""><b>FLAMA</b><span>${titulo}</span><label for="lk">Clave</label><input id="lk" type="password" autocomplete="current-password" required><button type="submit">Entrar</button><p role="alert"></p></form>`;
+    document.body.append(o); const f = o.querySelector("form"), inp = o.querySelector("input"), msg = o.querySelector("p"); inp.focus();
+    f.onsubmit = async (e) => {
+      e.preventDefault(); const v = inp.value.trim(); msg.textContent = "";
+      if (await probar(v).catch(() => false)) { try { localStorage.setItem(store, v); } catch {} o.remove(); resolve(v); }
+      else { msg.textContent = "Clave incorrecta"; inp.select(); }
+    };
+  });
+}
+function salir(store) { try { localStorage.removeItem(store); } catch {} location.reload(); }
+
 const $ = (id) => document.getElementById(id);
 const money = (n) => "$" + Math.round(Number(n || 0)).toLocaleString("es-AR");
 const num = (n) => Number(n || 0).toLocaleString("es-AR", { maximumFractionDigits: 2 });
@@ -303,36 +363,100 @@ function achicar(file) {
     }; img.onerror = rej; img.src = URL.createObjectURL(file);
   });
 }
+const ETIQUETAS = ["", "Nueva", "Más pedida", "Recomendada", "Picante", "Para compartir", "La más cargada", "Edición limitada", "Veggie"];
+const rid = (p) => p + "-" + Math.random().toString(36).slice(2, 8);
+let carta = null, fotos = {}, sucio = false;
+addEventListener("beforeunload", (e) => { if (sucio) { e.preventDefault(); e.returnValue = ""; } });
+function marcar() { sucio = true; const s = $("menuEstado"); if (s) { s.textContent = "● Hay cambios sin guardar"; s.className = "warnc"; } }
 async function verMenu(d) {
-  d = d || (await api("menu"));
-  const m = d.menu, fotos = d.fotos;
-  const foto = (id) => `<div class="ph ${fotos[id] ? "has" : ""}" style="${fotos[id] ? `background-image:url('/api/menu?foto=${id}&v=${fotos[id]}')` : ""}" title="Cambiar foto">${fotos[id] ? "" : "＋ Foto"}<input type="file" accept="image/*" data-foto="${id}" aria-label="Subir foto"></div>`;
-  const tog = (id, ag) => `<div class="tog" data-ag="${id}"><button type="button" class="si" aria-pressed="${!ag}">Disponible</button><button type="button" class="no" aria-pressed="${!!ag}">Agotado</button></div>`;
-  const precio = (id, lab, v) => `<label>${lab}<input type="number" step="100" min="0" data-pr="${id}" data-k="${lab.toLowerCase()}" value="${v}"></label>`;
+  if (d) { carta = d.carta; fotos = d.fotos; sucio = false; }
+  else if (!carta || !sucio) { const r = await api("menu"); carta = r.carta; fotos = r.fotos; sucio = false; }
+  pintarMenu();
+}
+function pintarMenu() {
+  const C = carta;
+  const fotoBox = (id) => `<div class="ph ${fotos[id] ? "has" : ""}" style="${fotos[id] ? `background-image:url('/api/menu?foto=${id}&v=${fotos[id]}')` : ""}">${fotos[id] ? "" : "＋ Foto"}<input type="file" accept="image/*" data-foto="${id}" aria-label="Subir foto" title="Subir foto"></div>`;
+  const opt = (v, l, sel) => `<option value="${esc(v)}" ${v === sel ? "selected" : ""}>${esc(l)}</option>`;
+  const prodCard = (p, i) => {
+    const custom = p.etiqueta && !ETIQUETAS.includes(p.etiqueta);
+    return `<div class="pcard est-${p.estado}" data-i="${i}">
+      ${fotoBox(p.id)}
+      <div class="pf">
+        <div class="r"><input class="nm" data-b="productos.${i}.nombre" value="${esc(p.nombre)}" placeholder="Nombre del producto" aria-label="Nombre">
+          <div class="tog3" role="group" aria-label="Estado">${[["disponible", "Disponible"], ["agotado", "Agotado"], ["oculto", "Oculto"]].map(([v, l]) => `<button type="button" data-estado="${i}" data-v="${v}" aria-pressed="${p.estado === v}">${l}</button>`).join("")}</div></div>
+        <textarea data-b="productos.${i}.desc" rows="2" placeholder="Ingredientes o descripción (se ve en la web y el bot la usa)" aria-label="Descripción">${esc(p.desc)}</textarea>
+        <div class="r">
+          <label>Precio<select data-tipo="${i}">${opt("tamanos", "Simple y doble", p.tipo)}${opt("unico", "Precio único", p.tipo)}</select></label>
+          ${p.tipo === "tamanos" ? `<label>Simple<input type="number" min="0" step="100" data-b="productos.${i}.simple" value="${p.simple || ""}"></label><label>Doble<input type="number" min="0" step="100" data-b="productos.${i}.doble" value="${p.doble || ""}"></label>`
+            : `<label>Precio<input type="number" min="0" step="100" data-b="productos.${i}.precio" value="${p.precio || ""}"></label>`}
+          <label>Etiqueta<select data-etq="${i}">${ETIQUETAS.map((e) => opt(e, e || "Sin etiqueta", custom ? "" : p.etiqueta)).join("")}${opt("__otra", "Otra…", custom ? "__otra" : "")}</select></label>
+          ${custom ? `<label>Texto<input data-b="productos.${i}.etiqueta" value="${esc(p.etiqueta)}" maxlength="24"></label>` : ""}
+        </div>
+        <div class="r sm">
+          ${p.tipo === "tamanos" ? `<label class="ck"><input type="checkbox" data-ck="productos.${i}.extras" ${p.extras ? "checked" : ""}> Permite extras</label><label class="ck"><input type="checkbox" data-ck="productos.${i}.veggie" ${p.veggie ? "checked" : ""}> Puede ser veggie</label>` : ""}
+          <label class="inl">Categoría <select data-cat="${i}">${C.categorias.map((c) => opt(c.id, c.nombre, p.cat)).join("")}</select></label>
+          <span class="sp"></span>
+          <button type="button" class="btn sm" data-mv="${i}" data-dir="-1" aria-label="Subir">↑</button><button type="button" class="btn sm" data-mv="${i}" data-dir="1" aria-label="Bajar">↓</button>
+          <button type="button" class="btn sm r" data-pdel="${i}">Borrar</button>
+          ${fotos[p.id] ? `<button type="button" class="btn sm" data-qfoto="${p.id}">Quitar foto</button>` : ""}
+        </div>
+      </div></div>`;
+  };
   $("t-menu").innerHTML = `
-  <p class="help">Lo que cambies acá se ve al instante en la web y el bot lo usa para tomar pedidos. Marcá <b>Agotado</b> lo que se terminó en el día. Tocá el cuadrado de la izquierda para subir la foto de cada producto.</p>
-  <h2>Hamburguesas</h2><div class="card" style="padding:0">${m.HAMBURGUESAS.map((h) => `<div class="prod">${foto(h.id)}<div><b>${esc(h.nombre)}</b>${fotos[h.id] ? ` <button class="btn sm r" data-qfoto="${h.id}">Quitar foto</button>` : ""}</div><div class="pr">${precio(h.id, "Simple", h.simple)}${precio(h.id, "Doble", h.doble)}</div>${tog(h.id, h.agotado)}</div>`).join("")}
-  <div class="prod">${foto("sliders")}<div><b>${esc(m.SLIDERS.nombre)}</b></div><div class="pr">${precio("sliders", "Precio", m.SLIDERS.precio)}</div>${tog("sliders", m.SLIDERS.agotado)}</div></div>
-  <h2>Extras</h2><div class="card" style="padding:0">${Object.entries(m.EXTRAS).map(([id, e]) => `<div class="prod"><div></div><div><b>${esc(e.nombre)}</b></div><div class="pr">${precio(id, "Precio", e.precio)}</div>${tog(id, e.agotado)}</div>`).join("")}</div>
-  <h2>Bebidas</h2><div class="card" style="padding:0">${m.BEBIDAS.map((b) => `<div class="prod">${foto(b.id)}<div><b>${esc(b.nombre)}</b></div><div class="pr">${precio(b.id, "Precio", b.precio)}</div>${tog(b.id, b.agotado)}</div>`).join("")}</div>
-  <h2>Envíos</h2><div class="card" style="padding:0">${m.ZONAS.map((z) => `<div class="prod"><div></div><div><b>${esc(z.nombre)}</b></div><div class="pr">${precio("zona:" + z.id, "Precio", z.precio)}</div><div></div></div>`).join("")}</div>
-  <div class="savebar"><button class="btn y" id="guardarMenu">Guardar cambios del menú</button></div>`;
-  $("t-menu").querySelectorAll(".tog").forEach((t) => t.querySelectorAll("button").forEach((b) => (b.onclick = () => t.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))))));
-  $("t-menu").querySelectorAll("[data-foto]").forEach((inp) => (inp.onchange = async () => {
-    const f = inp.files[0]; if (!f) return;
-    try { toast("Subiendo foto…"); const data = await achicar(f); verMenu(await post({ op: "foto", id: inp.dataset.foto, data, vista: "menu" })); toast("Foto subida ✓"); } catch (e) { toast(e.message || "No se pudo subir", 1); }
+  <p class="help">Acá armás toda la carta: categorías, productos, descripción, precios, fotos y etiquetas como <b>Nueva</b> o <b>Más pedida</b>. <b>Agotado</b> se ve en la web pero no se puede pedir. <b>Oculto</b> no aparece en ningún lado. Cuando termines, tocá <b>Guardar menú</b>.</p>
+  <h2>Categorías <span class="sp"></span><button class="btn" id="nuevaCat">＋ Nueva categoría</button></h2>
+  <div class="card" style="padding:0">${C.categorias.map((c, i) => { const n = C.productos.filter((p) => p.cat === c.id).length; return `<div class="crow">
+    <input class="nm" data-b="categorias.${i}.nombre" value="${esc(c.nombre)}" aria-label="Nombre de la categoría">
+    <input data-b="categorias.${i}.nota" value="${esc(c.nota)}" placeholder="Nota opcional (ej: todas vienen con papas)" aria-label="Nota de la categoría">
+    <span class="mono" style="color:var(--mut)">${n} productos</span>
+    <button type="button" class="btn sm" data-cmv="${i}" data-dir="-1" aria-label="Subir">↑</button><button type="button" class="btn sm" data-cmv="${i}" data-dir="1" aria-label="Bajar">↓</button>
+    <button type="button" class="btn sm r" data-cdel="${i}" ${n ? "disabled title='Primero mové o borrá sus productos'" : ""}>Borrar</button></div>`; }).join("")}</div>
+  ${C.categorias.map((c) => `<h2>${esc(c.nombre)} <span class="mono" style="color:var(--mut)">${C.productos.filter((p) => p.cat === c.id).length}</span><span class="sp"></span><button class="btn y" data-nuevo="${c.id}">＋ Producto en ${esc(c.nombre)}</button></h2>
+    <div class="plist">${C.productos.map((p, i) => (p.cat === c.id ? prodCard(p, i) : "")).join("") || `<p class="help">Sin productos todavía.</p>`}</div>`).join("")}
+  <h2>Extras <span class="sp"></span><button class="btn" id="nuevoEx">＋ Nuevo extra</button></h2>
+  <p class="help">Se pueden sumar a los productos que tienen "Permite extras" (simple y doble).</p>
+  <div class="card" style="padding:0">${C.extras.map((e, i) => `<div class="crow"><input class="nm" data-b="extras.${i}.nombre" value="${esc(e.nombre)}" aria-label="Nombre del extra"><label class="inl">$ <input type="number" min="0" step="100" data-b="extras.${i}.precio" value="${e.precio}" aria-label="Precio"></label>
+    <label class="ck"><input type="checkbox" data-ck="extras.${i}.agotado" ${e.agotado ? "checked" : ""}> Agotado</label><span class="sp"></span><button type="button" class="btn sm r" data-exdel="${i}">Borrar</button></div>`).join("")}</div>
+  <h2>Zonas de envío <span class="sp"></span><button class="btn" id="nuevaZona">＋ Nueva zona</button></h2>
+  <div class="card" style="padding:0">${C.zonas.map((z, i) => `<div class="crow"><input class="nm" style="flex:2" data-b="zonas.${i}.nombre" value="${esc(z.nombre)}" aria-label="Nombre de la zona"><label class="inl">$ <input type="number" min="0" step="100" data-b="zonas.${i}.precio" value="${z.precio}" aria-label="Precio"></label><span class="sp"></span><button type="button" class="btn sm r" data-zdel="${i}">Borrar</button></div>`).join("")}</div>
+  <div class="savebar"><span id="menuEstado" class="${sucio ? "warnc" : ""}" style="margin-right:auto;font-weight:800;align-self:center">${sucio ? "● Hay cambios sin guardar" : ""}</span><a class="btn" href="/" target="_blank" rel="noopener">Ver la web ↗</a><button class="btn y" id="guardarMenu">Guardar menú</button></div>`;
+
+  const root = $("t-menu"), all = (q) => root.querySelectorAll(q);
+  const setPath = (path, v) => { const k = path.split("."); let o = carta; for (let j = 0; j < k.length - 1; j++) o = o[k[j]]; o[k.at(-1)] = v; };
+  all("[data-b]").forEach((inp) => (inp.oninput = () => { setPath(inp.dataset.b, inp.type === "number" ? Number(inp.value) : inp.value); marcar(); }));
+  all("[data-ck]").forEach((inp) => (inp.onchange = () => { setPath(inp.dataset.ck, inp.checked); marcar(); }));
+  const re = () => { marcar(); pintarMenu(); };
+  all("[data-estado]").forEach((b) => (b.onclick = () => { carta.productos[b.dataset.estado].estado = b.dataset.v; re(); }));
+  all("[data-tipo]").forEach((s) => (s.onchange = () => { const p = carta.productos[s.dataset.tipo]; p.tipo = s.value; if (p.tipo === "tamanos") { p.simple = p.simple || p.precio; p.doble = p.doble || p.precio; p.extras = true; p.veggie = true; } else p.precio = p.precio || p.simple; re(); }));
+  all("[data-etq]").forEach((s) => (s.onchange = () => { carta.productos[s.dataset.etq].etiqueta = s.value === "__otra" ? "Especial" : s.value; re(); }));
+  all("[data-cat]").forEach((s) => (s.onchange = () => { carta.productos[s.dataset.cat].cat = s.value; re(); }));
+  all("[data-mv]").forEach((b) => (b.onclick = () => {
+    const i = Number(b.dataset.mv), p = carta.productos[i], dir = Number(b.dataset.dir);
+    const mismos = carta.productos.map((x, j) => [x, j]).filter(([x]) => x.cat === p.cat).map(([, j]) => j);
+    const pos = mismos.indexOf(i), j = mismos[pos + dir]; if (j === undefined) return;
+    [carta.productos[i], carta.productos[j]] = [carta.productos[j], carta.productos[i]]; re();
   }));
-  $("t-menu").querySelectorAll("[data-qfoto]").forEach((b) => (b.onclick = async () => { if (!confirm("¿Quitar la foto?")) return; verMenu(await post({ op: "foto", id: b.dataset.qfoto, borrar: true, vista: "menu" })); }));
+  all("[data-pdel]").forEach((b) => (b.onclick = () => { const p = carta.productos[b.dataset.pdel]; if (!confirm(`¿Borrar ${p.nombre || "este producto"}? Si solo querés sacarlo un tiempo, usá "Oculto".`)) return; carta.productos.splice(b.dataset.pdel, 1); re(); }));
+  all("[data-nuevo]").forEach((b) => (b.onclick = () => {
+    const cat = b.dataset.nuevo, conTam = carta.productos.some((p) => p.cat === cat && p.tipo === "tamanos");
+    carta.productos.push({ id: rid("p"), cat, nombre: "", desc: "", tipo: conTam ? "tamanos" : "unico", simple: 0, doble: 0, precio: 0, extras: conTam, veggie: conTam, etiqueta: "Nueva", estado: "disponible" });
+    re(); const nuevos = all(".pcard .nm"); const ult = [...all(`.pcard`)].find((x) => Number(x.dataset.i) === carta.productos.length - 1); ult?.scrollIntoView({ block: "center" }); ult?.querySelector(".nm")?.focus();
+  }));
+  $("nuevaCat").onclick = () => { carta.categorias.push({ id: rid("c"), nombre: "Nueva categoría", nota: "" }); re(); };
+  all("[data-cmv]").forEach((b) => (b.onclick = () => { const i = Number(b.dataset.cmv), j = i + Number(b.dataset.dir); if (j < 0 || j >= carta.categorias.length) return; [carta.categorias[i], carta.categorias[j]] = [carta.categorias[j], carta.categorias[i]]; re(); }));
+  all("[data-cdel]").forEach((b) => (b.onclick = () => { carta.categorias.splice(b.dataset.cdel, 1); re(); }));
+  $("nuevoEx").onclick = () => { carta.extras.push({ id: rid("extra"), nombre: "Nuevo extra", precio: 0, agotado: false }); re(); };
+  all("[data-exdel]").forEach((b) => (b.onclick = () => { carta.extras.splice(b.dataset.exdel, 1); re(); }));
+  $("nuevaZona").onclick = () => { carta.zonas.push({ id: rid("z"), nombre: "Nueva zona", precio: 0 }); re(); };
+  all("[data-zdel]").forEach((b) => (b.onclick = () => { carta.zonas.splice(b.dataset.zdel, 1); re(); }));
+  all("[data-foto]").forEach((inp) => (inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    try { toast("Subiendo foto…"); const data = await achicar(f); const r = await post({ op: "foto", id: inp.dataset.foto, data, vista: "" }); fotos = (await api("menu")).fotos; pintarMenu(); toast("Foto subida ✓"); } catch (e) { toast(e.message || "No se pudo subir", 1); }
+  }));
+  all("[data-qfoto]").forEach((b) => (b.onclick = async () => { if (!confirm("¿Quitar la foto?")) return; await post({ op: "foto", id: b.dataset.qfoto, borrar: true }); fotos = (await api("menu")).fotos; pintarMenu(); }));
   $("guardarMenu").onclick = async () => {
-    const c = { precios: {}, agotado: {}, extras: {}, zonas: {} };
-    $("t-menu").querySelectorAll("[data-pr]").forEach((i) => {
-      const id = i.dataset.pr, k = i.dataset.k, v = Number(i.value) || 0; if (!v) return;
-      if (id.startsWith("zona:")) c.zonas[id.slice(5)] = v;
-      else if (id.startsWith("extra-")) c.extras[id] = v;
-      else (c.precios[id] ||= {})[k === "precio" ? "precio" : k] = v;
-    });
-    $("t-menu").querySelectorAll("[data-ag]").forEach((t) => { if (t.querySelector(".no").getAttribute("aria-pressed") === "true") c.agotado[t.dataset.ag] = true; });
-    try { verMenu(await post({ op: "menu", cambios: c, vista: "menu" })); toast("Menú guardado ✓"); } catch (e) { toast(e.message, 1); }
+    try { const r = await post({ op: "carta", carta, vista: "menu" }); carta = r.carta; fotos = r.fotos; sucio = false; pintarMenu(); toast("Menú guardado ✓ Ya se ve en la web"); }
+    catch (e) { toast(e.message, 1); }
   };
 }
 
@@ -345,33 +469,40 @@ async function verAjustes(d) {
   <h2>Bot de pedidos</h2>
   <div class="card big-tog"><div style="flex:1"><b style="font-size:17px">${d.botOn ? "🤖 El bot está prendido" : "⛔ El bot está apagado"}</b><p class="help" style="margin:6px 0 0">${d.botOn ? "Responde los mensajes, toma pedidos y verifica comprobantes." : "Los clientes reciben: “En un ratito te responde alguien del local”."}</p></div>
   <button class="btn ${d.botOn ? "r" : "g"}" id="botT">${d.botOn ? "Apagar bot" : "Prender bot"}</button></div>
-  <h2>Accesos</h2>
+  <h2>Links del sistema</h2>
+  <p class="help">Todos piden clave la primera vez y después quedan guardados en ese celular o tablet. Para configurar un dispositivo del local sin tipear la clave, mandale el <b>link con acceso</b>.</p>
   <div class="links">
-    <div class="card"><b>📋 Panel de pedidos (empleados)</b><p>Pedidos del día, venta de mostrador y avisos de stock. No muestra la plata de la caja.</p><a class="btn y" href="${base}/panel.html?key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a></div>
-    <div class="card"><b>🕘 Pantalla para fichar</b><p>Dejala abierta en una tablet o celular del local. Cada empleado pone su PIN al entrar y al salir.</p><a class="btn y" href="${base}/fichar.html?key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a></div>
-    <div class="card"><b>🌐 Web de pedidos</b><p>La página que ven los clientes.</p><a class="btn" href="${base}/" target="_blank" rel="noopener">Abrir ↗</a></div>
+    <div class="card"><b>🌐 Web de pedidos (clientes)</b><p>La que va en la bio de Instagram y en WhatsApp.</p><code class="url">${base}</code><div class="acts"><a class="btn" href="/" target="_blank" rel="noopener">Abrir ↗</a><button class="btn" data-copy="${base}">Copiar link</button></div></div>
+    <div class="card"><b>📋 Pedidos (empleados)</b><p>Pedidos del día, venta de mostrador y avisos de stock. No muestra la plata de la caja.</p><code class="url">${base}/pedidos</code><div class="acts"><a class="btn y" href="/pedidos?key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a><button class="btn" data-copy="${base}/pedidos?key=${encodeURIComponent(claveEmp)}">Copiar link con acceso</button></div></div>
+    <div class="card"><b>🕘 Fichar (tablet del local)</b><p>Cada empleado pone su PIN al entrar y al salir.</p><code class="url">${base}/fichar</code><div class="acts"><a class="btn y" href="/fichar?key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a><button class="btn" data-copy="${base}/fichar?key=${encodeURIComponent(claveEmp)}">Copiar link con acceso</button></div></div>
+    <div class="card"><b>👑 Panel del dueño</b><p>Este panel. Usá tu clave de dueño; no se la pases a los empleados.</p><code class="url">${base}/dueno</code></div>
+    <div class="card"><b>🔑 Clave del local</b><p>La que usan los empleados para pedidos y fichaje.</p><code class="url">${esc(claveEmp)}</code></div>
   </div>
   <h2>Datos de prueba</h2>
   <div class="card big-tog"><p class="help" style="margin:0;flex:1">Borra todos los pedidos, la caja, el stock, el personal y los fichajes. Usalo solo para dejar la demo en cero.</p><button class="btn r" id="resetB">Borrar todo</button></div>`;
+  $("t-ajustes").querySelectorAll("[data-copy]").forEach((b) => (b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast("Link copiado ✓"); } catch { prompt("Copiá este link:", b.dataset.copy); } }));
   $("botT").onclick = async () => { try { await post({ op: "bot", on: !d.botOn }); verAjustes(); toast(d.botOn ? "Bot apagado" : "Bot prendido"); } catch (e) { toast(e.message, 1); } };
   $("resetB").onclick = async () => {
     if (!confirm("¿Seguro? Se borra TODO y no se puede deshacer.")) return;
     if (prompt('Escribí BORRAR para confirmar') !== "BORRAR") return;
     const r = await fetch(`/api/reset?key=${encodeURIComponent(KEY)}&confirmar=si`); toast(r.ok ? "Datos borrados" : "No se pudo borrar", !r.ok);
   };
-  $("topPanel").href = `/panel.html?key=${encodeURIComponent(claveEmp)}`;
+  $("topPanel").href = `/pedidos?key=${encodeURIComponent(claveEmp)}`;
 }
 
 const VISTAS = { resumen: verResumen, stock: verStock, personal: verPersonal, menu: verMenu, ajustes: verAjustes };
 async function abrir(t) {
   document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.t === t)));
   Object.keys(VISTAS).forEach((k) => ($("t-" + k).hidden = k !== t));
-  history.replaceState(null, "", `?key=${encodeURIComponent(KEY)}#${t}`);
+  history.replaceState(null, "", `${location.pathname}#${t}`);
   try { await VISTAS[t](); } catch (e) { $("t-" + t).innerHTML = `<div class="alert">${esc(e.message === "Clave incorrecta" ? "La clave del link no es correcta. Pedile el link al administrador." : e.message)}</div>`; }
 }
 document.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => abrir(b.dataset.t)));
-abrir(VISTAS[location.hash.slice(1)] ? location.hash.slice(1) : "resumen");
-api("ajustes").then((d) => { claveEmp = d.claveEmpleados; $("topPanel").href = `/panel.html?key=${encodeURIComponent(claveEmp)}`; }).catch(() => {});
+(async () => {
+  KEY = await sesion("flama_dueno", async (k) => (await fetch(`/api/dueno?key=${encodeURIComponent(k)}&op=ajustes`)).ok, "Panel del dueño");
+  abrir(VISTAS[location.hash.slice(1)] ? location.hash.slice(1) : "resumen");
+  api("ajustes").then((d) => { claveEmp = d.claveEmpleados; $("topPanel").href = `/pedidos?key=${encodeURIComponent(claveEmp)}`; }).catch(() => {});
+})();
 </script>
 </body>
 </html>

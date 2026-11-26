@@ -4,7 +4,7 @@ import { rol, CLAVE_EMPLEADOS } from "../lib/auth.js";
 import { cajaHoy, cajaMes, panelState } from "../lib/orders.js";
 import { getStock, guardarIngredientes, guardarRecetas, mover, movimientos, bajos } from "../lib/stock.js";
 import { empleados, guardarEmpleado, borrarEmpleado, resumenMes, trabajandoAhora, editarFichaje, mesDe } from "../lib/personal.js";
-import { getMenu, getCambiosMenu, guardarCambiosMenu, menuBase } from "../lib/menu.js";
+import { getMenu, guardarCarta } from "../lib/menu.js";
 
 export const config = { api: { bodyParser: { sizeLimit: "3mb" } } };
 const mesOk = (m) => (/^\d{4}-\d{2}$/.test(m || "") ? m : mesDe());
@@ -33,13 +33,10 @@ async function leer(op, q) {
   }
   if (op === "stock") {
     const { ing, rec } = await getStock();
-    const m = menuBase();
+    const c = await getMenu(true);
     const productos = [
-      ...m.HAMBURGUESAS.map((h) => ({ id: h.id, nombre: h.nombre, tams: ["simple", "doble"] })),
-      { id: "sliders", nombre: "Sliders x3", tams: ["unidad"] },
-      { id: "extra-carne", nombre: "Extra carne", tams: ["unidad"] },
-      { id: "extra-bacon", nombre: "Extra bacon", tams: ["unidad"] },
-      ...m.BEBIDAS.map((b) => ({ id: b.id, nombre: b.nombre, tams: ["unidad"] })),
+      ...c.productos.filter((p) => p.estado !== "oculto").map((p) => ({ id: p.id, nombre: p.nombre, tams: p.tipo === "tamanos" ? ["simple", "doble"] : ["unidad"] })),
+      ...c.extras.map((e) => ({ id: e.id, nombre: e.nombre, tams: ["unidad"] })),
     ];
     return { ing, rec, productos, bajos: bajos(ing), movimientos: (await movimientos()).slice(0, 60) };
   }
@@ -49,8 +46,8 @@ async function leer(op, q) {
     return { mes, ...r, ahora };
   }
   if (op === "menu") {
-    const [menu, cambios, fotos] = await Promise.all([getMenu(true), getCambiosMenu(), redis.get("flama:fotos")]);
-    return { menu, cambios, fotos: JSON.parse(fotos || "{}") };
+    const [carta, fotos] = await Promise.all([getMenu(true), redis.get("flama:fotos")]);
+    return { carta, fotos: JSON.parse(fotos || "{}") };
   }
   if (op === "ajustes") {
     const st = await panelState();
@@ -95,8 +92,9 @@ async function escribir(b) {
     case "emp_borrar": await borrarEmpleado(b.id); return;
     case "fich": await editarFichaje({ mes: mesOk(b.mes), id: b.id, inT: b.in, outT: b.out, emp: b.emp, borrar: b.borrar }); return;
     // ---- menú ----
-    case "menu": await guardarCambiosMenu(b.cambios || {}); await redis.incr("flama:menuv"); return;
+    case "carta": await guardarCarta(b.carta); return;
     case "foto": { // imagen ya achicada en el navegador (webp/jpeg en base64)
+      b.id = String(b.id || "").replace(/[^a-z0-9-]/gi, "").slice(0, 40); if (!b.id) throw new Error("Producto inválido");
       const fotos = JSON.parse((await redis.get("flama:fotos")) || "{}");
       if (b.borrar) { await redis.del(`flama:foto:${b.id}`); delete fotos[b.id]; }
       else {

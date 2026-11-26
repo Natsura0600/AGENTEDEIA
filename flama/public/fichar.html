@@ -52,6 +52,16 @@ body{margin:0;background:var(--k);color:var(--w);font-family:Archivo,system-ui,s
 .res p{font-size:clamp(20px,2.4vw,30px);font-weight:900;margin:0}
 .res small{font-family:"JetBrains Mono";font-size:14px;letter-spacing:.1em;opacity:.75;text-transform:uppercase}
 @media(max-width:760px){body{grid-template-columns:1fr;grid-template-rows:auto 1fr;overflow:auto}.left{border-right:0;border-bottom:3px solid var(--y);gap:16px}.clock{font-size:80px}.now{display:none}}
+.login{position:fixed;inset:0;z-index:100;background:#0c0b0a;display:grid;place-items:center;padding:20px}
+.login form{width:min(360px,100%);display:flex;flex-direction:column;align-items:center;gap:6px;background:#161412;border:1.5px solid #2c2824;border-top:4px solid #f6c91c;padding:28px 24px}
+.login img{width:64px;height:64px;border-radius:50%}
+.login b{font-family:Anton,Impact,sans-serif;font-weight:400;font-size:34px;letter-spacing:.04em;line-height:1;margin-top:6px}
+.login span{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#f6c91c;margin-bottom:14px}
+.login label{align-self:flex-start;font-size:12px;font-weight:800;color:#9b948a;text-transform:uppercase;letter-spacing:.06em}
+.login input{width:100%;background:#0c0b0a;color:#f4efe6;border:1.5px solid #2c2824;padding:12px;font:inherit;font-size:16px}
+.login input:focus{border-color:#f6c91c;outline:0}
+.login button{width:100%;margin-top:10px;background:#f6c91c;color:#0c0b0a;border:0;min-height:50px;font:inherit;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
+.login p{color:#ff5a47;font-weight:800;min-height:20px;margin:6px 0 0}
 </style>
 </head>
 <body>
@@ -68,7 +78,28 @@ body{margin:0;background:var(--k);color:var(--w);font-family:Archivo,system-ui,s
 </div>
 <div class="res" id="res" role="status"><div class="ic" id="ric"></div><h2 id="rh"></h2><p id="rp"></p><small id="rs"></small></div>
 <script>
-const KEY = new URLSearchParams(location.search).get("key") || "";
+let KEY = "";
+// ---- Ingreso con clave (se guarda en este dispositivo, así el link queda limpio) ----
+function sesion(store, probar, titulo) {
+  const qs = new URLSearchParams(location.search); let k = qs.get("key");
+  if (k) { try { localStorage.setItem(store, k); } catch {} qs.delete("key"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "") + location.hash); }
+  else { try { k = localStorage.getItem(store); } catch {} }
+  return (async () => (k && (await probar(k).catch(() => false))) ? k : pedirClave(store, probar, titulo))();
+}
+function pedirClave(store, probar, titulo) {
+  return new Promise((resolve) => {
+    const o = document.createElement("div"); o.className = "login";
+    o.innerHTML = `<form><img src="/img/logo-round.webp" alt=""><b>FLAMA</b><span>${titulo}</span><label for="lk">Clave</label><input id="lk" type="password" autocomplete="current-password" required><button type="submit">Entrar</button><p role="alert"></p></form>`;
+    document.body.append(o); const f = o.querySelector("form"), inp = o.querySelector("input"), msg = o.querySelector("p"); inp.focus();
+    f.onsubmit = async (e) => {
+      e.preventDefault(); const v = inp.value.trim(); msg.textContent = "";
+      if (await probar(v).catch(() => false)) { try { localStorage.setItem(store, v); } catch {} o.remove(); resolve(v); }
+      else { msg.textContent = "Clave incorrecta"; inp.select(); }
+    };
+  });
+}
+function salir(store) { try { localStorage.removeItem(store); } catch {} location.reload(); }
+
 const $ = (id) => document.getElementById(id);
 const TZ = "America/Argentina/Buenos_Aires";
 const hora = (t) => new Date(t).toLocaleTimeString("es-AR", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
@@ -114,7 +145,11 @@ async function cargar() {
     $("now").innerHTML = d.ahora?.length ? d.ahora.map((a) => `<span>🟢 ${a.nombre.replace(/[<>&]/g, "")} · ${hora(a.desde)}</span>`).join("") : "<p>Nadie fichó todavía.</p>";
   } catch {}
 }
-dots(); cargar(); setInterval(cargar, 60000);
+dots();
+(async () => {
+  KEY = await sesion("flama_local", async (k) => (await fetch(`/api/fichar?key=${encodeURIComponent(k)}`)).ok, "Fichero de personal");
+  cargar(); setInterval(cargar, 60000);
+})();
 </script>
 </body>
 </html>
