@@ -262,6 +262,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 .seg label{margin:0;padding:14px;display:flex;gap:10px;align-items:center;color:var(--w);cursor:pointer;text-transform:none;letter-spacing:0;font-size:15px}
 .seg label:has(input:checked){background:var(--w);color:var(--k)}
 .seg input{width:auto;accent-color:var(--k)}
+.geo{margin:10px 0 0;padding:11px 13px;border:1.5px solid var(--line);font-size:13.5px;line-height:1.45;color:var(--w);display:flex;gap:10px;align-items:flex-start}
+.geo[hidden]{display:none}.geo b{font-weight:800}.geo .km{font-family:"JetBrains Mono";color:var(--y);white-space:nowrap}
+.geo.ok{border-color:#5ad67d66}.geo.warn{border-color:#f6c91c66}.geo.err{border-color:#e8321e88}.geo.load{color:var(--mut)}
 .brk{display:grid;grid-template-columns:1fr auto;gap:6px;font-size:14px;color:var(--mut)}
 .brk span:nth-child(even){font-family:"JetBrains Mono";text-align:right;color:var(--w)}
 .brk .tot{margin-top:6px;padding-top:10px;border-top:1px dashed var(--line);color:var(--w);font-weight:800;font-size:15px;align-self:end}
@@ -401,8 +404,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--y);outline:0}
 <label><input type="radio" name="entrega" value="envio"> 🛵 Delivery</label>
 </div>
 <div id="envio" hidden>
-<label for="zona">Zona</label><select id="zona"></select>
-<label for="dir">Dirección</label><input id="dir" autocomplete="street-address" placeholder="Calle, número, piso">
+<label for="dir">Dirección</label><input id="dir" autocomplete="street-address" placeholder="Calle y número · ej: Belgrano 1234">
+<p id="geo" class="geo" hidden aria-live="polite"></p>
+<div id="zonabox" hidden><label for="zona">Zona</label><select id="zona"></select></div>
 </div>
 <label for="nombre">Tu nombre</label><input id="nombre" autocomplete="name" placeholder="¿A nombre de quién?">
 <label for="coment">Comentarios</label><textarea id="coment" rows="2" placeholder="Sin cebolla, bien cocida…"></textarea>
@@ -441,7 +445,8 @@ const MENU = [
 ];
 // Etiquetas de ejemplo: confirmar con Flama cuáles son las más pedidas
 const BADGES = { "oklahoma": ["Más pedida", ""], "cheese-2": ["Nueva", "red"], "anderson": ["La más cargada", ""], "sliders": ["Para compartir", ""] };
-const ZONAS = [["centro","Centro (hasta 15 cuadras)",1500],["cercana","Barrios cercanos",2500],["lejana","Barrios alejados",4000]];
+// [id, nombre, precio, hasta km del local]. La zona se elige sola con la dirección del cliente.
+const ZONAS = [["centro","Centro (hasta 15 cuadras)",1500,1.5],["cercana","Barrios cercanos",2500,4],["lejana","Barrios alejados",4000,12]];
 const EXTRA = 2000;
 const money = (n) => "$" + n.toLocaleString("es-AR");
 const cart = [];
@@ -542,10 +547,41 @@ addEventListener("scroll", () => {
   if (r.bottom > 0 && r.top < innerHeight) p.style.transform = `translateY(${(r.top / innerHeight) * -60}px)`;
 }, { passive: true });
 
-$("zona").innerHTML = ZONAS.map(([id, n, p]) => `<option value="${id}">${n} · ${money(p)}</option>`).join("");
+$("zona").innerHTML = `<option value="">Elegí tu zona</option>` + ZONAS.map(([id, n, p]) => `<option value="${id}">${n} · ${money(p)}</option>`).join("");
 const subtotal = () => cart.reduce((s, x) => s + x.price * x.qty, 0);
 const entrega = () => document.querySelector("[name=entrega]:checked").value;
-const envio = () => entrega() === "envio" ? ZONAS.find((z) => z[0] === $("zona").value)[2] : 0;
+// Zona automática: GEO = { estado: "vacio"|"buscando"|"ok"|"fuera"|"manual", r, zona }
+let GEO = { estado: "vacio" }, geoT = 0, geoN = 0, ultimaDir = "";
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const kmTxt = (n) => String(n).replace(".", ",") + " km";
+const CON_KM = ZONAS.filter((z) => z[3] > 0).sort((a, b) => a[3] - b[3]);
+const MAX_KM = CON_KM.length ? CON_KM.at(-1)[3] : 0;
+const zonaActual = () => GEO.estado === "ok" ? GEO.zona : GEO.estado === "manual" ? ZONAS.find((z) => z[0] === $("zona").value) : null;
+const envio = () => (entrega() === "envio" && zonaActual() ? zonaActual()[2] : 0);
+function pintarGeo() {
+  const g = $("geo"), r = GEO.r;
+  g.hidden = GEO.estado === "vacio"; $("zonabox").hidden = GEO.estado !== "manual";
+  g.className = "geo " + ({ buscando: "load", ok: r?.exacta ? "ok" : "warn", fuera: "err", manual: "warn" }[GEO.estado] || "");
+  if (GEO.estado === "buscando") g.textContent = "Buscando la dirección…";
+  else if (GEO.estado === "ok") g.innerHTML = `<span>📍</span><span><b>${esc(GEO.zona[1])}</b> · envío ${money(GEO.zona[2])}<br><span class="km">${r.exacta ? "" : "≈ "}${kmTxt(r.km)}</span> del local · ${esc(r.texto)}${r.exacta ? "" : "<br>Ubicación aproximada: el local la confirma."}</span>`;
+  else if (GEO.estado === "fuera") g.innerHTML = `<span>😕</span><span>Esa dirección queda a <span class="km">${kmTxt(r.km)}</span> y el delivery llega hasta ${kmTxt(MAX_KM)}. Podés retirar en Mitre 670.</span>`;
+  else if (GEO.estado === "manual") g.innerHTML = GEO.sinNumero ? `<span>🔢</span><span>Sumá la altura (ej: Belgrano <b>1234</b>) para calcular el envío, o elegí tu zona:</span>` : `<span>🔎</span><span>No encontramos esa dirección. Revisá calle y número, o elegí tu zona:</span>`;
+  updateCart();
+}
+async function buscarZona() {
+  const d = $("dir").value.trim(), n = ++geoN; ultimaDir = d;
+  if (d.length < 4) { GEO = { estado: "vacio" }; return pintarGeo(); }
+  if (!/\d/.test(d)) { GEO = { estado: "manual", sinNumero: true }; return pintarGeo(); }
+  GEO = { estado: "buscando" }; pintarGeo();
+  let r = null;
+  try { r = await (await fetch("/api/envio?dir=" + encodeURIComponent(d))).json(); } catch {}
+  if (n !== geoN) return; // llegó una búsqueda más nueva
+  const zona = r?.encontrada ? CON_KM.find((z) => r.km <= z[3]) : null;
+  GEO = zona ? { estado: "ok", r, zona } : r?.encontrada && CON_KM.length ? { estado: "fuera", r } : { estado: "manual", r };
+  pintarGeo();
+}
+$("dir").addEventListener("input", () => { clearTimeout(geoT); geoT = setTimeout(buscarZona, 900); });
+$("dir").addEventListener("blur", () => { clearTimeout(geoT); if ($("dir").value.trim() !== ultimaDir) buscarZona(); });
 function updateCart(bump) {
   const n = cart.reduce((s, x) => s + x.qty, 0);
   $("count").textContent = n; $("carttotal").textContent = money(subtotal());
@@ -563,15 +599,18 @@ function updateCart(bump) {
     q.append(mi, mk("span", null, x.qty), pl);
     r.append(left, mk("div", "lt", money(x.price * x.qty)), q); lines.append(r);
   });
-  const e = envio();
+  const e = envio(), pend = entrega() === "envio" && !zonaActual();
   $("sub").textContent = money(subtotal());
-  $("env").textContent = money(e); $("env").hidden = $("envlab").hidden = !e;
+  $("env").textContent = pend ? (GEO.estado === "fuera" ? "no llega" : "con la dirección") : money(e); $("env").hidden = $("envlab").hidden = !e && !pend;
   $("total").textContent = money(subtotal() + e);
 }
 function message() {
-  const z = ZONAS.find((x) => x[0] === $("zona").value);
+  const z = zonaActual();
   let m = `Hola Flama! Quiero hacer este pedido:\n${cart.map((x) => `• ${x.qty}x ${x.label}`).join("\n")}\n\n`;
-  m += entrega() === "envio" ? `Envío a: ${$("dir").value} (${z[1]})\n` : "Retiro en el local\n";
+  if (entrega() === "envio") {
+    m += `Envío a: ${$("dir").value.trim()}\nZona: ${z ? z[1] : "a confirmar"}${GEO.estado === "ok" ? ` · ${GEO.r.exacta ? "" : "≈ "}${kmTxt(GEO.r.km)}` : ""}\n`;
+    if (GEO.estado === "ok") m += `Mapa: https://maps.google.com/?q=${GEO.r.lat.toFixed(5)},${GEO.r.lng.toFixed(5)}\n`;
+  } else m += "Retiro en el local\n";
   if ($("nombre").value) m += `A nombre de: ${$("nombre").value}\n`;
   if ($("coment").value) m += `Comentarios: ${$("coment").value}\n`;
   return m + `Total estimado: ${money(subtotal() + envio())}`;
@@ -579,6 +618,9 @@ function message() {
 function validate() {
   if (!cart.length) return false;
   if (entrega() === "envio" && !$("dir").value.trim()) { $("dir").focus(); $("dir").placeholder = "Falta la dirección"; return false; }
+  if (entrega() === "envio" && GEO.estado === "buscando") return false;
+  if (entrega() === "envio" && GEO.estado === "fuera") { $("dir").focus(); return false; }
+  if (entrega() === "envio" && !zonaActual()) { if (GEO.estado === "vacio") buscarZona(); else $("zona").focus(); return false; }
   if (!$("nombre").value.trim()) { $("nombre").focus(); $("nombre").placeholder = "Falta tu nombre"; return false; }
   return true;
 }
@@ -589,7 +631,7 @@ $("tomenu").onclick = () => { closeDrawer(); location.hash = "#menu"; };
 addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
 document.querySelectorAll("[name=entrega]").forEach((r) => (r.onchange = () => { $("envio").hidden = entrega() !== "envio"; updateCart(); }));
 $("zona").onchange = () => updateCart();
-function vaciar() { cart.length = 0; ["dir", "nombre", "coment"].forEach((i) => ($(i).value = "")); closeDrawer(); updateCart(); }
+function vaciar() { cart.length = 0; ["dir", "nombre", "coment"].forEach((i) => ($(i).value = "")); GEO = { estado: "vacio" }; ultimaDir = ""; pintarGeo(); closeDrawer(); updateCart(); }
 $("sendwa").onclick = () => { if (!validate()) return; const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message())}`; vaciar(); window.open(url, "_blank") || (location.href = url); };
 renderMenu(); observe(); updateCart();
 </script>
