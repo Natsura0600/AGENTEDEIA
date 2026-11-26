@@ -4,19 +4,31 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flama · Chat</title>
+<link rel="icon" type="image/png" href="/img/favicon.png">
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,sans-serif;background:#0b141a;color:#e9edef;height:100dvh;display:flex;flex-direction:column}
 header{background:#202c33;padding:10px 14px;display:flex;align-items:center;gap:12px}
-.av{width:40px;height:40px;border-radius:50%;background:#f2cf4c;color:#2a1408;display:grid;place-items:center;font-weight:900}
+.av{width:42px;height:42px;border-radius:50%;flex:none;position:relative}.av img{width:100%;height:100%;border-radius:50%;display:block}.av::after{content:"";position:absolute;right:0;bottom:1px;width:11px;height:11px;border-radius:50%;background:#25d366;border:2px solid #202c33}
 .n{font-weight:600}.s{font-size:13px;color:#8696a0}
-.tag{margin-left:auto;font-size:11px;background:#ff8a1f;color:#2a1408;padding:3px 8px;border-radius:6px;font-weight:800}
-#msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:6px;background:#0b141a}
+.tag{margin-left:auto;font-size:11px;background:#f6c91c;color:#0c0b0a;padding:3px 8px;border-radius:6px;font-weight:800;letter-spacing:.06em}
+#msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:6px;background:#0b141a radial-gradient(#f6c91c0d 1px,transparent 1.5px) 0 0/18px 18px}
 .m{max-width:80%;padding:8px 10px;border-radius:8px;white-space:pre-wrap;line-height:1.35;font-size:15px;animation:in .2s}
 @keyframes in{from{opacity:0;transform:translateY(6px)}}
 .me{align-self:flex-end;background:#005c4b}.bot{align-self:flex-start;background:#202c33}
 .m img{max-width:220px;border-radius:6px;display:block}
-.typing{color:#8696a0;font-size:13px;padding:0 14px 6px}
+.typing{align-self:flex-start;background:#202c33;border-radius:8px;padding:12px 14px;margin:0;display:flex;gap:4px;width:max-content}
+.typing[hidden]{display:none}
+.typing i{width:7px;height:7px;border-radius:50%;background:#8696a0;animation:tp 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{0%,60%,100%{transform:none;opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+.welcome{align-self:flex-start;max-width:82%;background:#202c33;border-radius:8px;overflow:hidden;animation:in .3s}
+.welcome img{display:block;width:100%;height:120px;object-fit:cover;object-position:60% 62%}
+.welcome div{padding:10px 12px;font-size:15px;line-height:1.4}
+.welcome b{color:#f6c91c}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 2px}
+.quick button{width:auto;height:auto;border-radius:16px;background:transparent;border:1px solid #f6c91c66;color:#f6c91c;font-size:13px;font-weight:600;padding:7px 12px;font-family:inherit}
+.quick button:hover{background:#f6c91c1a}
 form{display:flex;gap:8px;padding:8px;background:#202c33;align-items:center}
 input[type=text]{flex:1;background:#2a3942;border:0;border-radius:20px;padding:12px 14px;color:#e9edef;font:inherit}
 button,label.att{background:#00a884;border:0;color:#0b141a;border-radius:50%;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;font-size:18px;flex:none}
@@ -24,10 +36,10 @@ label.att{background:#2a3942;color:#8696a0}
 </style>
 </head>
 <body>
-<header><div class="av">F</div><div><div class="n">Flama Burgers</div><div class="s">Asistente de pedidos</div></div><span class="tag">DEMO</span>
+<header><div class="av"><img src="/img/logo-round.webp" alt=""></div><div><div class="n">Flama Birra & Burgers</div><div class="s">en línea · responde al toque</div></div><span class="tag">DEMO</span>
 <button id="x" aria-label="Cerrar chat" style="background:none;color:#8696a0;width:36px;height:36px;font-size:22px" hidden>×</button></header>
 <div id="msgs" aria-live="polite"></div>
-<div class="typing" id="typing" hidden>Flama está escribiendo…</div>
+<div class="typing" id="typing" hidden aria-label="Flama está escribiendo"><i></i><i></i><i></i></div>
 <form id="f">
 <label class="att" title="Mandar comprobante" aria-label="Adjuntar comprobante">📎<input type="file" id="file" accept="image/*" hidden></label>
 <input type="text" id="t" placeholder="Escribí un mensaje" autocomplete="off" aria-label="Mensaje">
@@ -48,7 +60,7 @@ function add(text, who, img) {
 }
 async function send(body, shown, img) {
   add(shown, "me", img);
-  document.getElementById("typing").hidden = false;
+  const ty = document.getElementById("typing"); box.append(ty); ty.hidden = false; box.scrollTop = box.scrollHeight;
   try {
     const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session, name, ...body }) });
     const d = await r.json(); add(d.reply || "Error", "bot");
@@ -77,7 +89,14 @@ function startPoll() { if (polling) return; polling = true; setInterval(async ()
 }, 10000); }
 try { if (localStorage.getItem("flama_order")) startPoll(); } catch {}
 if (q.get("msg")) send({ text: q.get("msg") }, q.get("msg"));
-else add("¡Hola! Soy el asistente de Flama 🍔 Contame qué querés pedir.", "bot");
+else {
+  const w = document.createElement("div"); w.className = "welcome";
+  w.innerHTML = '<img src="/img/burger.webp" alt="Burger de Flama"><div>¡Hola! 👋 Soy el asistente de <b>Flama</b> 🔥<br>Contame qué querés pedir y te paso el total y el alias para transferir.</div>';
+  box.append(w);
+  const qk = document.createElement("div"); qk.className = "quick";
+  ["Una Oklahoma doble", "¿Qué burgers tienen?", "¿Hacen delivery?"].forEach((t) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => { qk.remove(); send({ text: t }, t); }; qk.append(b); });
+  box.append(qk);
+}
 </script>
 </body>
 </html>

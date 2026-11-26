@@ -3,73 +3,161 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0b0a">
 <title>Pedidos · Flama</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="/img/favicon.png">
+<link rel="preload" href="/fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-:root{--y:#f2cf4c;--y2:#ffd84d;--brown:#2a1408;--brown2:#3b1d0c;--card:#1d0f06;--ink:#fff6df;--muted:#cdb994;--line:#4a2a14;--ok:#7ddc8e;--warn:#ffb547;--bad:#ff7a6b}
+@font-face{font-family:Anton;src:url(/fonts/anton.woff2) format("woff2");font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-800.woff2) format("woff2");font-weight:800;font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-900.woff2) format("woff2");font-weight:900;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jbm-500.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jbm-700.woff2) format("woff2");font-weight:700;font-display:swap}
+:root{--y:#f6c91c;--k:#0c0b0a;--k2:#161412;--k3:#211e1b;--k4:#2a2622;--w:#f4efe6;--mut:#9b948a;--line:#2c2824;--ok:#5ad67d;--warn:#ff9f1c;--bad:#ff5a47;--blue:#5ab4ff}
 *{box-sizing:border-box}
-body{margin:0;background:var(--brown);color:var(--ink);font-family:Archivo,system-ui,sans-serif}
-header{position:sticky;top:0;z-index:5;background:var(--y);color:var(--brown);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 2px 0 #00000033}
-.logo{font-family:'Archivo Black';font-size:26px;letter-spacing:-.02em}
-.logo small{font-family:Archivo;font-size:12px;font-weight:700;display:block;letter-spacing:.08em}
-.live{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
-.dot{width:10px;height:10px;border-radius:50%;background:#1f8a3b;animation:pulse 1.6s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 0 #1f8a3b88}70%{box-shadow:0 0 0 10px #1f8a3b00}100%{box-shadow:0 0 0 0 #1f8a3b00}}
-.board{display:grid;grid-template-columns:repeat(4,minmax(260px,1fr));gap:16px;padding:20px;overflow-x:auto}
-.col h2{font-family:'Archivo Black';font-size:16px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;color:var(--y)}
-.col h2 span{background:var(--y);color:var(--brown);border-radius:999px;font-family:Archivo;font-size:13px;padding:2px 10px}
-.list{display:flex;flex-direction:column;gap:12px;min-height:80px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;animation:in .35s ease}
-@keyframes in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
-.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.num{font-family:'Archivo Black';font-size:20px}
-.time{color:var(--muted);font-size:13px}
-.who{font-weight:700;margin:4px 0 2px}
-.meta{color:var(--muted);font-size:13px;line-height:18px}
-ul{margin:10px 0;padding-left:18px;font-size:14px;line-height:20px}
-.total{display:flex;justify-content:space-between;font-weight:700;border-top:1px dashed var(--line);padding-top:8px}
-.badge{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;margin-top:8px}
-.b-ok{background:#1f8a3b33;color:var(--ok)}.b-warn{background:#ffb54722;color:var(--warn)}.b-bad{background:#ff7a6b22;color:var(--bad)}
-.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-button{font:inherit;font-weight:700;border:0;border-radius:10px;min-height:44px;padding:0 14px;cursor:pointer}
-.primary{background:var(--y);color:var(--brown)}
-.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
-button:focus-visible{outline:2px solid var(--y);outline-offset:2px}
-.receipt{margin-top:10px}
-.receipt summary{cursor:pointer;color:var(--muted);font-size:13px}
-.receipt img{width:100%;border-radius:10px;margin-top:8px}
-.empty{color:var(--muted);font-size:14px;border:1px dashed var(--line);border-radius:14px;padding:16px;text-align:center}
-.later{background:#ffd84d22;color:var(--y2)}
-@media (max-width:900px){.board{grid-template-columns:1fr}}
-.caja{font-weight:800;font-size:15px;background:#00000014;border-radius:10px;padding:8px 12px}
-.mes{display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:10px;font-weight:700}.mes input{background:transparent;border:0;color:inherit;font:inherit}
-.tools{display:flex;gap:8px;margin-left:auto}
-.tbtn{background:var(--brown);color:var(--y);min-height:40px;font-size:14px}
-.tbtn.off{background:#b3261e;color:#fff}
-header{flex-wrap:wrap}
+body{margin:0;background:var(--k);color:var(--w);font-family:Archivo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--y);outline-offset:2px}
+.mono{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blur(10px);border-bottom:3px solid var(--y);padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.brand img{width:44px;height:44px;border-radius:50%}
+.brand b{font-family:Anton;font-weight:400;font-size:28px;letter-spacing:.04em;line-height:1;display:block}
+.brand .mono{color:var(--y)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tbtn{display:inline-flex;align-items:center;gap:8px;background:var(--k3);color:var(--w);border:1.5px solid var(--line);min-height:42px;padding:0 14px;font-weight:800;font-size:13px;letter-spacing:.02em;transition:border-color .2s,background .2s}
+.tbtn:hover{border-color:var(--mut)}
+.tbtn.on{border-color:var(--ok);color:var(--ok)}
+.tbtn.off{background:var(--bad);border-color:var(--bad);color:#fff}
+.tbtn.yel{background:var(--y);border-color:var(--y);color:var(--k)}
+.mes input{background:transparent;border:0;color:inherit;font:inherit;color-scheme:dark;width:132px}
+.live{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;color:var(--mut)}
+.live i{width:10px;height:10px;border-radius:50%;background:var(--ok);animation:pulse 1.6s infinite}
+.live.offline i{background:var(--bad);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 #5ad67d88}70%{box-shadow:0 0 0 10px #5ad67d00}100%{box-shadow:0 0 0 0 #5ad67d00}}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px 20px 4px}
+.kpi{background:var(--k2);border:1.5px solid var(--line);padding:14px 16px;position:relative;overflow:hidden}
+.kpi .mono{color:var(--mut)}
+.kpi b{display:block;font-family:Anton;font-weight:400;font-size:clamp(30px,3.2vw,44px);line-height:1;margin-top:8px}
+.kpi.main{background:var(--y);border-color:var(--y);color:var(--k)}
+.kpi.main .mono{color:#0c0b0aa8}
+.kpi.alert b{color:var(--warn)}
+
+/* MOBILE TABS */
+.mtabs{display:none;gap:6px;padding:14px 16px 0;overflow-x:auto;scrollbar-width:none}
+.mtabs button{flex:none;background:var(--k2);border:1.5px solid var(--line);color:var(--w);min-height:44px;padding:0 14px;font-weight:800;font-size:13px;display:flex;align-items:center;gap:8px}
+.mtabs button span{background:var(--k4);border-radius:999px;padding:2px 8px;font-family:"JetBrains Mono";font-size:12px}
+.mtabs button[aria-selected="true"]{background:var(--w);color:var(--k);border-color:var(--w)}
+.mtabs button[aria-selected="true"] span{background:var(--k);color:var(--y)}
+
+/* BOARD */
+.board{display:grid;grid-template-columns:repeat(4,minmax(270px,1fr));gap:16px;padding:18px 20px 40px;align-items:start}
+.col h2{font-family:Anton;font-weight:400;font-size:24px;text-transform:uppercase;letter-spacing:.02em;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+.col h2 span{font-family:"JetBrains Mono";font-size:13px;background:var(--k3);border:1.5px solid var(--line);color:var(--y);min-width:30px;height:28px;display:grid;place-items:center;padding:0 8px}
+.list{display:flex;flex-direction:column;gap:12px}
+.empty{color:var(--mut);font-size:14px;border:1.5px dashed var(--line);padding:26px 16px;text-align:center}
+.empty b{display:block;font-size:26px;margin-bottom:6px}
+
+/* CARD */
+.card{--c:var(--line);background:var(--k2);border:1.5px solid var(--line);border-left:6px solid var(--c);padding:14px 16px 16px;animation:in .35s ease both}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+.card.nuevo{animation:in .35s ease both,flash 2.6s ease}
+@keyframes flash{0%,40%{background:#f6c91c2e;box-shadow:0 0 0 3px var(--y),0 0 30px #f6c91c55}100%{background:var(--k2);box-shadow:none}}
+.e-pago_pendiente{--c:var(--y)}.e-pago_a_verificar{--c:var(--bad)}.e-programado{--c:var(--blue)}.e-en_preparacion{--c:var(--ok)}
+.e-listo,.e-en_camino{--c:var(--blue)}.e-entregado{--c:#4a453f;opacity:.72}.e-cancelado{--c:#4a453f;opacity:.5}
+.e-cancelado .num{text-decoration:line-through}
+.ctop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.num{font-family:Anton;font-weight:400;font-size:42px;line-height:.9;letter-spacing:.01em}
+.chips{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:4px 9px;background:var(--k4);white-space:nowrap}
+.chip.env{background:#5ab4ff22;color:var(--blue)}.chip.ret{background:#f6c91c22;color:var(--y)}
+.ago{font-family:"JetBrains Mono";font-size:12px;font-weight:700;color:var(--mut)}
+.ago.warn{color:var(--warn)}
+.ago.late{color:#fff;background:var(--bad);padding:3px 8px;animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.6}}
+.who{font-weight:900;font-size:18px;margin:10px 0 2px}
+.meta{color:var(--mut);font-size:13px;line-height:1.5}
+.items{list-style:none;margin:12px 0;padding:10px 0;border-block:1px dashed var(--line);font-size:15px;line-height:1.45}
+.items li{display:flex;gap:8px}
+.items li b{color:var(--y);font-family:"JetBrains Mono";min-width:26px}
+.nota{background:#f6c91c14;border-left:3px solid var(--y);padding:8px 10px;font-size:13px;margin-bottom:10px}
+.tot{display:flex;justify-content:space-between;align-items:baseline;font-weight:800}
+.tot b{font-family:Anton;font-weight:400;font-size:26px}
+.tot small{color:var(--mut);font-weight:500;font-size:12px}
+.pay{display:flex;align-items:center;gap:10px;margin-top:12px;padding:8px 10px;font-size:13px;font-weight:800;line-height:1.35}
+.pay.ok{background:#5ad67d1a;color:var(--ok)}.pay.warn{background:#f6c91c1a;color:var(--y)}.pay.bad{background:#ff5a471a;color:var(--bad)}
+.pay span{flex:1}
+.thumb{width:52px;height:52px;flex:none;border:1.5px solid currentColor;padding:0;background:#000 center/cover;cursor:zoom-in}
+.later{display:inline-block;margin-top:8px;font-size:12px;font-weight:800;color:var(--blue)}
+.go{width:100%;margin-top:14px;min-height:56px;border:0;background:var(--y);color:var(--k);font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s,background .2s}
+.go:hover{background:#ffd83a}.go:active{transform:scale(.98)}
+.go.green{background:var(--ok)}
+.cancel{display:block;margin:10px auto 0;background:none;border:0;color:var(--mut);font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px;min-height:32px}
+.cancel:hover{color:var(--bad)}
+
+/* LIGHTBOX */
+.lb{position:fixed;inset:0;z-index:50;background:#000d;display:none;place-items:center;padding:20px;cursor:zoom-out}
+.lb.open{display:grid}
+.lb img{max-width:min(560px,100%);max-height:88vh;border:3px solid var(--y)}
+
+@media(max-width:1100px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){
+  .kpis{grid-template-columns:repeat(2,1fr);padding:14px 16px 0}
+  .mtabs{display:flex}
+  .board{grid-template-columns:1fr;padding:14px 16px 40px}
+  .col{display:none}.col.active{display:block}
+  .col h2{display:none}
+  header{padding:10px 14px}
+  .tools{width:100%}
+  .tbtn{flex:1 1 auto;justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <header>
-<div class="logo">FLAMA<small>PANEL DE PEDIDOS</small></div>
-<div class="caja" id="caja" aria-live="polite"></div>
-<div class="tools"><label class="tbtn mes">Mes <input type="month" id="mes"></label><button type="button" id="expbtn" class="tbtn">⬇ Excel del mes</button><button type="button" id="botbtn" class="tbtn">Bot: …</button><button type="button" id="sndbtn" class="tbtn">🔇 Activar sonido</button></div>
-<div class="live"><span class="dot" aria-hidden="true"></span><span id="status">En vivo</span></div>
+<div class="brand"><img src="/img/logo-round.webp" alt=""><div><b>FLAMA</b><span class="mono">Panel de pedidos</span></div></div>
+<div class="live" id="live"><i aria-hidden="true"></i><span id="status">En vivo</span></div>
+<div class="tools">
+<button type="button" id="botbtn" class="tbtn">🤖 Bot …</button>
+<button type="button" id="sndbtn" class="tbtn">🔇 Activar sonido</button>
+<label class="tbtn mes">📅 <input type="month" id="mes" aria-label="Mes a exportar"></label>
+<button type="button" id="expbtn" class="tbtn yel">⬇ Excel del mes</button>
+</div>
 </header>
+
+<section class="kpis" aria-label="Resumen de hoy">
+<div class="kpi main"><span class="mono">Caja de hoy</span><b id="k-caja">$0</b></div>
+<div class="kpi"><span class="mono">Entregados hoy</span><b id="k-ped">0</b></div>
+<div class="kpi"><span class="mono">Ticket promedio</span><b id="k-tic">$0</b></div>
+<div class="kpi" id="k-curso-box"><span class="mono">En curso</span><b id="k-curso">0</b></div>
+</section>
+
+<nav class="mtabs" id="mtabs" role="tablist" aria-label="Columnas"></nav>
 <main class="board" id="board" aria-live="polite"></main>
-<audio id="ding" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" preload="auto"></audio>
+<div class="lb" id="lb" role="dialog" aria-label="Comprobante"><img id="lbimg" alt="Comprobante de transferencia"></div>
+
 <script>
 const key = new URLSearchParams(location.search).get("key") || "flama2026";
 const COLS = [
   { id: "pago", title: "Pagos", estados: ["pago_pendiente", "pago_a_verificar"] },
-  { id: "cocina", title: "En preparación", estados: ["en_preparacion", "programado"] },
+  { id: "cocina", title: "En cocina", estados: ["en_preparacion", "programado"] },
   { id: "listos", title: "Listos / en camino", estados: ["listo", "en_camino"] },
   { id: "fin", title: "Entregados", estados: ["entregado", "cancelado"] },
 ];
-const money = (n) => "$" + Number(n).toLocaleString("es-AR");
+const ACTIVOS = ["pago_pendiente", "pago_a_verificar", "programado", "en_preparacion", "listo", "en_camino"];
+const money = (n) => "$" + Number(n || 0).toLocaleString("es-AR");
 const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-let ver = "", known = new Set(), first = true, sound = false, botOn = true, actx;
+const $ = (id) => document.getElementById(id);
+let ver = "", known = new Set(), first = true, sound = false, botOn = true, actx, activeCol = "pago", lastData = null;
+
 function ding() {
   if (!sound) return;
   actx = actx || new AudioContext();
@@ -77,17 +165,19 @@ function ding() {
     g.gain.setValueAtTime(.0001, actx.currentTime + t); g.gain.exponentialRampToValueAtTime(.4, actx.currentTime + t + .02); g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + t + .3);
     o.connect(g).connect(actx.destination); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + .32); });
 }
-document.getElementById("sndbtn").onclick = (e) => { sound = !sound; e.target.textContent = sound ? "🔔 Sonido activado" : "🔇 Activar sonido"; if (sound) { actx = actx || new AudioContext(); ding(); } };
-const mesI = document.getElementById("mes");
-mesI.value = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).slice(0, 7);
-document.getElementById("expbtn").onclick = () => { location.href = `/api/export?key=${encodeURIComponent(key)}&mes=${mesI.value}`; };
-function paintCaja(c) { if (!c) return; document.getElementById("caja").textContent = `Hoy: ${c.pedidos} entregados · Caja ${money(c.ventas)}`; }
-function paintBot() { const b = document.getElementById("botbtn"); b.textContent = botOn ? "🤖 Bot prendido" : "⛔ Bot apagado"; b.classList.toggle("off", !botOn); }
-document.getElementById("botbtn").onclick = async () => {
+$("sndbtn").onclick = (e) => { sound = !sound; e.currentTarget.textContent = sound ? "🔔 Sonido activado" : "🔇 Activar sonido"; e.currentTarget.classList.toggle("on", sound); if (sound) { actx = actx || new AudioContext(); ding(); } };
+$("mes").value = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).slice(0, 7);
+$("expbtn").onclick = () => { location.href = `/api/export?key=${encodeURIComponent(key)}&mes=${$("mes").value}`; };
+function paintBot() { const b = $("botbtn"); b.textContent = botOn ? "🤖 Bot prendido" : "⛔ Bot apagado"; b.classList.toggle("off", !botOn); b.classList.toggle("on", botOn); }
+$("botbtn").onclick = async () => {
   if (botOn && !confirm("¿Apagar el bot? Los clientes van a recibir: 'En un ratito te responde alguien del local'.")) return;
   await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bot: botOn ? "off" : "on" }) });
   botOn = !botOn; paintBot();
 };
+function paintKpis(c, orders) {
+  if (c) { $("k-caja").textContent = money(c.ventas); $("k-ped").textContent = c.pedidos; $("k-tic").textContent = money(c.pedidos ? Math.round(c.ventas / c.pedidos) : 0); }
+  if (orders) { const n = orders.filter((o) => ACTIVOS.includes(o.estado)).length; $("k-curso").textContent = n; $("k-curso-box").classList.toggle("alert", n >= 8); }
+}
 
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function btn(label, cls, onClick) { const b = el("button", cls, label); b.type = "button"; b.onclick = onClick; return b; }
@@ -96,66 +186,93 @@ async function load() {
   try {
     const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}&v=${ver}`);
     if (!r.ok) throw new Error();
-    const d = await r.json(); botOn = d.botOn !== false; paintBot(); if (!d.same) { ver = d.ver; render(d); paintCaja(d.caja); } document.getElementById("status").textContent = "En vivo";
-  } catch { document.getElementById("status").textContent = "Sin conexión"; }
+    const d = await r.json(); botOn = d.botOn !== false; paintBot();
+    if (!d.same) { ver = d.ver; lastData = d; render(d); paintKpis(d.caja, d.orders); }
+    $("status").textContent = "En vivo"; $("live").classList.remove("offline");
+  } catch { $("status").textContent = "Sin conexión"; $("live").classList.add("offline"); }
 }
 async function setEstado(id, estado) {
   await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, estado }) });
-  ver = "";
-  load();
+  ver = ""; load();
 }
-function card(o, estados) {
-  const c = el("article", "card");
-  const top = el("div", "top"); top.append(el("span", "num", "#" + o.id), el("span", "time", hhmm(o.createdAt)));
-  c.append(top, el("div", "who", o.nombre));
-  c.append(el("div", "meta", o.entrega === "envio" ? `Envío · ${o.direccion || ""}` : "Retiro en el local"));
-  if (o.telefono) c.append(el("div", "meta", "+" + o.telefono));
-  const ul = el("ul"); o.lineas.forEach((l) => ul.append(el("li", null, l.texto))); c.append(ul);
-  if (o.comentarios) c.append(el("div", "meta", "Nota: " + o.comentarios));
-  if (o.envio) c.append(el("div", "meta", "Envío " + money(o.envio)));
-  const t = el("div", "total"); t.append(el("span", null, "Total"), el("span", null, money(o.total))); c.append(t);
-  const b = el("span", "badge");
-  if (o.estado === "pago_pendiente") { b.className += " b-warn"; b.textContent = "Esperando comprobante"; }
-  else if (o.estado === "pago_a_verificar") { b.className += " b-bad"; b.textContent = "Revisar pago: " + (o.comprobante?.motivos || []).join(", "); }
-  else if (o.pagoVerificadoPor === "bot") { b.className += " b-ok"; b.textContent = "Pago verificado por el bot"; }
-  else if (o.pagoVerificadoPor === "local") { b.className += " b-ok"; b.textContent = "Pago verificado por el local"; }
-  if (b.textContent) c.append(b);
-  if (o.paraMasTarde && ["programado","pago_pendiente"].includes(o.estado)) c.append(el("span", "badge later", "Pedido para más tarde"));
-  if (o.comprobante?.imagen) {
-    const d = el("details", "receipt"); d.append(el("summary", null, "Ver comprobante"));
-    const img = el("img"); img.src = o.comprobante.imagen; img.alt = "Comprobante de transferencia del pedido " + o.id; d.append(img); c.append(d);
+
+// Tiempo desde que entró el pedido: naranja a los 20 min, rojo a los 30
+function agoText(t) { const m = Math.max(0, Math.floor((Date.now() - t) / 60000)); return m < 1 ? "recién" : m < 60 ? `hace ${m} min` : `hace ${Math.floor(m / 60)} h ${m % 60} min`; }
+function paintAgo(e) {
+  const t = Number(e.dataset.t), activo = e.dataset.activo === "1", m = (Date.now() - t) / 60000;
+  e.textContent = agoText(t);
+  e.classList.toggle("warn", activo && m >= 20 && m < 30); e.classList.toggle("late", activo && m >= 30);
+}
+setInterval(() => document.querySelectorAll(".ago").forEach(paintAgo), 30000);
+
+function card(o, nuevo) {
+  const c = el("article", `card e-${o.estado}${nuevo ? " nuevo" : ""}`);
+  const top = el("div", "ctop");
+  const left = el("div"); left.append(el("div", "num", "#" + o.id));
+  const chips = el("div", "chips");
+  chips.append(el("span", "chip " + (o.entrega === "envio" ? "env" : "ret"), o.entrega === "envio" ? "🛵 Delivery" : "🏪 Retiro"));
+  const ago = el("span", "ago"); ago.dataset.t = o.createdAt; ago.dataset.activo = ACTIVOS.includes(o.estado) ? "1" : "0"; ago.title = "Entró a las " + hhmm(o.createdAt); paintAgo(ago);
+  chips.append(ago); top.append(left, chips); c.append(top);
+  c.append(el("div", "who", o.nombre || "Sin nombre"));
+  if (o.entrega === "envio" && o.direccion) c.append(el("div", "meta", "📍 " + o.direccion));
+  if (o.telefono) c.append(el("div", "meta", "📱 +" + o.telefono));
+  const ul = el("ul", "items");
+  (o.lineas || []).forEach((l) => { const li = el("li"); const m = l.texto.match(/^(\d+)x (.+)$/); if (m) { li.append(el("b", null, m[1] + "×"), el("span", null, m[2])); } else li.append(el("span", null, l.texto)); ul.append(li); });
+  c.append(ul);
+  if (o.comentarios) c.append(el("div", "nota", "📝 " + o.comentarios));
+  const t = el("div", "tot"); const tl = el("span", null, "Total "); if (o.envio) tl.append(el("small", null, `(envío ${money(o.envio)})`)); t.append(tl, el("b", null, money(o.total))); c.append(t);
+
+  let pay = null;
+  if (o.estado === "pago_pendiente") pay = ["warn", "⏳ Esperando comprobante"];
+  else if (o.estado === "pago_a_verificar") pay = ["bad", "⚠️ Revisar pago: " + (o.comprobante?.motivos || []).join(", ")];
+  else if (o.pagoVerificadoPor === "bot") pay = ["ok", "✓ Pago verificado por el bot"];
+  else if (o.pagoVerificadoPor === "local") pay = ["ok", "✓ Pago verificado por el local"];
+  if (pay || o.comprobante?.imagen) {
+    const p = el("div", "pay " + (pay ? pay[0] : "ok"));
+    if (o.comprobante?.imagen) {
+      const th = btn("", "thumb", () => { $("lbimg").src = o.comprobante.imagen; $("lb").classList.add("open"); });
+      th.style.backgroundImage = `url("${o.comprobante.imagen}")`; th.setAttribute("aria-label", "Ver comprobante del pedido " + o.id); p.append(th);
+    }
+    p.append(el("span", null, pay ? pay[1] : "Comprobante recibido")); c.append(p);
   }
-  const a = el("div", "actions");
+  if (o.paraMasTarde && ["programado", "pago_pendiente"].includes(o.estado)) c.append(el("span", "later", "🕘 Pedido para más tarde"));
+
   const next = {
-    pago_pendiente: [["Marcar pagado", "en_preparacion", "primary"]],
-    pago_a_verificar: [["Pago OK → cocina", "en_preparacion", "primary"]],
-    programado: [["Empezar a preparar", "en_preparacion", "primary"]],
-    en_preparacion: o.entrega === "envio" ? [["Salió el delivery", "en_camino", "primary"]] : [["Listo para retirar", "listo", "primary"]],
-    listo: [["Entregado", "entregado", "primary"]],
-    en_camino: [["Entregado", "entregado", "primary"]],
-  }[o.estado] || [];
-  next.forEach(([label, e, cls]) => a.append(btn(label, cls, () => setEstado(o.id, e))));
-  if (!["entregado", "cancelado"].includes(o.estado)) a.append(btn("Cancelar", "ghost", () => { if (confirm(`¿Cancelar el pedido #${o.id}?`)) setEstado(o.id, "cancelado"); }));
-  if (a.children.length) c.append(a);
+    pago_pendiente: ["Marcar pagado → cocina", "en_preparacion"],
+    pago_a_verificar: ["Pago OK → cocina", "en_preparacion"],
+    programado: ["Empezar a preparar", "en_preparacion"],
+    en_preparacion: o.entrega === "envio" ? ["🛵 Salió el delivery", "en_camino"] : ["✓ Listo para retirar", "listo"],
+    listo: ["Entregado", "entregado", "green"],
+    en_camino: ["Entregado", "entregado", "green"],
+  }[o.estado];
+  if (next) c.append(btn(next[0], "go " + (next[2] || ""), () => setEstado(o.id, next[1])));
+  if (ACTIVOS.includes(o.estado)) c.append(btn("Cancelar pedido", "cancel", () => { if (confirm(`¿Cancelar el pedido #${o.id}?`)) setEstado(o.id, "cancelado"); }));
   return c;
 }
 function render(d) {
-  const board = document.getElementById("board"); board.replaceChildren();
+  const board = $("board"); board.replaceChildren(); const tabs = $("mtabs"); tabs.replaceChildren();
   let nuevo = false;
   for (const col of COLS) {
     const items = d.orders.filter((o) => col.estados.includes(o.estado));
-    const s = el("section", "col"); const h = el("h2", null, col.title); h.append(el("span", null, String(items.length))); s.append(h);
+    if (col.id !== "fin") items.sort((a, b) => a.createdAt - b.createdAt); // los más viejos primero
+    const s = el("section", "col" + (col.id === activeCol ? " active" : "")); s.id = "col-" + col.id;
+    const h = el("h2", null, col.title); h.append(el("span", null, String(items.length))); s.append(h);
     const list = el("div", "list");
-    if (!items.length) list.append(el("div", "empty", "Sin pedidos"));
-    items.forEach((o) => { if (!known.has(o.id)) { nuevo = true; known.add(o.id); } list.append(card(o)); });
+    if (!items.length) { const e = el("div", "empty"); e.append(el("b", null, col.id === "fin" ? "🍔" : "—"), document.createTextNode("Sin pedidos por ahora")); list.append(e); }
+    items.forEach((o) => { const isNew = !known.has(o.id) && !first; if (!known.has(o.id)) { nuevo = true; known.add(o.id); } list.append(card(o, isNew)); });
     s.append(list); board.append(s);
+    const tb = el("button"); tb.type = "button"; tb.setAttribute("role", "tab"); tb.setAttribute("aria-selected", String(col.id === activeCol));
+    tb.append(document.createTextNode(col.title), el("span", null, String(items.length)));
+    tb.onclick = () => { activeCol = col.id; document.querySelectorAll(".col").forEach((x) => x.classList.toggle("active", x.id === "col-" + col.id)); tabs.querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", String(x === tb))); };
+    tabs.append(tb);
   }
   if (nuevo && !first) { document.title = "🔔 Nuevo pedido · Flama"; ding(); }
   first = false;
 }
-document.addEventListener("visibilitychange", () => { if (!document.hidden) document.title = "Pedidos · Flama"; });
+$("lb").onclick = () => $("lb").classList.remove("open");
+addEventListener("keydown", (e) => { if (e.key === "Escape") $("lb").classList.remove("open"); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { document.title = "Pedidos · Flama"; load(); } });
 load(); setInterval(() => { if (!document.hidden) load(); }, 8000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 </script>
 </body>
 </html>
