@@ -4,6 +4,7 @@ import { redis } from "./redis.js";
 import { systemPrompt } from "./prompt.js";
 import { LOCAL, abierto, calcular, getMenu } from "./menu.js";
 import { sincronizarStock } from "./stock.js";
+import { detectarZona } from "./geo.js";
 import { nextId, saveOrder, activeOrder, claimOperation, jornada, ESTADOS } from "./orders.js";
 
 const MODEL = process.env.AI_MODEL || "openai/gpt-5-mini";
@@ -123,12 +124,22 @@ export async function reply({ chat, text, image, mediaType, name }) {
             nota: z.string().optional(),
           })),
           entrega: z.enum(["retiro", "envio"]),
-          zona: z.string().optional().describe("[id: ...] de la zona de delivery"),
-          direccion: z.string().optional(),
+          zona: z.string().optional().describe("Solo si crear_pedido no encontró la dirección: [id: ...] de la zona según el barrio que dijo el cliente"),
+          direccion: z.string().optional().describe("Calle y número como lo escribió el cliente (y entre qué calles o barrio si lo dijo)"),
           nombre: z.string(),
           comentarios: z.string().optional(),
         }),
         execute: async (i) => {
+          // Envío: la zona sale de la dirección (km al local), no de lo que elija el modelo
+          let geo = null, zonaAConfirmar = false;
+          if (i.entrega === "envio") {
+            if (!i.direccion?.trim()) return { error: "Falta la dirección: pedile al cliente calle y número." };
+            try { geo = await detectarZona(i.direccion, menu); } catch (e) { console.warn("geo", e.message); }
+            if (geo?.encontrada && geo.fuera) return { error: `Esa dirección queda a ${String(geo.km).replace(".", ",")} km del local y el delivery llega hasta ${String(geo.maxKm).replace(".", ",")} km. Avisale al cliente y ofrecé retiro en el local (${LOCAL.direccion}).` };
+            if (geo?.encontrada && geo.zona) { i.zona = geo.zona.id; zonaAConfirmar = !geo.exacta; }
+            else if (i.zona && menu.zonas.some((z) => z.id === i.zona)) zonaAConfirmar = true;
+            else return { error: "No encontré esa dirección en Luján. Pedile al cliente que revise calle y número, o que te diga el barrio, y volvé a llamar a crear_pedido (con la zona según el barrio si sigue sin aparecer)." };
+          }
           let calc;
           try { calc = calcular(i.items, i.entrega, i.zona, menu); } catch (e) { return { error: e.message }; }
           const prev = await activeOrder(chat);
@@ -138,12 +149,18 @@ export async function reply({ chat, text, image, mediaType, name }) {
             chat, createdAt: reuse ? prev.createdAt : Date.now(), updatedAt: Date.now(), jornada: reuse ? prev.jornada : jornada(),
             ...(reuse ? { _saved: true } : {}),
             nombre: i.nombre, telefono: chat.startsWith("wa:") ? chat.slice(3) : null,
-            entrega: i.entrega, zona: i.zona || null, direccion: i.direccion || null,
+            entrega: i.entrega, zona: i.entrega === "envio" ? i.zona : null, direccion: i.direccion || null,
+            zonaNombre: i.entrega === "envio" ? menu.zonas.find((z) => z.id === i.zona)?.nombre || null : null,
+            geo: geo?.encontrada ? { km: geo.km, lat: geo.lat, lng: geo.lng, texto: geo.texto, exacta: geo.exacta, fuente: geo.fuente } : null,
+            zonaAConfirmar,
             lineas: calc.lineas, envio: calc.envio, total: calc.total, items: i.items, canal: chat.startsWith("wa:") ? "whatsapp" : "web",
             comentarios: i.comentarios || "", estado: "pago_pendiente", paraMasTarde: !isOpen,
           };
           await saveOrder(o);
-          return { pedido: o.id, detalle: calc.lineas.map((l) => `${l.texto}: ${money(l.subtotal)}`), envio: money(calc.envio), total: money(calc.total), alias: LOCAL.alias, titular: LOCAL.titular };
+          return {
+            pedido: o.id, detalle: calc.lineas.map((l) => `${l.texto}: ${money(l.subtotal)}`), envio: money(calc.envio), total: money(calc.total), alias: LOCAL.alias, titular: LOCAL.titular,
+            ...(o.zonaNombre ? { zona: o.zonaNombre, distancia: geo?.encontrada ? `${String(geo.km).replace(".", ",")} km` : "sin verificar (la confirma el local)" } : {}),
+          };
         },
       }),
       estado_pedido: tool({

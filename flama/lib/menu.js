@@ -48,10 +48,12 @@ export function cartaBase() {
       { id: "extra-bacon", nombre: "Extra bacon", precio: 2000, agotado: false },
     ],
     zonas: [
-      { id: "centro", nombre: "Centro (hasta 15 cuadras)", precio: 1500 },
-      { id: "cercana", nombre: "Barrios cercanos (San Jorge, Padre Varela, Lanusse, El Quinto)", precio: 2500 },
-      { id: "lejana", nombre: "Barrios alejados (Jáuregui, Open Door, Olivera, Pueblo Nuevo)", precio: 4000 },
+      { id: "centro", nombre: "Centro (hasta 15 cuadras)", precio: 1500, hastaKm: 1.5 },
+      { id: "cercana", nombre: "Barrios cercanos (San Jorge, Padre Varela, Lanusse, El Quinto)", precio: 2500, hastaKm: 4 },
+      { id: "lejana", nombre: "Barrios alejados (Jáuregui, Open Door, Olivera, Pueblo Nuevo)", precio: 4000, hastaKm: 12 },
     ],
+    ubicacion: null, // { lat, lng } del local; si falta, se calcula con la dirección
+    envioV: 1,
   };
 }
 
@@ -86,8 +88,12 @@ export function normalizar(c) {
   const eids = new Set();
   const extras = (c.extras || []).map((e) => ({ id: e.id && !eids.has(e.id) ? (eids.add(e.id), e.id) : "extra-" + unico(e.nombre || "extra", eids), nombre: txt(e.nombre, 40), precio: plata(e.precio), agotado: !!e.agotado })).filter((e) => e.nombre);
   const zids = new Set();
-  const zonas = (c.zonas || []).map((z) => ({ id: z.id && !zids.has(z.id) ? (zids.add(z.id), z.id) : unico(z.nombre || "zona", zids), nombre: txt(z.nombre, 90), precio: plata(z.precio) })).filter((z) => z.nombre);
-  return { categorias, productos, extras, zonas };
+  const km = (n) => { const v = Math.round(Number(n) * 10) / 10; return v > 0 && v <= 60 ? v : 0; };
+  const zonas = (c.zonas || []).map((z) => ({ id: z.id && !zids.has(z.id) ? (zids.add(z.id), z.id) : unico(z.nombre || "zona", zids), nombre: txt(z.nombre, 90), precio: plata(z.precio), hastaKm: km(z.hastaKm) })).filter((z) => z.nombre);
+  const conKm = zonas.filter((z) => z.hastaKm).sort((a, b) => a.hastaKm - b.hastaKm);
+  for (let i = 1; i < conKm.length; i++) if (conKm[i].hastaKm === conKm[i - 1].hastaKm) throw new Error(`Dos zonas tienen el mismo "hasta km" (${conKm[i].hastaKm} km)`);
+  const u = c.ubicacion, ubicacion = u && Number(u.lat) < -34.3 && Number(u.lat) > -34.85 && Number(u.lng) < -58.85 && Number(u.lng) > -59.5 ? { lat: Number(u.lat), lng: Number(u.lng) } : null;
+  return { categorias, productos, extras, zonas, ubicacion, envioV: 1 };
 }
 
 // ---------------- Leer y guardar la carta ----------------
@@ -109,6 +115,13 @@ export async function getMenu(fresh = false) {
       for (const e of c.extras) { if (ov.extras?.[e.id]) e.precio = ov.extras[e.id]; if (ov.agotado?.[e.id]) e.agotado = true; }
       for (const z of c.zonas) if (ov.zonas?.[z.id]) z.precio = ov.zonas[z.id];
     } catch {}
+    await redis.set("flama:carta", JSON.stringify(c));
+  }
+  // Cartas guardadas antes de la zona automática: se les ponen los km sugeridos a las zonas de siempre
+  if (c.envioV !== 1) {
+    const base = Object.fromEntries(cartaBase().zonas.map((z) => [z.id, z.hastaKm]));
+    for (const z of c.zonas || []) if (z.hastaKm === undefined) z.hastaKm = base[z.id] || 0;
+    c.ubicacion = c.ubicacion || null; c.envioV = 1;
     await redis.set("flama:carta", JSON.stringify(c));
   }
   cache = { t: Date.now(), c };
@@ -136,8 +149,8 @@ export function menuTexto(c = cartaBase()) {
     return `${cat.nombre.toUpperCase()}${cat.nota ? ` — ${cat.nota}` : ""}\n${lineas.join("\n")}`;
   }).filter(Boolean);
   const ex = c.extras.map((e) => `- ${e.nombre} [id: ${e.id}]: ${$(e.precio)}${e.agotado ? " (AGOTADO HOY)" : ""}`).join("\n");
-  const zs = c.zonas.map((z) => `- ${z.nombre} [id: ${z.id}]: ${$(z.precio)}`).join("\n");
-  return `${bloques.join("\n\n")}\n\nEXTRAS (solo para productos con simple/doble; por unidad, se pueden repetir: ej. 2 extra carne)\n${ex}\n\nDELIVERY\n${zs}\n- Retiro en el local (${LOCAL.direccion}): sin cargo`;
+  const zs = c.zonas.map((z) => `- ${z.nombre} [id: ${z.id}]: ${$(z.precio)}${z.hastaKm ? ` (hasta ${String(z.hastaKm).replace(".", ",")} km del local)` : ""}`).join("\n");
+  return `${bloques.join("\n\n")}\n\nEXTRAS (solo para productos con simple/doble; por unidad, se pueden repetir: ej. 2 extra carne)\n${ex}\n\nDELIVERY (la zona y el costo los calcula crear_pedido con la dirección)\n${zs}\n- Retiro en el local (${LOCAL.direccion}): sin cargo`;
 }
 
 // ¿Está abierto ahora? (hora Argentina)

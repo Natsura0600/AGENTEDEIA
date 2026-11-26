@@ -103,6 +103,8 @@ td.n{font-family:"JetBrains Mono";text-align:right;white-space:nowrap}
 .crow{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .crow input{flex:1;min-width:140px}.crow input[type=number]{flex:none;width:110px;min-width:0}
 .crow .nm,.pcard .nm{font-weight:800}
+.crow input[step="0.5"]{width:76px}
+.geoc{padding:0;margin-top:10px}.geoc .crow:last-child{border-bottom:0}.geoc a:not(.btn){color:var(--y)}
 .sp{flex:1}
 .inl{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase}
 .ck{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer}
@@ -418,7 +420,14 @@ function pintarMenu() {
   <div class="card" style="padding:0">${C.extras.map((e, i) => `<div class="crow"><input class="nm" data-b="extras.${i}.nombre" value="${esc(e.nombre)}" aria-label="Nombre del extra"><label class="inl">$ <input type="number" min="0" step="100" data-b="extras.${i}.precio" value="${e.precio}" aria-label="Precio"></label>
     <label class="ck"><input type="checkbox" data-ck="extras.${i}.agotado" ${e.agotado ? "checked" : ""}> Agotado</label><span class="sp"></span><button type="button" class="btn sm r" data-exdel="${i}">Borrar</button></div>`).join("")}</div>
   <h2>Zonas de envío <span class="sp"></span><button class="btn" id="nuevaZona">＋ Nueva zona</button></h2>
-  <div class="card" style="padding:0">${C.zonas.map((z, i) => `<div class="crow"><input class="nm" style="flex:2" data-b="zonas.${i}.nombre" value="${esc(z.nombre)}" aria-label="Nombre de la zona"><label class="inl">$ <input type="number" min="0" step="100" data-b="zonas.${i}.precio" value="${z.precio}" aria-label="Precio"></label><span class="sp"></span><button type="button" class="btn sm r" data-zdel="${i}">Borrar</button></div>`).join("")}</div>
+  <p class="help">La zona se elige sola con la dirección del cliente: el sistema mide la distancia en línea recta desde el local y usa la primera zona que alcance. Más lejos que la última, no se toma delivery. Una zona <b>sin km</b> queda solo para elegirla a mano.</p>
+  <div class="card" style="padding:0">${C.zonas.map((z, i) => `<div class="crow"><input class="nm" style="flex:2" data-b="zonas.${i}.nombre" value="${esc(z.nombre)}" aria-label="Nombre de la zona"><label class="inl">Hasta <input type="number" min="0" max="60" step="0.5" data-b="zonas.${i}.hastaKm" value="${z.hastaKm || ""}" placeholder="—" aria-label="Hasta cuántos km"> km</label><label class="inl">$ <input type="number" min="0" step="100" data-b="zonas.${i}.precio" value="${z.precio}" aria-label="Precio"></label><span class="sp"></span><button type="button" class="btn sm r" data-zdel="${i}">Borrar</button></div>`).join("")}</div>
+  <div class="card geoc">
+    <div class="crow"><b>📍 Ubicación del local</b><span class="mono" id="origenTxt" style="color:var(--mut)">buscando…</span><span class="sp"></span><a class="btn sm" id="origenMapa" target="_blank" rel="noopener" hidden>Ver en el mapa ↗</a></div>
+    <div class="crow"><input id="ubic" value="${C.ubicacion ? `${C.ubicacion.lat}, ${C.ubicacion.lng}` : ""}" placeholder="Si quedó mal ubicado: pegá acá las coordenadas del local (en Google Maps, mantené apretado el local y copiá los números)" aria-label="Coordenadas del local"></div>
+    <div class="crow"><input id="probarDir" placeholder="Probar una dirección (usa lo último guardado), ej: Belgrano 1234" aria-label="Dirección para probar"><button type="button" class="btn" id="probar">Probar</button></div>
+    <div class="crow" id="probarRes" hidden></div>
+  </div>
   <div class="savebar"><span id="menuEstado" class="${sucio ? "warnc" : ""}" style="margin-right:auto;font-weight:800;align-self:center">${sucio ? "● Hay cambios sin guardar" : ""}</span><a class="btn" href="/" target="_blank" rel="noopener">Ver la web ↗</a><button class="btn y" id="guardarMenu">Guardar menú</button></div>`;
 
   const root = $("t-menu"), all = (q) => root.querySelectorAll(q);
@@ -447,7 +456,28 @@ function pintarMenu() {
   all("[data-cdel]").forEach((b) => (b.onclick = () => { carta.categorias.splice(b.dataset.cdel, 1); re(); }));
   $("nuevoEx").onclick = () => { carta.extras.push({ id: rid("extra"), nombre: "Nuevo extra", precio: 0, agotado: false }); re(); };
   all("[data-exdel]").forEach((b) => (b.onclick = () => { carta.extras.splice(b.dataset.exdel, 1); re(); }));
-  $("nuevaZona").onclick = () => { carta.zonas.push({ id: rid("z"), nombre: "Nueva zona", precio: 0 }); re(); };
+  $("nuevaZona").onclick = () => { carta.zonas.push({ id: rid("z"), nombre: "Nueva zona", precio: 0, hastaKm: 0 }); re(); };
+  // Ubicación del local y probador de direcciones (usa lo que ya está guardado)
+  fetch(`/api/envio?origen=1&key=${encodeURIComponent(KEY)}`).then((r) => r.json()).then((o) => {
+    if (!o.lat) return;
+    $("origenTxt").textContent = `${o.lat.toFixed(5)}, ${o.lng.toFixed(5)} · ${o.fuente === "dueño" ? "fijada por vos" : o.aprox ? "aproximada, conviene corregirla" : "calculada con Mitre 670"}`;
+    $("origenMapa").href = o.mapa; $("origenMapa").hidden = false;
+  }).catch(() => ($("origenTxt").textContent = "no se pudo calcular"));
+  $("ubic").oninput = () => {
+    const m = $("ubic").value.match(/(-?\d+[.,]\d+)\s*[,; ]\s*(-?\d+[.,]\d+)/);
+    carta.ubicacion = m ? { lat: Number(m[1].replace(",", ".")), lng: Number(m[2].replace(",", ".")) } : null; marcar();
+  };
+  const probar = async () => {
+    const d = $("probarDir").value.trim(), out = $("probarRes"); if (!d) return;
+    out.hidden = false; out.textContent = "Buscando…";
+    try {
+      const r = await (await fetch("/api/envio?dir=" + encodeURIComponent(d))).json();
+      const km = (n) => String(n).replace(".", ",") + " km";
+      out.innerHTML = !r.encontrada ? `🔎 No se encontró en Luján. El bot le va a pedir el barrio al cliente.`
+        : `📍 ${esc(r.texto)} · <b>${r.exacta ? "" : "≈ "}${km(r.km)}</b> → ${r.zona ? `<b>${esc(r.zona.nombre)}</b> (${money(r.zona.precio)})` : r.fuera ? `<b class="warnc">fuera de zona</b> (hasta ${km(r.maxKm)})` : "sin zona con km"}${r.exacta ? "" : " · ubicación aproximada"} <a href="${r.mapa}" target="_blank" rel="noopener">mapa ↗</a>`;
+    } catch { out.textContent = "No se pudo buscar"; }
+  };
+  $("probar").onclick = probar; $("probarDir").onkeydown = (e) => { if (e.key === "Enter") probar(); };
   all("[data-zdel]").forEach((b) => (b.onclick = () => { carta.zonas.splice(b.dataset.zdel, 1); re(); }));
   all("[data-foto]").forEach((inp) => (inp.onchange = async () => {
     const f = inp.files[0]; if (!f) return;

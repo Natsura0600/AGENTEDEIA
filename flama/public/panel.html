@@ -84,6 +84,9 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 @keyframes blink{50%{opacity:.6}}
 .who{font-weight:900;font-size:18px;margin:10px 0 2px}
 .meta{color:var(--mut);font-size:13px;line-height:1.5}
+.meta.dir{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
+.maplink{flex:none;color:var(--blue);font-weight:800;font-size:12px;text-decoration:none;border:1px solid #5ab4ff55;padding:2px 8px}
+.meta.warnz{color:var(--y);font-weight:700}
 .items{list-style:none;margin:12px 0;padding:10px 0;border-block:1px dashed var(--line);font-size:15px;line-height:1.45}
 .items li{display:flex;gap:8px}
 .items li b{color:var(--y);font-family:"JetBrains Mono";min-width:26px}
@@ -302,7 +305,16 @@ function card(o, nuevo) {
   const ago = el("span", "ago"); ago.dataset.t = o.createdAt; ago.dataset.activo = ACTIVOS.includes(o.estado) ? "1" : "0"; ago.title = "Entró a las " + hhmm(o.createdAt); paintAgo(ago);
   chips.append(ago); top.append(left, chips); c.append(top);
   if (o.canal !== "mostrador" || o.nombre !== "Mostrador") c.append(el("div", "who", o.nombre || "Sin nombre"));
-  if (o.entrega === "envio" && o.direccion) c.append(el("div", "meta", "📍 " + o.direccion));
+  if (o.entrega === "envio" && o.direccion) {
+    // Dirección + km + zona, con botón para abrirla en Google Maps (para el repartidor)
+    const d = el("div", "meta dir"); d.append(el("span", null, "📍 " + o.direccion));
+    const q = o.geo ? `${o.geo.lat},${o.geo.lng}` : encodeURIComponent(o.direccion + ", Luján, Buenos Aires");
+    const a = el("a", "maplink", "Mapa ↗"); a.href = "https://www.google.com/maps/search/?api=1&query=" + q; a.target = "_blank"; a.rel = "noopener"; d.append(a);
+    c.append(d);
+    const zt = [o.zonaNombre, o.geo ? (o.geo.exacta ? "" : "≈ ") + String(o.geo.km).replace(".", ",") + " km" : null].filter(Boolean).join(" · ");
+    if (zt) c.append(el("div", "meta", "🛵 " + zt));
+    if (o.zonaAConfirmar) c.append(el("div", "meta warnz", o.geo ? "⚠ Ubicación aproximada: confirmá la zona" : "⚠ No se pudo ubicar la dirección: confirmá la zona"));
+  }
   if (o.telefono) c.append(el("div", "meta", "📱 +" + o.telefono));
   const ul = el("ul", "items");
   (o.lineas || []).forEach((l) => { const li = el("li"); const m = l.texto.match(/^(\d+)x (.+)$/); if (m) { li.append(el("b", null, m[1] + "×"), el("span", null, m[2])); } else li.append(el("span", null, l.texto)); ul.append(li); });
