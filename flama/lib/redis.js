@@ -17,6 +17,10 @@ const memory = {
   async rpush(k, v) { const a = JSON.parse((await this.get(k)) || "[]"); a.push(v); mem.set(k, { val: JSON.stringify(a), exp: 0 }); return a.length; },
   async mget(...ks) { return Promise.all(ks.flat().map((k) => this.get(k))); },
   async incr(k) { const n = Number((await this.get(k)) || 0) + 1; mem.set(k, { val: String(n), exp: 0 }); return n; },
+  async scan(cursor, { match = "*" } = {}) {
+    const re = new RegExp("^" + match.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$");
+    return ["0", [...mem.keys()].filter((k) => re.test(k) && (!mem.get(k).exp || mem.get(k).exp > Date.now()))];
+  },
   async lpop(k) { const a = JSON.parse((await this.get(k)) || "[]"); const v = a.shift() ?? null; mem.set(k, { val: JSON.stringify(a), exp: 0 }); return v; },
 };
 
