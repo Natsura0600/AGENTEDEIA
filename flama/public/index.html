@@ -144,6 +144,10 @@ nav.solid{background:#0c0b0aee;backdrop-filter:blur(10px);padding:10px 24px;bord
 .ing i{font-style:normal;color:var(--y);margin:0 2px;font-weight:900}
 .badge{position:absolute;top:-11px;right:14px;background:var(--y);color:var(--k);font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:5px 10px;transform:rotate(3deg);box-shadow:3px 3px 0 var(--k);border:1.5px solid var(--k)}
 .badge.red{background:var(--red);color:var(--w)}
+.item .foto{display:block;width:calc(100% + 40px);margin:-20px -20px 4px;aspect-ratio:16/10;object-fit:cover;border-bottom:1.5px solid var(--line);background:var(--k3)}
+.item.agot,.ritem.agot{opacity:.45}.item.agot:hover{transform:none;border-color:var(--line)}
+.agotag{display:inline-block;margin-top:4px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:var(--red)}
+.add[disabled],.plus[disabled]{background:var(--k3);color:var(--mut);border-color:var(--line);cursor:not-allowed;transform:none}
 .opts{display:flex;gap:6px;flex-wrap:wrap}
 .chip{background:transparent;border:1.5px solid var(--line);color:var(--mut);padding:5px 10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;min-height:32px}
 .chip[aria-pressed="true"]{border-color:var(--y);color:var(--y)}
@@ -444,7 +448,8 @@ const MENU = [
 // Etiquetas de ejemplo: confirmar con Flama cuáles son las más pedidas
 const BADGES = { "oklahoma": ["Más pedida", ""], "cheese-2": ["Nueva", "red"], "anderson": ["La más cargada", ""], "sliders": ["Para compartir", ""] };
 const ZONAS = [["centro","Centro (hasta 15 cuadras)",1500],["cercana","Barrios cercanos",2500],["lejana","Barrios alejados",4000]];
-const EXTRA = 2000;
+let EXTRA = 2000, EXTRA_BACON = 2000;
+const AGOTADO = new Set(); let FOTOS = {};
 const money = (n) => "$" + n.toLocaleString("es-AR");
 const cart = [];
 const $ = (id) => document.getElementById(id);
@@ -483,12 +488,15 @@ function renderMenu() {
       const r = mk("div", "ritem reveal");
       const nm = mk("div", "nm"); nm.append(mk("h4", null, name), mk("p", null, desc));
       const add = mk("button", "plus", "+"); add.type = "button"; add.setAttribute("aria-label", "Agregar " + name);
+      if (AGOTADO.has(id)) { r.classList.add("agot"); add.disabled = true; add.textContent = "✕"; nm.append(mk("span", "agotag", "Agotado hoy")); }
       add.onclick = () => agregar(name, s, add, "✓");
       r.append(nm, mk("span", "price", money(s)), add); list.append(r); return;
     }
     let size = "simple"; const ext = { carne: 0, bacon: 0 }; let veg = false;
     const row = mk("article", "item reveal");
-    if (BADGES[id]) row.append(mk("span", "badge " + BADGES[id][1], BADGES[id][0]));
+    if (FOTOS[id]) { const im = mk("img", "foto"); im.src = `/api/menu?foto=${id}&v=${FOTOS[id]}`; im.alt = name; im.loading = "lazy"; row.append(im); row.classList.add("confoto"); }
+    if (AGOTADO.has(id)) { row.classList.add("agot"); row.append(mk("span", "badge red", "Agotado hoy")); }
+    else if (BADGES[id]) row.append(mk("span", "badge " + BADGES[id][1], BADGES[id][0]));
     const top = mk("div", "top"); const pr = mk("span", "price");
     if (d) pr.append(mk("small", null, "desde")); pr.append(document.createTextNode(money(s)));
     top.append(mk("h3", null, name), pr);
@@ -520,11 +528,12 @@ function renderMenu() {
     }
     const add = mk("button", "add", "Agregar"); add.type = "button"; add.setAttribute("aria-label", "Agregar " + name);
     add.onclick = () => {
-      const price = (d ? (size === "simple" ? s : d) : s) + (ext.carne + ext.bacon) * EXTRA;
+      const price = (d ? (size === "simple" ? s : d) : s) + ext.carne * EXTRA + ext.bacon * EXTRA_BACON;
       const exTxt = ["carne", "bacon"].filter((k) => ext[k]).map((k) => `${ext[k] > 1 ? ext[k] + " " : ""}extra ${k}`).join(" + ");
       const label = d ? `${name} ${size}${veg ? " veggie" : ""}${exTxt ? " + " + exTxt : ""}` : name;
       agregar(label, price, add, "✓ Listo");
     };
+    if (AGOTADO.has(id)) { add.disabled = true; add.textContent = "Agotado"; }
     buy.append(sz, add); row.append(buy); list.append(row);
   });
   observe();
@@ -600,6 +609,21 @@ function openChat(q) {
 $("wab").onclick = () => { if ($("wawin").classList.contains("open")) { $("wawin").classList.remove("open"); $("wab").classList.remove("open"); $("wab").setAttribute("aria-expanded", "false"); } else if (!$("wawin").firstChild) openChat(); else { $("wawin").classList.add("open"); $("wab").classList.add("open"); } };
 $("sendtry").onclick = () => { if (validate()) { const q = `&msg=${encodeURIComponent(message())}&name=${encodeURIComponent($("nombre").value)}`; vaciar(); openChat(q); } };
 renderMenu(); observe(); updateCart();
+// Precios, agotados y fotos que el dueño cambia desde su panel
+fetch("/api/menu").then((r) => r.json()).then((m) => {
+  for (const it of m.items) {
+    const row = MENU.find((x) => x[0] === it.id); if (!row) continue;
+    if (it.simple) { row[3] = it.simple; row[4] = it.doble; } else if (it.precio) row[3] = it.precio;
+    it.agotado ? AGOTADO.add(it.id) : AGOTADO.delete(it.id);
+  }
+  FOTOS = m.fotos || {};
+  if (m.extras?.["extra-carne"]) EXTRA = m.extras["extra-carne"].precio;
+  if (m.extras?.["extra-bacon"]) EXTRA_BACON = m.extras["extra-bacon"].precio;
+  for (const z of m.zonas || []) { const zz = ZONAS.find((x) => x[0] === z.id); if (zz) zz[2] = z.precio; }
+  $("zona").innerHTML = ZONAS.map(([id, n, p]) => `<option value="${id}">${n} · ${money(p)}</option>`).join("");
+  document.querySelector(".extras-note").textContent = `Extra carne +${money(EXTRA)} c/u · Extra bacon +${money(EXTRA_BACON)} c/u`;
+  renderMenu(); document.querySelectorAll("#list .reveal").forEach((e) => e.classList.add("in")); updateCart();
+}).catch(() => {});
 </script>
 </body>
 </html>

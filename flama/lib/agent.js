@@ -2,7 +2,8 @@ import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { redis } from "./redis.js";
 import { systemPrompt } from "./prompt.js";
-import { LOCAL, ZONAS, BEBIDAS, abierto, calcular } from "./menu.js";
+import { LOCAL, ZONAS, BEBIDAS, abierto, calcular, getMenu } from "./menu.js";
+import { sincronizarStock } from "./stock.js";
 import { nextId, saveOrder, activeOrder, claimOperation, jornada, ESTADOS } from "./orders.js";
 
 const MODEL = process.env.AI_MODEL || "openai/gpt-5-mini";
@@ -64,6 +65,7 @@ export async function reply({ chat, text, image, mediaType, name }) {
   const history = await getHistory(chat);
   const isOpen = process.env.RESPETAR_HORARIO === "1" ? abierto() : true; // demo: siempre abierto
   const VIEJO = 3 * 3600e3;
+  const menu = await getMenu();
   const esPedidoWeb = /quiero hacer este pedido:/i.test(text || "");
   let order = await activeOrder(chat);
   // Un pedido que quedó esperando pago hace horas no se mezcla con uno nuevo
@@ -88,6 +90,7 @@ export async function reply({ chat, text, image, mediaType, name }) {
       order.estado = "pago_a_verificar";
       nota = `[SISTEMA: ${detalle(order)} El comprobante quedó para revisión manual del local (${v.motivos.join("; ")}). Decile al cliente, amablemente, que el local lo revisa y le confirma en unos minutos. Si el problema es claro (por ejemplo el monto), explicáselo.]`;
     }
+    await sincronizarStock(order);
     await saveOrder(order);
   } else if (image) {
     nota = "[SISTEMA: el cliente mandó una imagen, pero no hay un pedido esperando pago.]";
@@ -103,7 +106,7 @@ export async function reply({ chat, text, image, mediaType, name }) {
   const result = await generateText({
     model: MODEL,
     providerOptions: fast,
-    instructions: systemPrompt(isOpen),
+    instructions: systemPrompt(isOpen, menu),
     messages,
     stopWhen: stepCountIs(4),
     prepareStep: ({ stepNumber }) => (esPedidoWeb && stepNumber === 0 ? { toolChoice: { type: "tool", toolName: "crear_pedido" } } : {}),
@@ -126,7 +129,8 @@ export async function reply({ chat, text, image, mediaType, name }) {
           comentarios: z.string().optional(),
         }),
         execute: async (i) => {
-          const calc = calcular(i.items, i.entrega, i.zona);
+          let calc;
+          try { calc = calcular(i.items, i.entrega, i.zona, menu); } catch (e) { return { error: e.message }; }
           const prev = await activeOrder(chat);
           const reuse = prev && prev.estado === "pago_pendiente" && Date.now() - (prev.updatedAt || prev.createdAt) < VIEJO && prev.jornada === jornada();
           const o = {
@@ -135,7 +139,7 @@ export async function reply({ chat, text, image, mediaType, name }) {
             ...(reuse ? { _saved: true } : {}),
             nombre: i.nombre, telefono: chat.startsWith("wa:") ? chat.slice(3) : null,
             entrega: i.entrega, zona: i.zona || null, direccion: i.direccion || null,
-            lineas: calc.lineas, envio: calc.envio, total: calc.total,
+            lineas: calc.lineas, envio: calc.envio, total: calc.total, items: i.items, canal: chat.startsWith("wa:") ? "whatsapp" : "web",
             comentarios: i.comentarios || "", estado: "pago_pendiente", paraMasTarde: !isOpen,
           };
           await saveOrder(o);

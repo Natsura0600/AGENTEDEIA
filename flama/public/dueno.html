@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0b0a">
+<title>Panel del dueño · Flama</title>
+<link rel="icon" type="image/png" href="/img/favicon.png">
+<link rel="preload" href="/fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:Anton;src:url(/fonts/anton.woff2) format("woff2");font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-800.woff2) format("woff2");font-weight:800;font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-900.woff2) format("woff2");font-weight:900;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jbm-500.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jbm-700.woff2) format("woff2");font-weight:700;font-display:swap}
+:root{--y:#f6c91c;--k:#0c0b0a;--k2:#161412;--k3:#211e1b;--k4:#2a2622;--w:#f4efe6;--mut:#9b948a;--line:#2c2824;--ok:#5ad67d;--warn:#ff9f1c;--bad:#ff5a47;--blue:#5ab4ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--k);color:var(--w);font-family:Archivo,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--y);outline-offset:2px}
+.mono{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.d{font-family:Anton;font-weight:400;text-transform:uppercase;letter-spacing:.01em;line-height:1}
+header{position:sticky;top:0;z-index:20;background:#0c0b0af2;backdrop-filter:blur(10px);border-bottom:3px solid var(--y)}
+.top{display:flex;align-items:center;gap:14px;padding:12px 20px}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.brand img{width:44px;height:44px;border-radius:50%}
+.brand b{font-family:Anton;font-weight:400;font-size:28px;letter-spacing:.04em;line-height:1;display:block}
+.brand .mono{color:var(--y)}
+.tabs{display:flex;gap:2px;padding:0 20px;overflow-x:auto;scrollbar-width:none}
+.tabs button{flex:none;background:none;border:0;color:var(--mut);font-weight:800;font-size:14px;padding:12px 16px;border-bottom:3px solid transparent;margin-bottom:-3px}
+.tabs button[aria-selected="true"]{color:var(--y);border-color:var(--y)}
+main{padding:22px 20px 80px;max-width:1300px;margin:0 auto}
+section[hidden]{display:none}
+h2{font-family:Anton;font-weight:400;font-size:30px;text-transform:uppercase;margin:34px 0 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h2:first-child{margin-top:0}
+h2 .sp{margin-left:auto}
+h2 input{font:700 15px Archivo,system-ui,sans-serif;text-transform:none}
+.help{color:var(--mut);font-size:14px;margin:-6px 0 14px;max-width:760px;line-height:1.5}
+.btn{font-family:Archivo,system-ui,sans-serif;display:inline-flex;align-items:center;gap:8px;background:var(--k3);color:var(--w);border:1.5px solid var(--line);min-height:42px;padding:0 14px;font-weight:800;font-size:13px;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--mut)}
+.btn.y{background:var(--y);border-color:var(--y);color:var(--k)}
+.btn.g{background:var(--ok);border-color:var(--ok);color:var(--k)}
+.btn.r{color:var(--bad)}
+.btn.sm{min-height:34px;padding:0 10px;font-size:12px}
+input,select{background:var(--k);color:var(--w);border:1.5px solid var(--line);padding:9px 10px;border-radius:0;color-scheme:dark;min-height:40px}
+input:focus,select:focus{border-color:var(--y);outline:0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:var(--k2);border:1.5px solid var(--line);padding:14px 16px}
+.kpi .mono{color:var(--mut)}
+.kpi b{display:block;font-family:Anton;font-weight:400;font-size:clamp(28px,3vw,42px);line-height:1;margin-top:8px}
+.kpi small{display:block;color:var(--mut);font-size:12px;margin-top:6px}
+.kpi.main{background:var(--y);border-color:var(--y);color:var(--k)}.kpi.main .mono,.kpi.main small{color:#0c0b0ab0}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{background:var(--k3);border:1px solid var(--line);padding:6px 10px;font-size:13px;font-weight:700}
+.chip b{font-family:"JetBrains Mono";color:var(--y);margin-left:6px}
+.card{background:var(--k2);border:1.5px solid var(--line);padding:16px}
+.chart{display:flex;align-items:flex-end;gap:4px;height:180px;padding:10px 4px 0;border-bottom:1.5px solid var(--line);overflow-x:auto}
+.bar{flex:1 0 18px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.bar i{display:block;width:100%;background:var(--y);min-height:2px;transition:height .4s}
+.bar.cero i{background:var(--k4)}
+.bar span{font-family:"JetBrains Mono";font-size:10px;color:var(--mut)}
+.two{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.toplist div{display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin-bottom:10px;font-size:14px;font-weight:700}
+.toplist i{grid-column:1/-1;height:6px;background:var(--y);display:block}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-family:"JetBrains Mono";font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:700;padding:10px 8px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.n{font-family:"JetBrains Mono";text-align:right;white-space:nowrap}
+.scroll{overflow-x:auto;border:1.5px solid var(--line);background:var(--k2)}
+.alert{background:#ff5a471a;border:1.5px solid var(--bad);color:#ffb3aa;padding:12px 14px;font-weight:800;margin-bottom:14px}
+.ings{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.ing{background:var(--k2);border:1.5px solid var(--line);border-top:5px solid var(--ok);padding:16px}
+.ing.warn{border-top-color:var(--warn)}.ing.bad{border-top-color:var(--bad)}
+.ing h3{margin:0;font-size:17px;font-weight:900}
+.ing .q{font-family:Anton;font-size:46px;line-height:1;margin:10px 0 2px}
+.ing .q small{font-family:Archivo;font-size:14px;color:var(--mut);margin-left:6px;font-weight:700}
+.meter{height:8px;background:var(--k4);margin:10px 0 6px}.meter i{display:block;height:100%;background:var(--ok)}
+.ing.warn .meter i{background:var(--warn)}.ing.bad .meter i{background:var(--bad)}
+.ing .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.rec input{width:72px;text-align:right;min-height:34px;padding:6px 8px}
+.rec td.p{font-weight:800;white-space:nowrap}
+.rec td.t{color:var(--mut);font-size:12px;text-transform:uppercase;font-weight:800}
+.now{display:flex;gap:8px;flex-wrap:wrap}
+.now span{background:#5ad67d1a;border:1px solid var(--ok);color:var(--ok);padding:8px 12px;font-weight:800}
+.warnc{color:var(--warn);font-weight:800}
+.prod{display:grid;grid-template-columns:72px 1fr auto auto;gap:12px;align-items:center;padding:10px;border-bottom:1px solid var(--line)}
+.prod .ph{width:72px;height:72px;background:var(--k3) center/cover;border:1.5px dashed var(--line);display:grid;place-items:center;color:var(--mut);font-size:11px;text-align:center;cursor:pointer;position:relative}
+.prod .ph.has{border-style:solid}
+.prod .ph input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.prod b{font-size:15px}
+.prod .pr{display:flex;gap:6px;align-items:center}
+.prod .pr label{font-size:11px;color:var(--mut);font-weight:800;text-transform:uppercase;display:flex;flex-direction:column;gap:3px}
+.prod .pr input{width:100px}
+.tog{display:inline-flex;border:1.5px solid var(--line)}
+.tog button{background:none;border:0;color:var(--mut);padding:8px 10px;font-weight:800;font-size:12px;min-height:38px}
+.tog button[aria-pressed="true"].si{background:var(--ok);color:var(--k)}
+.tog button[aria-pressed="true"].no{background:var(--bad);color:#fff}
+.savebar{position:sticky;bottom:0;background:#0c0b0af2;border-top:1.5px solid var(--line);padding:12px 0;display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.links .card b{display:block;font-size:16px;margin-bottom:4px}
+.links .card p{color:var(--mut);font-size:13px;margin:0 0 12px}
+.big-tog{display:flex;align-items:center;gap:16px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--w);color:var(--k);font-weight:800;padding:12px 18px;z-index:60;box-shadow:0 10px 30px #000a;animation:tin .25s}
+.toast.err{background:var(--bad);color:#fff}
+@keyframes tin{from{opacity:0;transform:translate(-50%,10px)}}
+dialog{background:var(--k2);color:var(--w);border:1.5px solid var(--y);padding:0;width:min(440px,calc(100vw - 24px))}
+dialog::backdrop{background:#000b}
+dialog form{padding:20px}
+dialog h3{font-family:Anton;font-weight:400;font-size:28px;text-transform:uppercase;margin:0 0 14px}
+dialog label{display:block;font-size:12px;color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin:12px 0 6px}
+dialog input,dialog select{width:100%}
+dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.prod{grid-template-columns:60px 1fr;}.prod .ph{width:60px;height:60px}.prod .pr,.prod .tog{grid-column:2}.top{padding:10px 14px}main{padding:18px 14px 80px}.tabs{padding:0 10px}}
+</style>
+</head>
+<body>
+<header>
+<div class="top">
+<div class="brand"><img src="/img/logo-round.webp" alt=""><div><b>FLAMA</b><span class="mono">Panel del dueño</span></div></div>
+<a class="btn sm" id="topPanel" href="#" target="_blank" rel="noopener">Pedidos ↗</a>
+</div>
+<nav class="tabs" role="tablist">
+<button role="tab" data-t="resumen" aria-selected="true">📊 Caja</button>
+<button role="tab" data-t="stock" aria-selected="false">📦 Stock</button>
+<button role="tab" data-t="personal" aria-selected="false">👥 Personal</button>
+<button role="tab" data-t="menu" aria-selected="false">🍔 Menú</button>
+<button role="tab" data-t="ajustes" aria-selected="false">⚙️ Ajustes</button>
+</nav>
+</header>
+<main>
+<section id="t-resumen"></section>
+<section id="t-stock" hidden></section>
+<section id="t-personal" hidden></section>
+<section id="t-menu" hidden></section>
+<section id="t-ajustes" hidden></section>
+</main>
+<dialog id="dlg"><form method="dialog" id="dlgf"></form></dialog>
+
+<script>
+const KEY = new URLSearchParams(location.search).get("key") || "";
+const $ = (id) => document.getElementById(id);
+const money = (n) => "$" + Math.round(Number(n || 0)).toLocaleString("es-AR");
+const num = (n) => Number(n || 0).toLocaleString("es-AR", { maximumFractionDigits: 2 });
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const TZ = "America/Argentina/Buenos_Aires";
+const fecha = (t) => new Date(t).toLocaleString("es-AR", { timeZone: TZ, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+const hora = (t) => new Date(t).toLocaleTimeString("es-AR", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
+const mesActual = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ }).slice(0, 7);
+let estado = { mes: mesActual() }, claveEmp = "";
+
+function toast(msg, err) { const t = document.createElement("div"); t.className = "toast" + (err ? " err" : ""); t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), 2600); }
+async function api(op, params = {}) {
+  const r = await fetch(`/api/dueno?key=${encodeURIComponent(KEY)}&op=${op}&` + new URLSearchParams(params));
+  const d = await r.json(); if (!r.ok) throw new Error(d.error || "Error"); return d;
+}
+async function post(body) {
+  const r = await fetch(`/api/dueno?key=${encodeURIComponent(KEY)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const d = await r.json(); if (!r.ok) throw new Error(d.error || "Error"); return d;
+}
+// Ventana simple para pedir datos
+function ask(title, fields, okLabel = "Guardar") {
+  return new Promise((resolve) => {
+    const f = $("dlgf");
+    f.innerHTML = `<h3>${esc(title)}</h3>` + fields.map((x) => x.type === "select"
+      ? `<label for="f_${x.name}">${esc(x.label)}</label><select id="f_${x.name}" name="${x.name}">${x.options.map(([v, l]) => `<option value="${esc(v)}" ${v == x.value ? "selected" : ""}>${esc(l)}</option>`).join("")}</select>`
+      : `<label for="f_${x.name}">${esc(x.label)}</label><input id="f_${x.name}" name="${x.name}" type="${x.type || "text"}" value="${esc(x.value ?? "")}" ${x.step ? `step="${x.step}"` : ""} ${x.ph ? `placeholder="${esc(x.ph)}"` : ""} ${x.req ? "required" : ""} inputmode="${x.type === "number" ? "decimal" : "text"}">`).join("")
+      + `<div class="row"><button class="btn" value="cancel" formnovalidate>Cancelar</button><button class="btn y" value="ok">${esc(okLabel)}</button></div>`;
+    const d = $("dlg");
+    d.onclose = () => { if (d.returnValue !== "ok") return resolve(null); const o = {}; fields.forEach((x) => (o[x.name] = f.elements[x.name].value)); resolve(o); };
+    d.returnValue = ""; d.showModal(); f.querySelector("input,select")?.focus();
+  });
+}
+
+// ---------- CAJA ----------
+async function verResumen() {
+  const d = await api("resumen", { mes: estado.mes });
+  const h = d.hoy, pp = h.porPago || {};
+  const totMes = d.dias.reduce((s, x) => s + x.ventas, 0), pedMes = d.dias.reduce((s, x) => s + x.pedidos, 0);
+  const max = Math.max(1, ...d.dias.map((x) => x.ventas));
+  const topMax = Math.max(1, ...d.top.map((x) => x[1]));
+  $("t-resumen").innerHTML = `
+  <h2>Hoy</h2>
+  <div class="kpis">
+    <div class="kpi main"><span class="mono">Caja de hoy</span><b>${money(h.ventas)}</b><small>${h.pedidos} pedidos entregados</small></div>
+    <div class="kpi"><span class="mono">Ticket promedio</span><b>${money(h.pedidos ? h.ventas / h.pedidos : 0)}</b></div>
+    <div class="kpi"><span class="mono">Envíos cobrados</span><b>${money(h.envios)}</b></div>
+    <div class="kpi"><span class="mono">Cancelados</span><b>${h.cancelados}</b></div>
+  </div>
+  <div class="chips">
+    <span class="chip">💵 Efectivo<b>${money(pp.efectivo)}</b></span><span class="chip">🏦 Transferencia<b>${money(pp.transferencia)}</b></span><span class="chip">💳 Tarjeta<b>${money(pp.tarjeta)}</b></span>
+    <span class="chip">🏪 Retiro<b>${h.retiro}</b></span><span class="chip">🛵 Delivery<b>${h.delivery}</b></span><span class="chip">🧾 Mostrador<b>${h.mostrador || 0}</b></span>
+  </div>
+  <h2>Mes <input type="month" id="mesR" value="${d.mes}" aria-label="Mes"><span class="sp"></span>
+    <a class="btn y" href="/api/export?key=${encodeURIComponent(KEY)}&mes=${d.mes}">⬇ Excel de caja</a><a class="btn" href="/api/export?key=${encodeURIComponent(KEY)}&tipo=horas&mes=${d.mes}">⬇ Excel de horas</a></h2>
+  <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><span class="mono">Ventas del mes</span><b>${money(totMes)}</b></div>
+    <div class="kpi"><span class="mono">Pedidos del mes</span><b>${pedMes}</b></div>
+    <div class="kpi"><span class="mono">Ticket promedio</span><b>${money(pedMes ? totMes / pedMes : 0)}</b></div>
+  </div>
+  <div class="two" style="margin-top:14px">
+    <div class="card"><span class="mono" style="color:var(--mut)">Ventas por día</span>
+      <div class="chart">${d.dias.map((x) => `<div class="bar ${x.ventas ? "" : "cero"}" title="${x.fecha.slice(8)}: ${money(x.ventas)} · ${x.pedidos} pedidos"><i style="height:${(x.ventas / max) * 100}%"></i><span>${Number(x.fecha.slice(8))}</span></div>`).join("")}</div>
+    </div>
+    <div class="card toplist"><span class="mono" style="color:var(--mut);display:block;margin-bottom:12px">Lo más vendido</span>
+      ${d.top.length ? d.top.map(([n, c]) => `<div><span>${esc(n)}</span><span class="mono">${c}</span><i style="width:${(c / topMax) * 100}%"></i></div>`).join("") : `<p style="color:var(--mut)">Todavía no hay ventas este mes.</p>`}
+    </div>
+  </div>`;
+  $("mesR").onchange = (e) => { estado.mes = e.target.value; verResumen(); };
+}
+
+// ---------- STOCK ----------
+async function verStock(d) {
+  d = d || (await api("stock"));
+  estado.stock = d;
+  const ingIds = Object.keys(d.ing);
+  const filas = d.productos.flatMap((p) => p.tams.map((t) => ({ p, t })));
+  $("t-stock").innerHTML = `
+  ${d.bajos.length ? `<div class="alert">⚠️ Stock bajo: ${d.bajos.map((b) => `${esc(b.nombre)} (${num(b.cant)} ${esc(b.unidad)})`).join(" · ")}</div>` : ""}
+  <h2>Ingredientes <span class="sp"></span><button class="btn y" id="nuevoIng">＋ Nuevo ingrediente</button></h2>
+  <p class="help">Cada pedido que entra a cocina descuenta solo lo que usa según la receta. Con <b>Ingreso</b> cargás mercadería, con <b>Merma</b> lo que se tira o se rompe y con <b>Conteo</b> ponés lo que contaste al cierre.</p>
+  <div class="ings">${ingIds.map((id) => { const x = d.ing[id], c = Number(x.cant), m = Number(x.min) || 0;
+    const cls = c <= m ? "bad" : c <= m * 1.5 ? "warn" : ""; const pct = Math.max(2, Math.min(100, (c / Math.max(1, m * 3)) * 100));
+    return `<div class="ing ${cls}"><h3>${esc(x.nombre)}</h3><div class="q">${num(c)}<small>${esc(x.unidad)}</small></div>
+    <div class="meter"><i style="width:${pct}%"></i></div><span class="mono" style="color:var(--mut)">Mínimo: ${num(m)} ${esc(x.unidad)}</span>
+    <div class="acts"><button class="btn sm g" data-mov="ingreso" data-id="${id}">＋ Ingreso</button><button class="btn sm" data-mov="merma" data-id="${id}">− Merma</button><button class="btn sm" data-mov="conteo" data-id="${id}">✎ Conteo</button><button class="btn sm" data-edit="${id}">Editar</button></div></div>`; }).join("")}</div>
+  <h2>Recetas <span class="sp"></span><button class="btn y" id="guardarRec">Guardar recetas</button></h2>
+  <p class="help">Cuánto usa cada producto de cada ingrediente, en la unidad que elegiste (por ejemplo 1 pan, 2 medallones, 0,12 kg). Si una burger es veggie, no se descuenta la carne.</p>
+  <div class="scroll"><table class="rec"><thead><tr><th>Producto</th><th>Tamaño</th>${ingIds.map((i) => `<th>${esc(d.ing[i].nombre)}<br><span style="text-transform:none">(${esc(d.ing[i].unidad)})</span></th>`).join("")}</tr></thead>
+  <tbody>${filas.map(({ p, t }) => `<tr><td class="p">${esc(p.nombre)}</td><td class="t">${t === "unidad" ? "—" : t}</td>${ingIds.map((i) => `<td><input type="number" min="0" step="0.01" data-p="${p.id}" data-t="${t}" data-i="${i}" value="${d.rec[p.id]?.[t]?.[i] ?? ""}" placeholder="0" aria-label="${esc(p.nombre)} ${t} ${esc(d.ing[i].nombre)}"></td>`).join("")}</tr>`).join("")}</tbody></table></div>
+  <h2>Movimientos de hoy</h2>
+  <div class="scroll"><table><thead><tr><th>Hora</th><th>Tipo</th><th>Detalle</th><th>Cambios</th></tr></thead><tbody>
+  ${d.movimientos.length ? d.movimientos.map((m) => `<tr><td class="n">${hora(m.t)}</td><td>${{ pedido: "🧾 Pedido", ingreso: "📥 Ingreso", merma: "🗑️ Merma", conteo: "✎ Conteo", devolucion: "↩️ Devolución" }[m.tipo] || esc(m.tipo)}</td><td>${esc(m.nota)}</td><td class="n">${Object.entries(m.delta).map(([k, v]) => `${esc(d.ing[k]?.nombre || k)} ${v > 0 ? "+" : ""}${num(v)}`).join(" · ")}</td></tr>`).join("") : `<tr><td colspan="4" style="color:var(--mut)">Sin movimientos hoy.</td></tr>`}
+  </tbody></table></div>`;
+  $("t-stock").querySelectorAll("[data-mov]").forEach((b) => (b.onclick = async () => {
+    const x = d.ing[b.dataset.id], tipo = b.dataset.mov;
+    const titulo = { ingreso: `Ingreso de ${x.nombre}`, merma: `Merma de ${x.nombre}`, conteo: `Conteo de ${x.nombre}` }[tipo];
+    const r = await ask(titulo, [{ name: "cant", label: tipo === "conteo" ? `Cantidad real que hay (${x.unidad})` : `Cantidad (${x.unidad})`, type: "number", step: "0.01", req: true }, { name: "nota", label: "Nota (opcional)", ph: tipo === "ingreso" ? "Proveedor, factura…" : "" }]);
+    if (!r) return;
+    try { verStock(await post({ op: "mov", ing: b.dataset.id, tipo, cant: r.cant, nota: r.nota, vista: "stock" })); toast("Listo ✓"); } catch (e) { toast(e.message, 1); }
+  }));
+  $("t-stock").querySelectorAll("[data-edit]").forEach((b) => (b.onclick = async () => {
+    const id = b.dataset.edit, x = d.ing[id];
+    const r = await ask(`Editar ${x.nombre}`, [{ name: "nombre", label: "Nombre", value: x.nombre, req: true }, { name: "unidad", label: "Cómo se cuenta (unidad)", value: x.unidad, ph: "unidades, fetas, kg…" }, { name: "min", label: "Avisar cuando quede menos de", type: "number", step: "0.01", value: x.min }, { name: "borrar", label: "¿Borrar este ingrediente?", type: "select", value: "no", options: [["no", "No"], ["si", "Sí, borrarlo"]] }]);
+    if (!r) return;
+    try { verStock(await post(r.borrar === "si" ? { op: "ing_borrar", id, vista: "stock" } : { op: "ing", id, nombre: r.nombre, unidad: r.unidad, min: r.min, vista: "stock" })); toast("Guardado ✓"); } catch (e) { toast(e.message, 1); }
+  }));
+  $("nuevoIng").onclick = async () => {
+    const r = await ask("Nuevo ingrediente", [{ name: "nombre", label: "Nombre", ph: "Bacon, papas, salsa…", req: true }, { name: "unidad", label: "Cómo se cuenta (unidad)", ph: "unidades, fetas, kg…", value: "unidades" }, { name: "cant", label: "Cantidad que hay hoy", type: "number", step: "0.01", value: 0 }, { name: "min", label: "Avisar cuando quede menos de", type: "number", step: "0.01", value: 0 }], "Crear");
+    if (!r) return;
+    try { verStock(await post({ op: "ing", ...r, vista: "stock" })); toast("Ingrediente creado ✓"); } catch (e) { toast(e.message, 1); }
+  };
+  $("guardarRec").onclick = async () => {
+    const recetas = {};
+    $("t-stock").querySelectorAll("input[data-p]").forEach((i) => { const { p, t } = i.dataset; ((recetas[p] ||= {})[t] ||= {})[i.dataset.i] = i.value; });
+    try { verStock(await post({ op: "recetas", recetas, vista: "stock" })); toast("Recetas guardadas ✓"); } catch (e) { toast(e.message, 1); }
+  };
+}
+
+// ---------- PERSONAL ----------
+const toLocal = (t) => { if (!t) return ""; const d = new Date(t); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16); };
+const fromLocal = (s) => (s ? new Date(s).getTime() : "");
+async function verPersonal(d) {
+  d = d || (await api("personal", { mes: estado.mes }));
+  estado.mes = d.mes;
+  const nombre = (id) => d.empleados.find((e) => e.id === id)?.nombre || "(borrado)";
+  const totPagar = d.empleados.reduce((s, e) => s + e.pagar, 0);
+  $("t-personal").innerHTML = `
+  <h2>Trabajando ahora</h2>
+  <div class="now">${d.ahora.length ? d.ahora.map((a) => `<span>🟢 ${esc(a.nombre)} · desde ${hora(a.desde)}</span>`).join("") : `<p style="color:var(--mut);margin:0">Nadie fichó entrada todavía.</p>`}</div>
+  <h2>Empleados <input type="month" id="mesP" value="${d.mes}" aria-label="Mes"><span class="sp"></span><a class="btn" href="/api/export?key=${encodeURIComponent(KEY)}&tipo=horas&mes=${d.mes}">⬇ Excel de horas</a><button class="btn y" id="nuevoEmp">＋ Nuevo empleado</button></h2>
+  <p class="help">Cada empleado ficha con su PIN en la pantalla de fichaje del local. Si cobran por hora, cargá el valor y el sistema calcula cuánto pagarle en el mes.</p>
+  <div class="scroll"><table><thead><tr><th>Nombre</th><th>Puesto</th><th>PIN</th><th>$ / hora</th><th>Días</th><th>Horas</th><th>A pagar</th><th></th></tr></thead><tbody>
+  ${d.empleados.map((e) => `<tr><td><b>${esc(e.nombre)}</b>${e.abiertos ? ` <span class="warnc">● trabajando</span>` : ""}</td><td>${esc(e.puesto)}</td><td class="n">${esc(e.pin)}</td><td class="n">${money(e.valorHora)}</td><td class="n">${e.dias}</td><td class="n">${num(e.horas)}</td><td class="n"><b>${money(e.pagar)}</b></td><td class="n"><button class="btn sm" data-emp="${e.id}">Editar</button> <button class="btn sm r" data-del="${e.id}">Borrar</button></td></tr>`).join("") || `<tr><td colspan="8" style="color:var(--mut)">Todavía no hay empleados.</td></tr>`}
+  <tr><td colspan="6"><b>Total a pagar en el mes</b></td><td class="n"><b style="color:var(--y)">${money(totPagar)}</b></td><td></td></tr>
+  </tbody></table></div>
+  <h2>Fichajes del mes <span class="sp"></span><button class="btn" id="nuevoFich">＋ Agregar a mano</button></h2>
+  <p class="help">Si alguien se olvidó de fichar la salida, corregilo acá. Los cambios a mano quedan marcados.</p>
+  <div class="scroll"><table><thead><tr><th>Empleado</th><th>Entrada</th><th>Salida</th><th>Horas</th><th></th></tr></thead><tbody>
+  ${d.fichajes.length ? [...d.fichajes].reverse().map((f) => `<tr><td><b>${esc(nombre(f.emp))}</b>${f.editado ? ` <span class="mono" style="color:var(--mut)">editado</span>` : ""}</td><td class="n">${fecha(f.in)}</td><td class="n">${f.out ? fecha(f.out) : `<span class="warnc">sin salida</span>`}</td><td class="n">${f.out ? num((f.out - f.in) / 36e5) : "—"}</td><td class="n"><button class="btn sm" data-f="${f.id}">Corregir</button> <button class="btn sm r" data-fdel="${f.id}">Borrar</button></td></tr>`).join("") : `<tr><td colspan="5" style="color:var(--mut)">Sin fichajes este mes.</td></tr>`}
+  </tbody></table></div>`;
+  const empForm = (e = {}) => [{ name: "nombre", label: "Nombre", value: e.nombre, req: true }, { name: "puesto", label: "Puesto", value: e.puesto, ph: "Cocina, barra, delivery…" }, { name: "pin", label: "PIN para fichar (4 números o más)", value: e.pin, req: true }, { name: "valorHora", label: "Valor de la hora (0 si tiene sueldo fijo)", type: "number", value: e.valorHora ?? 0 }];
+  $("mesP").onchange = (ev) => { estado.mes = ev.target.value; verPersonal(); };
+  $("nuevoEmp").onclick = async () => { const r = await ask("Nuevo empleado", empForm(), "Crear"); if (!r) return; try { verPersonal(await post({ op: "emp", emp: r, vista: "personal", mes: estado.mes })); toast("Empleado creado ✓"); } catch (e) { toast(e.message, 1); } };
+  $("t-personal").querySelectorAll("[data-emp]").forEach((b) => (b.onclick = async () => { const e = d.empleados.find((x) => x.id === b.dataset.emp); const r = await ask(`Editar a ${e.nombre}`, empForm(e)); if (!r) return; try { verPersonal(await post({ op: "emp", emp: { ...e, ...r }, vista: "personal", mes: estado.mes })); toast("Guardado ✓"); } catch (er) { toast(er.message, 1); } }));
+  $("t-personal").querySelectorAll("[data-del]").forEach((b) => (b.onclick = async () => { const e = d.empleados.find((x) => x.id === b.dataset.del); if (!confirm(`¿Borrar a ${e.nombre}? Sus fichajes quedan guardados.`)) return; try { verPersonal(await post({ op: "emp_borrar", id: e.id, vista: "personal", mes: estado.mes })); } catch (er) { toast(er.message, 1); } }));
+  const fichForm = (f = {}) => [...(f.id ? [] : [{ name: "emp", label: "Empleado", type: "select", options: d.empleados.map((e) => [e.id, e.nombre]), value: "" }]), { name: "in", label: "Entrada", type: "datetime-local", value: toLocal(f.in), req: true }, { name: "out", label: "Salida (vacío si sigue trabajando)", type: "datetime-local", value: toLocal(f.out) }];
+  $("nuevoFich").onclick = async () => { if (!d.empleados.length) return toast("Primero cargá un empleado", 1); const r = await ask("Agregar fichaje", fichForm(), "Agregar"); if (!r) return; try { verPersonal(await post({ op: "fich", mes: estado.mes, emp: r.emp, in: fromLocal(r.in), out: fromLocal(r.out), vista: "personal" })); toast("Agregado ✓"); } catch (e) { toast(e.message, 1); } };
+  $("t-personal").querySelectorAll("[data-f]").forEach((b) => (b.onclick = async () => { const f = d.fichajes.find((x) => x.id === b.dataset.f); const r = await ask(`Corregir fichaje de ${nombre(f.emp)}`, fichForm(f)); if (!r) return; try { verPersonal(await post({ op: "fich", mes: estado.mes, id: f.id, in: fromLocal(r.in), out: fromLocal(r.out), vista: "personal" })); toast("Corregido ✓"); } catch (e) { toast(e.message, 1); } }));
+  $("t-personal").querySelectorAll("[data-fdel]").forEach((b) => (b.onclick = async () => { if (!confirm("¿Borrar este fichaje?")) return; try { verPersonal(await post({ op: "fich", mes: estado.mes, id: b.dataset.fdel, borrar: true, vista: "personal" })); } catch (e) { toast(e.message, 1); } }));
+}
+
+// ---------- MENÚ ----------
+function achicar(file) {
+  return new Promise((res, rej) => {
+    const img = new Image(); img.onload = () => {
+      const s = Math.min(1, 720 / Math.max(img.width, img.height)); const c = document.createElement("canvas");
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      let data = c.toDataURL("image/webp", .8); if (!data.startsWith("data:image/webp")) data = c.toDataURL("image/jpeg", .82); res(data);
+    }; img.onerror = rej; img.src = URL.createObjectURL(file);
+  });
+}
+async function verMenu(d) {
+  d = d || (await api("menu"));
+  const m = d.menu, fotos = d.fotos;
+  const foto = (id) => `<div class="ph ${fotos[id] ? "has" : ""}" style="${fotos[id] ? `background-image:url('/api/menu?foto=${id}&v=${fotos[id]}')` : ""}" title="Cambiar foto">${fotos[id] ? "" : "＋ Foto"}<input type="file" accept="image/*" data-foto="${id}" aria-label="Subir foto"></div>`;
+  const tog = (id, ag) => `<div class="tog" data-ag="${id}"><button type="button" class="si" aria-pressed="${!ag}">Disponible</button><button type="button" class="no" aria-pressed="${!!ag}">Agotado</button></div>`;
+  const precio = (id, lab, v) => `<label>${lab}<input type="number" step="100" min="0" data-pr="${id}" data-k="${lab.toLowerCase()}" value="${v}"></label>`;
+  $("t-menu").innerHTML = `
+  <p class="help">Lo que cambies acá se ve al instante en la web y el bot lo usa para tomar pedidos. Marcá <b>Agotado</b> lo que se terminó en el día. Tocá el cuadrado de la izquierda para subir la foto de cada producto.</p>
+  <h2>Hamburguesas</h2><div class="card" style="padding:0">${m.HAMBURGUESAS.map((h) => `<div class="prod">${foto(h.id)}<div><b>${esc(h.nombre)}</b>${fotos[h.id] ? ` <button class="btn sm r" data-qfoto="${h.id}">Quitar foto</button>` : ""}</div><div class="pr">${precio(h.id, "Simple", h.simple)}${precio(h.id, "Doble", h.doble)}</div>${tog(h.id, h.agotado)}</div>`).join("")}
+  <div class="prod">${foto("sliders")}<div><b>${esc(m.SLIDERS.nombre)}</b></div><div class="pr">${precio("sliders", "Precio", m.SLIDERS.precio)}</div>${tog("sliders", m.SLIDERS.agotado)}</div></div>
+  <h2>Extras</h2><div class="card" style="padding:0">${Object.entries(m.EXTRAS).map(([id, e]) => `<div class="prod"><div></div><div><b>${esc(e.nombre)}</b></div><div class="pr">${precio(id, "Precio", e.precio)}</div>${tog(id, e.agotado)}</div>`).join("")}</div>
+  <h2>Bebidas</h2><div class="card" style="padding:0">${m.BEBIDAS.map((b) => `<div class="prod">${foto(b.id)}<div><b>${esc(b.nombre)}</b></div><div class="pr">${precio(b.id, "Precio", b.precio)}</div>${tog(b.id, b.agotado)}</div>`).join("")}</div>
+  <h2>Envíos</h2><div class="card" style="padding:0">${m.ZONAS.map((z) => `<div class="prod"><div></div><div><b>${esc(z.nombre)}</b></div><div class="pr">${precio("zona:" + z.id, "Precio", z.precio)}</div><div></div></div>`).join("")}</div>
+  <div class="savebar"><button class="btn y" id="guardarMenu">Guardar cambios del menú</button></div>`;
+  $("t-menu").querySelectorAll(".tog").forEach((t) => t.querySelectorAll("button").forEach((b) => (b.onclick = () => t.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))))));
+  $("t-menu").querySelectorAll("[data-foto]").forEach((inp) => (inp.onchange = async () => {
+    const f = inp.files[0]; if (!f) return;
+    try { toast("Subiendo foto…"); const data = await achicar(f); verMenu(await post({ op: "foto", id: inp.dataset.foto, data, vista: "menu" })); toast("Foto subida ✓"); } catch (e) { toast(e.message || "No se pudo subir", 1); }
+  }));
+  $("t-menu").querySelectorAll("[data-qfoto]").forEach((b) => (b.onclick = async () => { if (!confirm("¿Quitar la foto?")) return; verMenu(await post({ op: "foto", id: b.dataset.qfoto, borrar: true, vista: "menu" })); }));
+  $("guardarMenu").onclick = async () => {
+    const c = { precios: {}, agotado: {}, extras: {}, zonas: {} };
+    $("t-menu").querySelectorAll("[data-pr]").forEach((i) => {
+      const id = i.dataset.pr, k = i.dataset.k, v = Number(i.value) || 0; if (!v) return;
+      if (id.startsWith("zona:")) c.zonas[id.slice(5)] = v;
+      else if (id.startsWith("extra-")) c.extras[id] = v;
+      else (c.precios[id] ||= {})[k === "precio" ? "precio" : k] = v;
+    });
+    $("t-menu").querySelectorAll("[data-ag]").forEach((t) => { if (t.querySelector(".no").getAttribute("aria-pressed") === "true") c.agotado[t.dataset.ag] = true; });
+    try { verMenu(await post({ op: "menu", cambios: c, vista: "menu" })); toast("Menú guardado ✓"); } catch (e) { toast(e.message, 1); }
+  };
+}
+
+// ---------- AJUSTES ----------
+async function verAjustes(d) {
+  d = d || (await api("ajustes"));
+  claveEmp = d.claveEmpleados;
+  const base = location.origin;
+  $("t-ajustes").innerHTML = `
+  <h2>Bot de pedidos</h2>
+  <div class="card big-tog"><div style="flex:1"><b style="font-size:17px">${d.botOn ? "🤖 El bot está prendido" : "⛔ El bot está apagado"}</b><p class="help" style="margin:6px 0 0">${d.botOn ? "Responde los mensajes, toma pedidos y verifica comprobantes." : "Los clientes reciben: “En un ratito te responde alguien del local”."}</p></div>
+  <button class="btn ${d.botOn ? "r" : "g"}" id="botT">${d.botOn ? "Apagar bot" : "Prender bot"}</button></div>
+  <h2>Accesos</h2>
+  <div class="links">
+    <div class="card"><b>📋 Panel de pedidos (empleados)</b><p>Pedidos del día, venta de mostrador y avisos de stock. No muestra la plata de la caja.</p><a class="btn y" href="${base}/panel.html?key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a></div>
+    <div class="card"><b>🕘 Pantalla para fichar</b><p>Dejala abierta en una tablet o celular del local. Cada empleado pone su PIN al entrar y al salir.</p><a class="btn y" href="${base}/fichar.html?key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a></div>
+    <div class="card"><b>🌐 Web de pedidos</b><p>La página que ven los clientes.</p><a class="btn" href="${base}/" target="_blank" rel="noopener">Abrir ↗</a></div>
+  </div>
+  <h2>Datos de prueba</h2>
+  <div class="card big-tog"><p class="help" style="margin:0;flex:1">Borra todos los pedidos, la caja, el stock, el personal y los fichajes. Usalo solo para dejar la demo en cero.</p><button class="btn r" id="resetB">Borrar todo</button></div>`;
+  $("botT").onclick = async () => { try { await post({ op: "bot", on: !d.botOn }); verAjustes(); toast(d.botOn ? "Bot apagado" : "Bot prendido"); } catch (e) { toast(e.message, 1); } };
+  $("resetB").onclick = async () => {
+    if (!confirm("¿Seguro? Se borra TODO y no se puede deshacer.")) return;
+    if (prompt('Escribí BORRAR para confirmar') !== "BORRAR") return;
+    const r = await fetch(`/api/reset?key=${encodeURIComponent(KEY)}&confirmar=si`); toast(r.ok ? "Datos borrados" : "No se pudo borrar", !r.ok);
+  };
+  $("topPanel").href = `/panel.html?key=${encodeURIComponent(claveEmp)}`;
+}
+
+const VISTAS = { resumen: verResumen, stock: verStock, personal: verPersonal, menu: verMenu, ajustes: verAjustes };
+async function abrir(t) {
+  document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.t === t)));
+  Object.keys(VISTAS).forEach((k) => ($("t-" + k).hidden = k !== t));
+  history.replaceState(null, "", `?key=${encodeURIComponent(KEY)}#${t}`);
+  try { await VISTAS[t](); } catch (e) { $("t-" + t).innerHTML = `<div class="alert">${esc(e.message === "Clave incorrecta" ? "La clave del link no es correcta. Pedile el link al administrador." : e.message)}</div>`; }
+}
+document.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => abrir(b.dataset.t)));
+abrir(VISTAS[location.hash.slice(1)] ? location.hash.slice(1) : "resumen");
+api("ajustes").then((d) => { claveEmp = d.claveEmpleados; $("topPanel").href = `/panel.html?key=${encodeURIComponent(claveEmp)}`; }).catch(() => {});
+</script>
+</body>
+</html>

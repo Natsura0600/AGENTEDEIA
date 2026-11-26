@@ -66,12 +66,13 @@ export async function claimOperation(op, orderId) {
 }
 
 // ---- Caja diaria (se guarda para siempre, 1 registro por día) ----
-const vacio = () => ({ pedidos: 0, ventas: 0, envios: 0, retiro: 0, delivery: 0, cancelados: 0, productos: {} });
+const vacio = () => ({ pedidos: 0, ventas: 0, envios: 0, retiro: 0, delivery: 0, mostrador: 0, cancelados: 0, productos: {}, porPago: {} });
 export async function sumarCaja(o, signo = 1) {
   const k = K(`caja:${o.jornada || jornada(o.createdAt)}`);
   let d; try { d = { ...vacio(), ...JSON.parse((await redis.get(k)) || "{}") }; } catch { d = vacio(); }
   d.pedidos += signo; d.ventas += signo * o.total; d.envios += signo * (o.envio || 0);
-  d[o.entrega === "envio" ? "delivery" : "retiro"] += signo;
+  d[o.canal === "mostrador" ? "mostrador" : o.entrega === "envio" ? "delivery" : "retiro"] += signo;
+  const pago = o.pago || "transferencia"; d.porPago = d.porPago || {}; d.porPago[pago] = (d.porPago[pago] || 0) + signo * o.total;
   for (const l of o.lineas || []) { const m = l.texto.match(/^(\d+)x (.+?)(?: \+| \(|$)/); if (m) d.productos[m[2]] = (d.productos[m[2]] || 0) + signo * Number(m[1]); }
   await redis.set(k, JSON.stringify(d));
 }

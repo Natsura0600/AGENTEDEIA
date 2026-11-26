@@ -1,3 +1,4 @@
+import { redis } from "./redis.js";
 // Datos del local. Editá acá menú, precios, zonas, horarios y alias.
 export const LOCAL = {
   nombre: "Flama",
@@ -44,12 +45,38 @@ export const ZONAS = [
   { id: "lejana", nombre: "Barrios alejados (Jáuregui, Open Door, Olivera, Pueblo Nuevo)", precio: 4000 },
 ];
 
-export function menuTexto() {
-  const hs = HAMBURGUESAS.map((h) => `- ${h.nombre} (${h.desc}): simple $${h.simple} / doble $${h.doble}`).join("\n");
-  const ex = Object.values(EXTRAS).map((e) => `- ${e.nombre}: $${e.precio}`).join("\n");
-  const zs = ZONAS.map((z) => `- ${z.nombre}: $${z.precio}`).join("\n");
-  const bs = BEBIDAS.map((b) => `- ${b.nombre}: $${b.precio}`).join("\n");
-  return `HAMBURGUESAS\n${hs}\n- ${SLIDERS.nombre} (${SLIDERS.desc}): $${SLIDERS.precio}\n${NOTAS_MENU}\n\nEXTRAS (por unidad, se pueden repetir: ej. 2 extra carne)\n${ex}\n\nBEBIDAS\n${bs}\n\nDELIVERY\n${zs}\n- Retiro en el local (${LOCAL.direccion}): sin cargo`;
+// ---- Menú editable: el dueño cambia precios y marca agotados desde su panel ----
+const clon = (x) => JSON.parse(JSON.stringify(x));
+export function menuBase() {
+  return { HAMBURGUESAS: clon(HAMBURGUESAS), SLIDERS: clon(SLIDERS), EXTRAS: clon(EXTRAS), BEBIDAS: clon(BEBIDAS), ZONAS: clon(ZONAS) };
+}
+export function aplicarCambios(ov = {}) {
+  const m = menuBase(); const p = ov.precios || {}, ag = ov.agotado || {};
+  for (const h of m.HAMBURGUESAS) { if (p[h.id]?.simple) h.simple = p[h.id].simple; if (p[h.id]?.doble) h.doble = p[h.id].doble; h.agotado = !!ag[h.id]; }
+  if (p.sliders?.precio) m.SLIDERS.precio = p.sliders.precio; m.SLIDERS.agotado = !!ag.sliders;
+  for (const b of m.BEBIDAS) { if (p[b.id]?.precio) b.precio = p[b.id].precio; b.agotado = !!ag[b.id]; }
+  for (const k in m.EXTRAS) { if (ov.extras?.[k]) m.EXTRAS[k].precio = ov.extras[k]; m.EXTRAS[k].agotado = !!ag[k]; }
+  for (const z of m.ZONAS) if (ov.zonas?.[z.id]) z.precio = ov.zonas[z.id];
+  return m;
+}
+let cache = { t: 0, m: null };
+export async function getMenu(fresh = false) {
+  if (!fresh && cache.m && Date.now() - cache.t < 20000) return cache.m;
+  let ov = {};
+  try { ov = JSON.parse((await redis.get("flama:menu")) || "{}"); } catch {}
+  cache = { t: Date.now(), m: aplicarCambios(ov), ov };
+  return cache.m;
+}
+export async function getCambiosMenu() { try { return JSON.parse((await redis.get("flama:menu")) || "{}"); } catch { return {}; } }
+export async function guardarCambiosMenu(ov) { await redis.set("flama:menu", JSON.stringify(ov)); cache = { t: 0, m: null }; }
+
+export function menuTexto(m = menuBase()) {
+  const ag = (x) => (x.agotado ? " (AGOTADO HOY: no se puede pedir)" : "");
+  const hs = m.HAMBURGUESAS.map((h) => `- ${h.nombre} (${h.desc}): simple $${h.simple} / doble $${h.doble}${ag(h)}`).join("\n");
+  const ex = Object.values(m.EXTRAS).map((e) => `- ${e.nombre}: $${e.precio}${ag(e)}`).join("\n");
+  const zs = m.ZONAS.map((z) => `- ${z.nombre}: $${z.precio}`).join("\n");
+  const bs = m.BEBIDAS.map((b) => `- ${b.nombre}: $${b.precio}${ag(b)}`).join("\n");
+  return `HAMBURGUESAS\n${hs}\n- ${m.SLIDERS.nombre} (${m.SLIDERS.desc}): $${m.SLIDERS.precio}${ag(m.SLIDERS)}\n${NOTAS_MENU}\n\nEXTRAS (por unidad, se pueden repetir: ej. 2 extra carne)\n${ex}\n\nBEBIDAS\n${bs}\n\nDELIVERY\n${zs}\n- Retiro en el local (${LOCAL.direccion}): sin cargo`;
 }
 
 // ¿Está abierto ahora? (hora Argentina)
@@ -64,32 +91,35 @@ export function abierto(d = new Date()) {
 }
 
 // Calcula el total a partir de los ítems (precios del menú, no del modelo)
-export function calcular(items, entrega, zonaId) {
+export function calcular(items, entrega, zonaId, m = menuBase()) {
   let total = 0;
   const lineas = [];
   for (const it of items) {
     const cant = Math.max(1, Number(it.cantidad) || 1);
-    let precio, nombre;
-    const beb = BEBIDAS.find((b) => b.id === it.id);
-    if (beb) { precio = beb.precio; nombre = beb.nombre; }
-    else if (it.id === "sliders") { precio = SLIDERS.precio; nombre = SLIDERS.nombre; }
+    let precio, nombre, prod;
+    const beb = m.BEBIDAS.find((b) => b.id === it.id);
+    if (beb) { prod = beb; precio = beb.precio; nombre = beb.nombre; }
+    else if (it.id === "sliders") { prod = m.SLIDERS; precio = m.SLIDERS.precio; nombre = m.SLIDERS.nombre; }
     else {
-      const h = HAMBURGUESAS.find((x) => x.id === it.id);
+      const h = m.HAMBURGUESAS.find((x) => x.id === it.id);
       if (!h) throw new Error(`No existe el producto ${it.id}`);
+      prod = h;
       const tam = it.tamano === "doble" ? "doble" : "simple";
       precio = h[tam]; nombre = `${h.nombre} ${tam}${it.veggie ? " veggie" : ""}`;
     }
-    const extras = (it.extras || []).filter((e) => EXTRAS[e]);
-    precio += extras.reduce((s, e) => s + EXTRAS[e].precio, 0);
+    if (prod.agotado) throw new Error(`${prod.nombre} está agotado hoy`);
+    const extras = (it.extras || []).filter((e) => m.EXTRAS[e]);
+    for (const e of extras) if (m.EXTRAS[e].agotado) throw new Error(`${m.EXTRAS[e].nombre} está agotado hoy`);
+    precio += extras.reduce((s, e) => s + m.EXTRAS[e].precio, 0);
     const cnt = {}; extras.forEach((e) => (cnt[e] = (cnt[e] || 0) + 1));
-    const ext = extras.length ? ` + ${Object.entries(cnt).map(([e, n]) => `${n > 1 ? n + " " : ""}${EXTRAS[e].nombre.toLowerCase()}`).join(", ")}` : "";
+    const ext = extras.length ? ` + ${Object.entries(cnt).map(([e, n]) => `${n > 1 ? n + " " : ""}${m.EXTRAS[e].nombre.toLowerCase()}`).join(", ")}` : "";
     const nota = it.nota ? ` (${it.nota})` : "";
     lineas.push({ texto: `${cant}x ${nombre}${ext}${nota}`, subtotal: precio * cant });
     total += precio * cant;
   }
   let envio = 0;
   if (entrega === "envio") {
-    const z = ZONAS.find((x) => x.id === zonaId);
+    const z = m.ZONAS.find((x) => x.id === zonaId);
     if (!z) throw new Error("Falta la zona de envío");
     envio = z.precio;
   }

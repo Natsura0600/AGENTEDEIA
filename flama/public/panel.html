@@ -30,7 +30,7 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 .brand b{font-family:Anton;font-weight:400;font-size:28px;letter-spacing:.04em;line-height:1;display:block}
 .brand .mono{color:var(--y)}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.tbtn{display:inline-flex;align-items:center;gap:8px;background:var(--k3);color:var(--w);border:1.5px solid var(--line);min-height:42px;padding:0 14px;font-weight:800;font-size:13px;letter-spacing:.02em;transition:border-color .2s,background .2s}
+.tbtn{text-decoration:none;display:inline-flex;align-items:center;gap:8px;background:var(--k3);color:var(--w);border:1.5px solid var(--line);min-height:42px;padding:0 14px;font-weight:800;font-size:13px;letter-spacing:.02em;transition:border-color .2s,background .2s}
 .tbtn:hover{border-color:var(--mut)}
 .tbtn.on{border-color:var(--ok);color:var(--ok)}
 .tbtn.off{background:var(--bad);border-color:var(--bad);color:#fff}
@@ -102,6 +102,47 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 .cancel{display:block;margin:10px auto 0;background:none;border:0;color:var(--mut);font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px;min-height:32px}
 .cancel:hover{color:var(--bad)}
 
+.kpi.alert b{color:var(--bad)}
+.stockalert{margin:12px 20px 0;background:#ff5a471a;border:1.5px solid var(--bad);color:#ffb3aa;padding:12px 14px;font-weight:800}
+.chip.most{background:#5ad67d22;color:var(--ok)}
+/* VENTA MOSTRADOR */
+.mdlg{position:fixed;inset:0;z-index:60;display:none}
+.mdlg.open{display:block}
+.mdlg .bd{position:absolute;inset:0;background:#000c}
+.mbox{position:absolute;right:0;top:0;bottom:0;width:min(920px,100%);background:var(--k2);border-left:3px solid var(--y);display:grid;grid-template-columns:1.3fr 1fr;animation:slide .3s cubic-bezier(.2,1,.3,1)}
+@keyframes slide{from{transform:translateX(100%)}}
+.mcat{overflow:auto;padding:18px;border-right:1.5px solid var(--line)}
+.mcat h3{font-family:Anton;font-weight:400;font-size:26px;text-transform:uppercase;margin:4px 0 10px}
+.mcat h4{font-family:"JetBrains Mono";font-size:11px;letter-spacing:.14em;color:var(--y);text-transform:uppercase;margin:16px 0 8px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.pbtn{background:var(--k3);border:1.5px solid var(--line);color:var(--w);text-align:left;padding:12px;min-height:70px;font-weight:800;font-size:14px;line-height:1.2;display:flex;flex-direction:column;justify-content:space-between;gap:6px}
+.pbtn small{font-family:"JetBrains Mono";color:var(--y);font-weight:700;font-size:12px}
+.pbtn:hover{border-color:var(--y)}.pbtn:active{transform:scale(.97)}
+.pbtn[disabled]{opacity:.35;cursor:not-allowed}
+.mtick{display:flex;flex-direction:column;min-height:0}
+.mtick .head{display:flex;justify-content:space-between;align-items:center;padding:18px;border-bottom:1.5px solid var(--line)}
+.mtick .head h3{font-family:Anton;font-weight:400;font-size:26px;text-transform:uppercase;margin:0}
+.mlines{flex:1;overflow:auto;padding:4px 18px}
+.mline{padding:12px 0;border-bottom:1px solid var(--line)}
+.mline .r1{display:flex;justify-content:space-between;gap:8px;font-weight:800}
+.mline .r2{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.seg2{display:inline-flex;border:1.5px solid var(--line)}
+.seg2 button{background:none;border:0;color:var(--mut);font-weight:800;font-size:12px;padding:6px 10px;min-height:34px;text-transform:uppercase}
+.seg2 button[aria-pressed="true"]{background:var(--w);color:var(--k)}
+.stp{display:inline-flex;align-items:center;border:1.5px solid var(--line);font-size:12px;font-weight:800;color:var(--mut)}
+.stp span{padding:0 6px}.stp b{min-width:18px;text-align:center;color:var(--w);font-family:"JetBrains Mono"}
+.stp button{background:none;border:0;color:var(--w);width:32px;height:32px;font-weight:900;font-size:15px}
+.mfoot{padding:16px 18px;border-top:1.5px solid var(--line);background:var(--k3)}
+.mfoot .tot{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.mfoot .tot b{font-family:Anton;font-weight:400;font-size:40px;color:var(--y)}
+.pago3{display:grid;grid-template-columns:repeat(3,1fr);border:1.5px solid var(--line);margin-bottom:12px}
+.pago3 button{background:none;border:0;color:var(--w);font-weight:800;min-height:46px}
+.pago3 button[aria-pressed="true"]{background:var(--w);color:var(--k)}
+.mvacio{color:var(--mut);text-align:center;padding:40px 10px}
+.tst{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ok);color:var(--k);font-weight:900;padding:14px 20px;z-index:70;box-shadow:0 10px 30px #000a}
+.tst.err{background:var(--bad);color:#fff}
+#mclose{flex:none;width:44px;justify-content:center}
+@media(max-width:800px){.mbox{grid-template-columns:1fr;grid-template-rows:1fr auto}.mcat{border-right:0;border-bottom:1.5px solid var(--line)}.mtick{max-height:52vh}}
 /* LIGHTBOX */
 .lb{position:fixed;inset:0;z-index:50;background:#000d;display:none;place-items:center;padding:20px;cursor:zoom-out}
 .lb.open{display:grid}
@@ -128,21 +169,28 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 <div class="tools">
 <button type="button" id="botbtn" class="tbtn">🤖 Bot …</button>
 <button type="button" id="sndbtn" class="tbtn">🔇 Activar sonido</button>
-<label class="tbtn mes">📅 <input type="month" id="mes" aria-label="Mes a exportar"></label>
-<button type="button" id="expbtn" class="tbtn yel">⬇ Excel del mes</button>
+<a class="tbtn" id="fichlink" href="#" target="_blank" rel="noopener">🕘 Fichar</a>
+<button type="button" id="mostbtn" class="tbtn yel">＋ Venta mostrador</button>
 </div>
 </header>
 
 <section class="kpis" aria-label="Resumen de hoy">
-<div class="kpi main"><span class="mono">Caja de hoy</span><b id="k-caja">$0</b></div>
+<div class="kpi main" id="k-curso-box"><span class="mono">En curso</span><b id="k-curso">0</b></div>
+<div class="kpi"><span class="mono">Esperando pago</span><b id="k-pago">0</b></div>
 <div class="kpi"><span class="mono">Entregados hoy</span><b id="k-ped">0</b></div>
-<div class="kpi"><span class="mono">Ticket promedio</span><b id="k-tic">$0</b></div>
-<div class="kpi" id="k-curso-box"><span class="mono">En curso</span><b id="k-curso">0</b></div>
+<div class="kpi" id="k-stock-box"><span class="mono">Stock bajo</span><b id="k-stock">0</b></div>
 </section>
+<div class="stockalert" id="stockalert" hidden></div>
 
 <nav class="mtabs" id="mtabs" role="tablist" aria-label="Columnas"></nav>
 <main class="board" id="board" aria-live="polite"></main>
 <div class="lb" id="lb" role="dialog" aria-label="Comprobante"><img id="lbimg" alt="Comprobante de transferencia"></div>
+<div class="mdlg" id="mdlg" role="dialog" aria-modal="true" aria-label="Venta de mostrador"><div class="bd" id="mbd"></div>
+<div class="mbox"><div class="mcat"><h3>Venta de mostrador</h3><div id="mcat"></div></div>
+<div class="mtick"><div class="head"><h3>Ticket</h3><button class="tbtn" id="mclose" type="button" aria-label="Cerrar">✕</button></div><div class="mlines" id="mlines"></div>
+<div class="mfoot"><div class="tot"><span class="mono">Total</span><b id="mtotal">$0</b></div>
+<div class="pago3" role="group" aria-label="Forma de pago"><button type="button" data-pago="efectivo" aria-pressed="true">💵 Efectivo</button><button type="button" data-pago="transferencia" aria-pressed="false">🏦 Transf.</button><button type="button" data-pago="tarjeta" aria-pressed="false">💳 Tarjeta</button></div>
+<button class="go green" type="button" id="mok">Cobrar y cargar</button></div></div></div></div>
 
 <script>
 const key = new URLSearchParams(location.search).get("key") || "flama2026";
@@ -154,7 +202,7 @@ const COLS = [
 ];
 const ACTIVOS = ["pago_pendiente", "pago_a_verificar", "programado", "en_preparacion", "listo", "en_camino"];
 const money = (n) => "$" + Number(n || 0).toLocaleString("es-AR");
-const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
 const $ = (id) => document.getElementById(id);
 let ver = "", known = new Set(), first = true, sound = false, botOn = true, actx, activeCol = "pago", lastData = null;
 
@@ -166,17 +214,22 @@ function ding() {
     o.connect(g).connect(actx.destination); o.start(actx.currentTime + t); o.stop(actx.currentTime + t + .32); });
 }
 $("sndbtn").onclick = (e) => { sound = !sound; e.currentTarget.textContent = sound ? "🔔 Sonido activado" : "🔇 Activar sonido"; e.currentTarget.classList.toggle("on", sound); if (sound) { actx = actx || new AudioContext(); ding(); } };
-$("mes").value = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).slice(0, 7);
-$("expbtn").onclick = () => { location.href = `/api/export?key=${encodeURIComponent(key)}&mes=${$("mes").value}`; };
+$("fichlink").href = `/fichar.html?key=${encodeURIComponent(key)}`;
 function paintBot() { const b = $("botbtn"); b.textContent = botOn ? "🤖 Bot prendido" : "⛔ Bot apagado"; b.classList.toggle("off", !botOn); b.classList.toggle("on", botOn); }
 $("botbtn").onclick = async () => {
   if (botOn && !confirm("¿Apagar el bot? Los clientes van a recibir: 'En un ratito te responde alguien del local'.")) return;
   await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bot: botOn ? "off" : "on" }) });
   botOn = !botOn; paintBot();
 };
-function paintKpis(c, orders) {
-  if (c) { $("k-caja").textContent = money(c.ventas); $("k-ped").textContent = c.pedidos; $("k-tic").textContent = money(c.pedidos ? Math.round(c.ventas / c.pedidos) : 0); }
-  if (orders) { const n = orders.filter((o) => ACTIVOS.includes(o.estado)).length; $("k-curso").textContent = n; $("k-curso-box").classList.toggle("alert", n >= 8); }
+function paintKpis(c, orders, bajos = []) {
+  if (c) $("k-ped").textContent = c.pedidos;
+  if (orders) {
+    const n = orders.filter((o) => ACTIVOS.includes(o.estado)).length; $("k-curso").textContent = n;
+    $("k-pago").textContent = orders.filter((o) => ["pago_pendiente", "pago_a_verificar"].includes(o.estado)).length;
+  }
+  $("k-stock").textContent = bajos.length; $("k-stock-box").classList.toggle("alert", bajos.length > 0);
+  const a = $("stockalert"); a.hidden = !bajos.length;
+  a.textContent = bajos.length ? "⚠️ Avisale al encargado, queda poco: " + bajos.map((b) => `${b.nombre} (${Number(b.cant).toLocaleString("es-AR")} ${b.unidad})`).join(" · ") : "";
 }
 
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -187,7 +240,7 @@ async function load() {
     const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}&v=${ver}`);
     if (!r.ok) throw new Error();
     const d = await r.json(); botOn = d.botOn !== false; paintBot();
-    if (!d.same) { ver = d.ver; lastData = d; render(d); paintKpis(d.caja, d.orders); }
+    if (!d.same) { ver = d.ver; lastData = d; render(d); paintKpis(d.caja, d.orders, d.stockBajo || []); }
     $("status").textContent = "En vivo"; $("live").classList.remove("offline");
   } catch { $("status").textContent = "Sin conexión"; $("live").classList.add("offline"); }
 }
@@ -210,10 +263,10 @@ function card(o, nuevo) {
   const top = el("div", "ctop");
   const left = el("div"); left.append(el("div", "num", "#" + o.id));
   const chips = el("div", "chips");
-  chips.append(el("span", "chip " + (o.entrega === "envio" ? "env" : "ret"), o.entrega === "envio" ? "🛵 Delivery" : "🏪 Retiro"));
+  chips.append(o.canal === "mostrador" ? el("span", "chip most", "🧾 Mostrador · " + (o.pago || "efectivo")) : el("span", "chip " + (o.entrega === "envio" ? "env" : "ret"), o.entrega === "envio" ? "🛵 Delivery" : "🏪 Retiro"));
   const ago = el("span", "ago"); ago.dataset.t = o.createdAt; ago.dataset.activo = ACTIVOS.includes(o.estado) ? "1" : "0"; ago.title = "Entró a las " + hhmm(o.createdAt); paintAgo(ago);
   chips.append(ago); top.append(left, chips); c.append(top);
-  c.append(el("div", "who", o.nombre || "Sin nombre"));
+  if (o.canal !== "mostrador") c.append(el("div", "who", o.nombre || "Sin nombre"));
   if (o.entrega === "envio" && o.direccion) c.append(el("div", "meta", "📍 " + o.direccion));
   if (o.telefono) c.append(el("div", "meta", "📱 +" + o.telefono));
   const ul = el("ul", "items");
@@ -269,8 +322,58 @@ function render(d) {
   if (nuevo && !first) { document.title = "🔔 Nuevo pedido · Flama"; ding(); }
   first = false;
 }
+// ---- Venta de mostrador ----
+let carta = null, ticket = [], pago = "efectivo";
+function tst(msg, err) { const t = el("div", "tst" + (err ? " err" : ""), msg); document.body.append(t); setTimeout(() => t.remove(), 2600); }
+async function abrirMostrador() {
+  if (!carta) { try { carta = await (await fetch("/api/menu")).json(); } catch { return tst("No se pudo cargar el menú", 1); } }
+  const cat = $("mcat"); cat.replaceChildren();
+  [["burger", "Hamburguesas"], ["sliders", "Sliders"], ["bebida", "Bebidas"]].forEach(([tipo, tit]) => {
+    cat.append(el("h4", null, tit)); const g = el("div", "pgrid");
+    carta.items.filter((i) => i.tipo === tipo).forEach((i) => {
+      const b = btn("", "pbtn", () => { ticket.push({ id: i.id, nombre: i.nombre, tipo, tamano: "simple", cantidad: 1, carne: 0, bacon: 0 }); pintarTicket(); });
+      b.append(el("span", null, i.nombre), el("small", null, i.agotado ? "Agotado" : money(i.simple ?? i.precio))); b.disabled = i.agotado; g.append(b);
+    });
+    cat.append(g);
+  });
+  pintarTicket(); $("mdlg").classList.add("open");
+}
+function precioLinea(l) {
+  const i = carta.items.find((x) => x.id === l.id); const ex = carta.extras;
+  return ((l.tipo === "burger" ? i[l.tamano] : i.precio) + l.carne * (ex["extra-carne"]?.precio || 0) + l.bacon * (ex["extra-bacon"]?.precio || 0)) * l.cantidad;
+}
+function pintarTicket() {
+  const box = $("mlines"); box.replaceChildren();
+  if (!ticket.length) box.append(el("div", "mvacio", "Tocá los productos de la izquierda para armar la venta."));
+  ticket.forEach((l, idx) => {
+    const r = el("div", "mline"); const r1 = el("div", "r1"); r1.append(el("span", null, l.nombre), el("span", null, money(precioLinea(l))));
+    const r2 = el("div", "r2");
+    const stp = (lab, get, set, min = 0) => { const s = el("span", "stp"); const n = el("b", null, String(get())); s.append(el("span", null, lab), btn("−", "", () => { set(Math.max(min, get() - 1)); if (!get() && lab === "Cant.") ticket.splice(idx, 1); pintarTicket(); }), n, btn("+", "", () => { set(get() + 1); pintarTicket(); })); return s; };
+    r2.append(stp("Cant.", () => l.cantidad, (v) => (l.cantidad = v)));
+    if (l.tipo === "burger") {
+      const sg = el("span", "seg2"); ["simple", "doble"].forEach((t) => { const b = btn(t, "", () => { l.tamano = t; pintarTicket(); }); b.setAttribute("aria-pressed", String(l.tamano === t)); sg.append(b); });
+      r2.append(sg, stp("+carne", () => l.carne, (v) => (l.carne = v)), stp("+bacon", () => l.bacon, (v) => (l.bacon = v)));
+    }
+    r.append(r1, r2); box.append(r);
+  });
+  $("mtotal").textContent = money(ticket.reduce((s, l) => s + precioLinea(l), 0));
+  $("mok").disabled = !ticket.length;
+}
+document.querySelectorAll("[data-pago]").forEach((b) => (b.onclick = () => { pago = b.dataset.pago; document.querySelectorAll("[data-pago]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }));
+const cerrarM = () => $("mdlg").classList.remove("open");
+$("mostbtn").onclick = abrirMostrador; $("mclose").onclick = $("mbd").onclick = cerrarM;
+$("mok").onclick = async () => {
+  if (!ticket.length) return;
+  const items = ticket.map((l) => ({ id: l.id, cantidad: l.cantidad, ...(l.tipo === "burger" ? { tamano: l.tamano, extras: [...Array(l.carne).fill("extra-carne"), ...Array(l.bacon).fill("extra-bacon")] } : {}) }));
+  $("mok").disabled = true;
+  try {
+    const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mostrador: { items, pago } }) });
+    const d = await r.json(); if (!r.ok) throw new Error(d.error || "Error");
+    tst(`✓ Venta #${d.id} cargada · ${money(d.total)}`); ticket = []; cerrarM(); ver = ""; load();
+  } catch (e) { tst(e.message, 1); } finally { $("mok").disabled = false; }
+};
 $("lb").onclick = () => $("lb").classList.remove("open");
-addEventListener("keydown", (e) => { if (e.key === "Escape") $("lb").classList.remove("open"); });
+addEventListener("keydown", (e) => { if (e.key === "Escape") { $("lb").classList.remove("open"); cerrarM(); } });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { document.title = "Pedidos · Flama"; load(); } });
 load(); setInterval(() => { if (!document.hidden) load(); }, 8000);
 </script>
