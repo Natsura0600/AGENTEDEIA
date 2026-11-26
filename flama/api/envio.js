@@ -23,6 +23,8 @@ export default async function handler(req, res) {
   if (n === 1) await redis.expire?.(rk, 120);
   if (n > 30) return res.status(429).json({ error: "Muchas consultas, probá en un minuto" });
   try {
+    // ?debug=1 con la clave del dueño: muestra qué encontró cada buscador
+    if (req.query.debug && rol(req.query.key) === "dueno") { const diag = {}; const r = await detectarZona(dir, c, diag); return res.json({ ...r, diag }); }
     const r = await detectarZona(dir, c);
     res.setHeader("Cache-Control", "public, s-maxage=60");
     res.json(r);

@@ -3,7 +3,8 @@
 //   /api/reset?key=CLAVE_DUENO&confirmar=si&solo=pedidos     → borra pedidos, chats y caja, y devuelve al stock
 //                                                             lo que esos pedidos descontaron (menú, recetas,
 //                                                             personal y movimientos manuales de stock quedan)
-//   /api/reset?key=CLAVE_DUENO&confirmar=si&quitar_foto=ID   → saca la foto de un producto del menú
+//   /api/reset?key=CLAVE_DUENO&confirmar=si&quitar_foto=ID   → saca la foto de un producto
+//   /api/reset?key=CLAVE_DUENO&confirmar=si&solo=direcciones → olvida las direcciones ya buscadas (se vuelven a buscar) del menú
 import { redis } from "../lib/redis.js";
 import { rol } from "../lib/auth.js";
 
@@ -83,6 +84,11 @@ export default async function handler(req, res) {
   }
   const claves = await todasLasClaves();
   if (req.query.solo === "pedidos") return res.json(await borrarPedidos(claves));
+  if (req.query.solo === "direcciones") {
+    const geo = claves.filter((k) => k.startsWith("flama:geo:") && k !== "flama:geo:origen");
+    for (let i = 0; i < geo.length; i += 100) await redis.del(...geo.slice(i, i + 100));
+    return res.json({ ok: true, direccionesOlvidadas: geo.length });
+  }
 
   for (let i = 0; i < claves.length; i += 100) await redis.del(...claves.slice(i, i + 100));
   res.json({ ok: true, borradas: claves.length });

@@ -36,7 +36,7 @@ export function limpiarDireccion(d) {
 
 const conTiempo = (ms) => AbortSignal.timeout(ms);
 
-async function porGoogle({ calle, localidad }) {
+async function porGoogle({ calle, localidad }, diag) {
   const key = process.env.GOOGLE_MAPS_KEY;
   if (!key) return null;
   const q = new URLSearchParams({
@@ -51,20 +51,23 @@ async function porGoogle({ calle, localidad }) {
   return { lat: r.geometry.location.lat, lng: r.geometry.location.lng, texto: r.formatted_address.replace(/, Argentina$/, ""), exacta, fuente: "google" };
 }
 
-async function porGeoref({ calle, localidad }) {
+async function porGeoref({ calle, localidad }, diag) {
   if (!/\d/.test(calle)) return null; // Georef necesita la altura
   const q = new URLSearchParams({ direccion: calle, departamento: "Luján", provincia: "06", max: "5" });
   const j = await (await fetch(`https://apis.datos.gob.ar/georef/api/direcciones?${q}`, { signal: conTiempo(4000) })).json();
   const ds = (j.direcciones || []).filter((d) => d.ubicacion && d.ubicacion.lat != null && dentro({ lat: d.ubicacion.lat, lng: d.ubicacion.lon }));
   if (!ds.length) return null;
+  if (diag) diag.georef = ds.map((x) => ({ calle: x.calle?.nombre, altura: x.altura?.valor, localidad: x.localidad_censal?.nombre, lat: x.ubicacion.lat, lng: x.ubicacion.lon }));
+  // Si el cliente dijo la localidad, solo vale una calle de esa localidad (San Martín existe en Luján y en Jáuregui)
   const quiero = sinTilde(localidad || "lujan");
-  const d = ds.find((x) => sinTilde(x.localidad_censal?.nombre).includes(quiero)) || ds[0];
-  const nombre = d.calle?.nombre ? d.calle.nombre.toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase()) : calle;
+  const d = ds.find((x) => sinTilde(x.localidad_censal?.nombre).includes(quiero)) || (localidad ? null : ds[0]);
+  if (!d) return null;
+  const nombre = d.calle?.nombre ? d.calle.nombre.replace(/^\d+\s*-\s*/, "").toLowerCase().replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase()) : calle;
   const alt = d.altura?.valor ? ` ${d.altura.valor}` : "";
   return { lat: d.ubicacion.lat, lng: d.ubicacion.lon, texto: `${nombre}${alt}, ${d.localidad_censal?.nombre || "Luján"}`, exacta: !!alt, fuente: "georef" };
 }
 
-async function porOSM({ calle, localidad }) {
+async function porOSM({ calle, localidad }, diag) {
   const q = new URLSearchParams({
     format: "jsonv2", limit: "3", countrycodes: "ar", bounded: "1", addressdetails: "1",
     viewbox: `${CAJA.lngMin},${CAJA.latMax},${CAJA.lngMax},${CAJA.latMin}`,
@@ -73,7 +76,10 @@ async function porOSM({ calle, localidad }) {
   const j = await (await fetch(`https://nominatim.openstreetmap.org/search?${q}`, {
     signal: conTiempo(4000), headers: { "User-Agent": "FlamaPedidos/1.0 (+https://flama-demo.vercel.app)", "Accept-Language": "es" },
   })).json();
-  const r = (j || []).map((x) => ({ ...x, lat: Number(x.lat), lng: Number(x.lon) })).find(dentro);
+  const todos = (j || []).map((x) => ({ ...x, lat: Number(x.lat), lng: Number(x.lon) }));
+  if (diag) diag.osm = todos.map((x) => ({ nombre: x.display_name, tipo: x.addresstype || x.type, lat: x.lat, lng: x.lng }));
+  const quiero = localidad ? sinTilde(localidad) : null;
+  const r = todos.filter(dentro).find((x) => !quiero || sinTilde(x.display_name).includes(quiero));
   if (!r) return null;
   const a = r.address || {};
   const exacta = !!a.house_number;
@@ -81,16 +87,18 @@ async function porOSM({ calle, localidad }) {
   return { lat: r.lat, lng: r.lng, texto, exacta, fuente: "osm" };
 }
 
-// Devuelve { lat, lng, texto, exacta, fuente } o null si no se encontró en Luján
-export async function ubicar(direccion) {
+// Devuelve { lat, lng, texto, exacta, fuente } o null si no se encontró en Luján.
+// Con diag = {} no usa la caché y deja ahí lo que devolvió cada buscador (para el panel del dueño).
+export async function ubicar(direccion, diag) {
   const d = limpiarDireccion(direccion);
+  if (diag) diag.limpia = d;
   if (d.calle.length < 3) return null;
   const ck = `flama:geo:${sinTilde(d.calle + " " + (d.localidad || "")).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 90)}`;
-  try { const c = await redis.get(ck); if (c) return c === "-" ? null : JSON.parse(c); } catch {}
+  if (!diag) try { const c = await redis.get(ck); if (c) return c === "-" ? null : JSON.parse(c); } catch {}
   let mejor = null;
   for (const f of [porGoogle, porGeoref, porOSM]) {
     try {
-      const r = await f(d);
+      const r = await f(d, diag);
       if (r?.exacta) { mejor = r; break; }
       if (r && !mejor) mejor = r;
     } catch (e) { console.warn("geo", f.name, e.message); }
@@ -112,9 +120,9 @@ export async function origenLocal(c) {
 export const linkMapa = (p) => `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`;
 
 // Zona para una dirección. Zonas con "hasta km" se eligen solas; las que no tienen km quedan para elegir a mano.
-export async function detectarZona(direccion, c) {
+export async function detectarZona(direccion, c, diag) {
   const zonasKm = (c.zonas || []).filter((z) => Number(z.hastaKm) > 0).sort((a, b) => a.hastaKm - b.hastaKm);
-  const lugar = await ubicar(direccion);
+  const lugar = await ubicar(direccion, diag);
   if (!lugar) return { encontrada: false, maxKm: zonasKm.at(-1)?.hastaKm || 0 };
   const origen = await origenLocal(c);
   const km = Math.round(distanciaKm(origen, lugar) * 10) / 10;
