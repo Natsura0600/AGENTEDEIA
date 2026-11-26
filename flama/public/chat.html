@@ -91,7 +91,7 @@ try { if (localStorage.getItem("flama_order")) startPoll(); } catch {}
 if (q.get("msg")) send({ text: q.get("msg") }, q.get("msg"));
 else {
   const w = document.createElement("div"); w.className = "welcome";
-  w.innerHTML = '<img src="/img/burger.webp" alt="Burger de Flama"><div>¡Hola! 👋 Soy el asistente de <b>Flama</b> 🔥<br>Contame qué querés pedir y te paso el total y el alias para transferir.</div>';
+  w.innerHTML = '<div>¡Hola! 👋 Soy el asistente de <b>Flama</b> 🔥<br>Contame qué querés pedir y te paso el total y el alias para transferir.</div>';
   box.append(w);
   const qk = document.createElement("div"); qk.className = "quick";
   ["Una Oklahoma doble", "¿Qué burgers tienen?", "¿Hacen delivery?"].forEach((t) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => { qk.remove(); send({ text: t }, t); }; qk.append(b); });
