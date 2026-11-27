@@ -48,7 +48,9 @@ label.att{background:#2a3942;color:#8696a0}
 <script>
 const q = new URLSearchParams(location.search);
 let session = localStorage.getItem("flama_s");
-try { if (!session) { session = Math.random().toString(36).slice(2, 12); localStorage.setItem("flama_s", session); } } catch { session = session || Math.random().toString(36).slice(2, 12); }
+// Sesión al azar con criptografía del navegador: nadie puede adivinar la de otro cliente
+const nueva = () => (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join(""));
+try { if (!session || session.length < 20) { session = nueva(); localStorage.setItem("flama_s", session); } } catch { session = session && session.length >= 20 ? session : nueva(); }
 if (q.get('embed')) { const x = document.getElementById('x'); x.hidden = false; x.onclick = () => parent.document.getElementById('wab').click(); }
 const name = q.get("name") || "";
 const box = document.getElementById("msgs");
@@ -83,10 +85,16 @@ document.getElementById("file").onchange = (e) => {
 };
 // Solo consulta avisos del local cuando ya hay un pedido, cada 10 s y con la pestaña visible
 let polling = false;
-function startPoll() { if (polling) return; polling = true; setInterval(async () => {
-  if (document.hidden) return;
-  try { const d = await (await fetch("/api/chat?session=" + session)).json(); (d.messages || []).forEach((m) => add(typeof m === "string" ? m : m.text, "bot")); } catch {}
-}, 10000); }
+// Cada 10 s la primera media hora, después cada 30 s, y deja de consultar a las 3 horas del pedido
+function startPoll() {
+  if (polling) return; polling = true; const t0 = Date.now();
+  const vuelta = async () => {
+    const pasado = Date.now() - t0; if (pasado > 3 * 3600e3) { polling = false; return; }
+    if (!document.hidden) { try { const d = await (await fetch("/api/chat?session=" + encodeURIComponent(session))).json(); (d.messages || []).forEach((m) => add(typeof m === "string" ? m : m.text, "bot")); } catch {} }
+    setTimeout(vuelta, pasado < 30 * 60e3 ? 10000 : 30000);
+  };
+  setTimeout(vuelta, 10000);
+}
 try { if (localStorage.getItem("flama_order")) startPoll(); } catch {}
 if (q.get("msg")) send({ text: q.get("msg") }, q.get("msg"));
 else {

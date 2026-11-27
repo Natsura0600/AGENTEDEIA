@@ -213,8 +213,10 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 let key = "";
 // ---- Ingreso con clave (se guarda en este dispositivo, así el link queda limpio) ----
 function sesion(store, probar, titulo) {
-  const qs = new URLSearchParams(location.search); let k = qs.get("key");
-  if (k) { try { localStorage.setItem(store, k); } catch {} qs.delete("key"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "") + location.hash); }
+  // El link de acceso trae la clave después de "#" (nunca llega al servidor) o, en links viejos, en ?key=
+  const qs = new URLSearchParams(location.search), hs = new URLSearchParams(location.hash.slice(1));
+  let k = hs.get("key") || qs.get("key");
+  if (k) { try { localStorage.setItem(store, k); } catch {} qs.delete("key"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "")); }
   else { try { k = localStorage.getItem(store); } catch {} }
   return (async () => (k && (await probar(k).catch(() => false))) ? k : pedirClave(store, probar, titulo))();
 }
@@ -242,7 +244,9 @@ const ACTIVOS = ["pago_pendiente", "pago_a_verificar", "programado", "en_prepara
 const money = (n) => "$" + Number(n || 0).toLocaleString("es-AR");
 const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
 const $ = (id) => document.getElementById(id);
-let ver = "", known = new Set(), first = true, sound = false, botOn = true, actx, activeCol = "pago", lastData = null;
+// La clave va en un encabezado, nunca en la dirección
+const api = (url, o = {}) => fetch(url, { ...o, headers: { ...(o.headers || {}), "x-flama-key": key } });
+let ver = "", jor = "", desde = 0, ORD = new Map(), stockBajo = [], ultimoCambio = Date.now(), known = new Set(), first = true, sound = false, botOn = true, actx, activeCol = "pago", lastData = null;
 
 function ding() {
   if (!sound) return;
@@ -256,7 +260,7 @@ $("sndbtn").onclick = (e) => { sound = !sound; e.currentTarget.textContent = sou
 function paintBot() { const b = $("botbtn"); b.textContent = botOn ? "🤖 Bot prendido" : "⛔ Bot apagado"; b.classList.toggle("off", !botOn); b.classList.toggle("on", botOn); }
 $("botbtn").onclick = async () => {
   if (botOn && !confirm("¿Apagar el bot? Los clientes van a recibir: 'En un ratito te responde alguien del local'.")) return;
-  await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bot: botOn ? "off" : "on" }) });
+  await api("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bot: botOn ? "off" : "on" }) });
   botOn = !botOn; paintBot();
 };
 function paintKpis(c, orders, bajos = []) {
@@ -273,20 +277,40 @@ function paintKpis(c, orders, bajos = []) {
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 function btn(label, cls, onClick) { const b = el("button", cls, label); b.type = "button"; b.onclick = onClick; return b; }
 
-async function load() {
+// Sincronización: la primera vez baja todo el día; después solo los pedidos que cambiaron.
+// Si no cambió nada, el servidor gasta 1 solo comando.
+async function load(full) {
   try {
-    const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}&v=${ver}`);
+    const q = full || !ver ? "full=1" : `v=${ver}&j=${jor}&desde=${desde}`;
+    const r = await api("/api/orders?" + q);
+    if (r.status === 401) { try { localStorage.removeItem("flama_local"); } catch {} return location.reload(); }
     if (!r.ok) throw new Error();
     const d = await r.json(); botOn = d.botOn !== false; paintBot();
-    if (!d.same) { ver = d.ver; lastData = d; render(d); paintKpis(d.caja, d.orders, d.stockBajo || []); }
+    if (d.stockBajo) stockBajo = d.stockBajo;
+    if (!d.same) {
+      if (d.full) ORD = new Map();
+      for (const o of d.orders || []) ORD.set(o.id, o);
+      if (d.orders?.length) ultimoCambio = Date.now();
+      ver = d.ver; jor = d.jornada; desde = d.desde;
+      const orders = [...ORD.values()];
+      render({ orders }); paintKpis({ pedidos: orders.filter((o) => o.estado === "entregado").length }, orders, stockBajo);
+    } else paintKpis(null, null, stockBajo);
     $("status").textContent = "En vivo"; $("live").classList.remove("offline");
   } catch { $("status").textContent = "Sin conexión"; $("live").classList.add("offline"); }
 }
 async function setEstado(id, estado) {
-  await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, estado }) });
-  ver = ""; load();
+  const r = await api("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, estado }) });
+  if (!r.ok) { const d = await r.json().catch(() => ({})); tst(d.error || "No se pudo actualizar", 1); }
+  load();
 }
 
+// Comprobantes: se piden al servidor solo cuando hacen falta, y se guardan acá
+const IMGS = new Map();
+async function imgComprobante(o) {
+  if (typeof o.comprobante?.imagen === "string") return o.comprobante.imagen;
+  if (IMGS.has(o.id)) return IMGS.get(o.id);
+  try { const d = await (await api("/api/orders?comp=" + o.id)).json(); IMGS.set(o.id, d.img); return d.img; } catch { return null; }
+}
 // Tiempo desde que entró el pedido: naranja a los 20 min, rojo a los 30
 function agoText(t) { const m = Math.max(0, Math.floor((Date.now() - t) / 60000)); return m < 1 ? "recién" : m < 60 ? `hace ${m} min` : `hace ${Math.floor(m / 60)} h ${m % 60} min`; }
 function paintAgo(e) {
@@ -331,8 +355,9 @@ function card(o, nuevo) {
   if (pay || o.comprobante?.imagen) {
     const p = el("div", "pay " + (pay ? pay[0] : "ok"));
     if (o.comprobante?.imagen) {
-      const th = btn("", "thumb", () => { $("lbimg").src = o.comprobante.imagen; $("lb").classList.add("open"); });
-      th.style.backgroundImage = `url("${o.comprobante.imagen}")`; th.setAttribute("aria-label", "Ver comprobante del pedido " + o.id); p.append(th);
+      const th = btn("🧾", "thumb", async () => { const src = await imgComprobante(o); if (src) { $("lbimg").src = src; $("lb").classList.add("open"); } else tst("La imagen ya no está disponible", 1); });
+      th.setAttribute("aria-label", "Ver comprobante del pedido " + o.id); p.append(th);
+      if (o.estado === "pago_a_verificar") imgComprobante(o).then((src) => { if (src) { th.textContent = ""; th.style.backgroundImage = `url("${src}")`; } });
     }
     p.append(el("span", null, pay ? pay[1] : "Comprobante recibido")); c.append(p);
   }
@@ -356,14 +381,16 @@ function render(d) {
   for (const col of COLS) {
     const items = d.orders.filter((o) => col.estados.includes(o.estado));
     if (col.id !== "fin") items.sort((a, b) => a.createdAt - b.createdAt); // los más viejos primero
+    else items.sort((a, b) => b.updatedAt - a.updatedAt);
+    const total = items.length; if (col.id === "fin" && items.length > 40) items.length = 40;
     const s = el("section", "col" + (col.id === activeCol ? " active" : "")); s.id = "col-" + col.id;
-    const h = el("h2", null, col.title); h.append(el("span", null, String(items.length))); s.append(h);
+    const h = el("h2", null, col.title); h.append(el("span", null, String(total))); s.append(h);
     const list = el("div", "list");
     if (!items.length) { const e = el("div", "empty"); e.append(el("b", null, col.id === "fin" ? "🍔" : "—"), document.createTextNode("Sin pedidos por ahora")); list.append(e); }
     items.forEach((o) => { const isNew = !known.has(o.id) && !first; if (!known.has(o.id)) { nuevo = true; known.add(o.id); } list.append(card(o, isNew)); });
     s.append(list); board.append(s);
     const tb = el("button"); tb.type = "button"; tb.setAttribute("role", "tab"); tb.setAttribute("aria-selected", String(col.id === activeCol));
-    tb.append(document.createTextNode(col.title), el("span", null, String(items.length)));
+    tb.append(document.createTextNode(col.title), el("span", null, String(total)));
     tb.onclick = () => { activeCol = col.id; document.querySelectorAll(".col").forEach((x) => x.classList.toggle("active", x.id === "col-" + col.id)); tabs.querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", String(x === tb))); };
     tabs.append(tb);
   }
@@ -422,18 +449,25 @@ $("mok").onclick = async () => {
   const items = ticket.map((l) => ({ id: l.id, cantidad: l.cantidad, ...(l.tam ? { tamano: l.tamano, veggie: l.veggie, extras: Object.entries(l.ext).flatMap(([id, n]) => Array(n).fill(id)) } : {}) }));
   $("mok").disabled = true;
   try {
-    const r = await fetch(`/api/orders?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mostrador: { items, pago, nombre: $("mnombre").value } }) });
+    const r = await api("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mostrador: { items, pago, nombre: $("mnombre").value } }) });
     const d = await r.json(); if (!r.ok) throw new Error(d.error || "Error");
-    tst(`✓ Venta #${d.id} a cocina · ${money(d.total)}`); ticket = []; $("mnombre").value = ""; cerrarM(); ver = ""; load();
+    tst(`✓ Venta #${d.id} a cocina · ${money(d.total)}`); ticket = []; $("mnombre").value = ""; cerrarM(); load();
   } catch (e) { tst(e.message, 1); } finally { $("mok").disabled = false; }
 };
 $("lb").onclick = () => $("lb").classList.remove("open");
 addEventListener("keydown", (e) => { if (e.key === "Escape") { $("lb").classList.remove("open"); cerrarM(); } });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { document.title = "Pedidos · Flama"; load(); } });
 (async () => {
-  key = await sesion("flama_local", async (k) => (await fetch(`/api/orders?key=${encodeURIComponent(k)}&v=login`)).ok, "Panel de pedidos");
-  $("fichlink").href = `/fichar?key=${encodeURIComponent(key)}`;
-  load(); setInterval(() => { if (!document.hidden) load(); }, 8000);
+  key = await sesion("flama_local", async (k) => (await fetch("/api/orders?comp=0", { headers: { "x-flama-key": k } })).ok, "Panel de pedidos");
+  $("fichlink").href = `/fichar#key=${encodeURIComponent(key)}`;
+  // Cada 8 s con pedidos en curso o movimiento reciente; cada 30 s si está todo quieto; nada si la pantalla está oculta
+  load(true);
+  const tick = () => {
+    const activos = [...ORD.values()].some((o) => ACTIVOS.includes(o.estado));
+    const espera = activos || Date.now() - ultimoCambio < 10 * 60e3 ? 8000 : 30000;
+    setTimeout(async () => { if (!document.hidden) await load(); tick(); }, espera);
+  };
+  tick();
 })();
 </script>
 </body>

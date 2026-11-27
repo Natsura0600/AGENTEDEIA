@@ -103,6 +103,7 @@ td.n{font-family:"JetBrains Mono";text-align:right;white-space:nowrap}
 .crow{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .crow input{flex:1;min-width:140px}.crow input[type=number]{flex:none;width:110px;min-width:0}
 .crow .nm,.pcard .nm{font-weight:800}
+.avisos{padding:0}.avisos label{cursor:pointer;gap:10px}.avisos input{width:18px;height:18px;flex:none}
 .crow input[step="0.5"]{width:76px}
 .geoc{padding:0;margin-top:10px}.geoc .crow:last-child{border-bottom:0}.geoc a:not(.btn){color:var(--y)}
 .sp{flex:1}
@@ -185,8 +186,10 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 let KEY = "";
 // ---- Ingreso con clave (se guarda en este dispositivo, así el link queda limpio) ----
 function sesion(store, probar, titulo) {
-  const qs = new URLSearchParams(location.search); let k = qs.get("key");
-  if (k) { try { localStorage.setItem(store, k); } catch {} qs.delete("key"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "") + location.hash); }
+  // El link de acceso trae la clave después de "#" (nunca llega al servidor) o, en links viejos, en ?key=
+  const qs = new URLSearchParams(location.search), hs = new URLSearchParams(location.hash.slice(1));
+  let k = hs.get("key") || qs.get("key");
+  if (k) { try { localStorage.setItem(store, k); } catch {} qs.delete("key"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "")); }
   else { try { k = localStorage.getItem(store); } catch {} }
   return (async () => (k && (await probar(k).catch(() => false))) ? k : pedirClave(store, probar, titulo))();
 }
@@ -214,13 +217,22 @@ const hora = (t) => new Date(t).toLocaleTimeString("es-AR", { timeZone: TZ, hour
 const mesActual = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ }).slice(0, 7);
 let estado = { mes: mesActual() }, claveEmp = "";
 
+// Descarga del Excel: se pide con la clave en el encabezado y se guarda como archivo
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-xls]"); if (!b) return;
+  try {
+    const r = await fetch("/api/export?" + b.dataset.xls, { headers: { "x-flama-key": KEY } }); if (!r.ok) throw new Error();
+    const nombre = (r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/)?.[1] || "flama.csv";
+    const a = document.createElement("a"); a.href = URL.createObjectURL(await r.blob()); a.download = nombre; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } catch { toast("No se pudo descargar", 1); }
+});
 function toast(msg, err) { const t = document.createElement("div"); t.className = "toast" + (err ? " err" : ""); t.textContent = msg; document.body.append(t); setTimeout(() => t.remove(), 2600); }
 async function api(op, params = {}) {
-  const r = await fetch(`/api/dueno?key=${encodeURIComponent(KEY)}&op=${op}&` + new URLSearchParams(params));
+  const r = await fetch(`/api/dueno?op=${op}&` + new URLSearchParams(params), { headers: { "x-flama-key": KEY } });
   const d = await r.json(); if (!r.ok) throw new Error(d.error || "Error"); return d;
 }
 async function post(body) {
-  const r = await fetch(`/api/dueno?key=${encodeURIComponent(KEY)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetch("/api/dueno", { method: "POST", headers: { "Content-Type": "application/json", "x-flama-key": KEY }, body: JSON.stringify(body) });
   const d = await r.json(); if (!r.ok) throw new Error(d.error || "Error"); return d;
 }
 // Ventana simple para pedir datos
@@ -257,7 +269,7 @@ async function verResumen() {
     <span class="chip">🏪 Retiro<b>${h.retiro}</b></span><span class="chip">🛵 Delivery<b>${h.delivery}</b></span><span class="chip">🧾 Mostrador<b>${h.mostrador || 0}</b></span>
   </div>
   <h2>Mes <input type="month" id="mesR" value="${d.mes}" aria-label="Mes"><span class="sp"></span>
-    <a class="btn y" href="/api/export?key=${encodeURIComponent(KEY)}&mes=${d.mes}">⬇ Excel de caja</a><a class="btn" href="/api/export?key=${encodeURIComponent(KEY)}&tipo=horas&mes=${d.mes}">⬇ Excel de horas</a></h2>
+    <button type="button" class="btn y" data-xls="mes=${d.mes}">⬇ Excel de caja</button><button type="button" class="btn" data-xls="tipo=horas&mes=${d.mes}">⬇ Excel de horas</button></h2>
   <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
     <div class="kpi"><span class="mono">Ventas del mes</span><b>${money(totMes)}</b></div>
     <div class="kpi"><span class="mono">Pedidos del mes</span><b>${pedMes}</b></div>
@@ -333,7 +345,7 @@ async function verPersonal(d) {
   $("t-personal").innerHTML = `
   <h2>Trabajando ahora</h2>
   <div class="now">${d.ahora.length ? d.ahora.map((a) => `<span>🟢 ${esc(a.nombre)} · desde ${hora(a.desde)}</span>`).join("") : `<p style="color:var(--mut);margin:0">Nadie fichó entrada todavía.</p>`}</div>
-  <h2>Empleados <input type="month" id="mesP" value="${d.mes}" aria-label="Mes"><span class="sp"></span><a class="btn" href="/api/export?key=${encodeURIComponent(KEY)}&tipo=horas&mes=${d.mes}">⬇ Excel de horas</a><button class="btn y" id="nuevoEmp">＋ Nuevo empleado</button></h2>
+  <h2>Empleados <input type="month" id="mesP" value="${d.mes}" aria-label="Mes"><span class="sp"></span><button type="button" class="btn" data-xls="tipo=horas&mes=${d.mes}">⬇ Excel de horas</button><button class="btn y" id="nuevoEmp">＋ Nuevo empleado</button></h2>
   <p class="help">Cada empleado ficha con su PIN en la pantalla de fichaje del local. Si cobran por hora, cargá el valor y el sistema calcula cuánto pagarle en el mes.</p>
   <div class="scroll"><table><thead><tr><th>Nombre</th><th>Puesto</th><th>PIN</th><th>$ / hora</th><th>Días</th><th>Horas</th><th>A pagar</th><th></th></tr></thead><tbody>
   ${d.empleados.map((e) => `<tr><td><b>${esc(e.nombre)}</b>${e.abiertos ? ` <span class="warnc">● trabajando</span>` : ""}</td><td>${esc(e.puesto)}</td><td class="n">${esc(e.pin)}</td><td class="n">${money(e.valorHora)}</td><td class="n">${e.dias}</td><td class="n">${num(e.horas)}</td><td class="n"><b>${money(e.pagar)}</b></td><td class="n"><button class="btn sm" data-emp="${e.id}">Editar</button> <button class="btn sm r" data-del="${e.id}">Borrar</button></td></tr>`).join("") || `<tr><td colspan="8" style="color:var(--mut)">Todavía no hay empleados.</td></tr>`}
@@ -458,7 +470,7 @@ function pintarMenu() {
   all("[data-exdel]").forEach((b) => (b.onclick = () => { carta.extras.splice(b.dataset.exdel, 1); re(); }));
   $("nuevaZona").onclick = () => { carta.zonas.push({ id: rid("z"), nombre: "Nueva zona", precio: 0, hastaKm: 0 }); re(); };
   // Ubicación del local y probador de direcciones (usa lo que ya está guardado)
-  fetch(`/api/envio?origen=1&key=${encodeURIComponent(KEY)}`).then((r) => r.json()).then((o) => {
+  fetch("/api/envio?origen=1", { headers: { "x-flama-key": KEY } }).then((r) => r.json()).then((o) => {
     if (!o.lat) return;
     $("origenTxt").textContent = `${o.lat.toFixed(5)}, ${o.lng.toFixed(5)} · ${o.fuente === "dueño" ? "fijada por vos" : o.aprox ? "aproximada, conviene corregirla" : "calculada con Mitre 670"}`;
     $("origenMapa").href = o.mapa; $("origenMapa").hidden = false;
@@ -499,25 +511,32 @@ async function verAjustes(d) {
   <h2>Bot de pedidos</h2>
   <div class="card big-tog"><div style="flex:1"><b style="font-size:17px">${d.botOn ? "🤖 El bot está prendido" : "⛔ El bot está apagado"}</b><p class="help" style="margin:6px 0 0">${d.botOn ? "Responde los mensajes, toma pedidos y verifica comprobantes." : "Los clientes reciben: “En un ratito te responde alguien del local”."}</p></div>
   <button class="btn ${d.botOn ? "r" : "g"}" id="botT">${d.botOn ? "Apagar bot" : "Prender bot"}</button></div>
+  <h2>Avisos al cliente por WhatsApp</h2>
+  <p class="help">Cada aviso por WhatsApp se paga (después de los 1.000 gratis del mes). Dejá prendidos solo los que sirven.</p>
+  <div class="card avisos">${[["en_preparacion", "Pago confirmado / en preparación"], ["listo", "Listo para retirar"], ["en_camino", "Salió el delivery"], ["entregado", "Gracias al entregar"], ["cancelado", "Pedido cancelado"]].map(([k, t]) => `<label class="crow"><input type="checkbox" data-aviso="${k}" ${d.avisos?.[k] ? "checked" : ""}> ${t}</label>`).join("")}</div>
   <h2>Links del sistema</h2>
   <p class="help">Todos piden clave la primera vez y después quedan guardados en ese celular o tablet. Para configurar un dispositivo del local sin tipear la clave, mandale el <b>link con acceso</b>.</p>
   <div class="links">
     <div class="card"><b>🌐 Web de pedidos (clientes)</b><p>La que va en la bio de Instagram y en WhatsApp.</p><code class="url">${base}</code><div class="acts"><a class="btn" href="/" target="_blank" rel="noopener">Abrir ↗</a><button class="btn" data-copy="${base}">Copiar link</button></div></div>
-    <div class="card"><b>📋 Pedidos (empleados)</b><p>Pedidos del día, venta de mostrador y avisos de stock. No muestra la plata de la caja.</p><code class="url">${base}/pedidos</code><div class="acts"><a class="btn y" href="/pedidos?key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a><button class="btn" data-copy="${base}/pedidos?key=${encodeURIComponent(claveEmp)}">Copiar link con acceso</button></div></div>
-    <div class="card"><b>🕘 Fichar (tablet del local)</b><p>Cada empleado pone su PIN al entrar y al salir.</p><code class="url">${base}/fichar</code><div class="acts"><a class="btn y" href="/fichar?key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a><button class="btn" data-copy="${base}/fichar?key=${encodeURIComponent(claveEmp)}">Copiar link con acceso</button></div></div>
+    <div class="card"><b>📋 Pedidos (empleados)</b><p>Pedidos del día, venta de mostrador y avisos de stock. No muestra la plata de la caja.</p><code class="url">${base}/pedidos</code><div class="acts"><a class="btn y" href="/pedidos#key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a><button class="btn" data-copy="${base}/pedidos#key=${encodeURIComponent(claveEmp)}">Copiar link con acceso</button></div></div>
+    <div class="card"><b>🕘 Fichar (tablet del local)</b><p>Cada empleado pone su PIN al entrar y al salir.</p><code class="url">${base}/fichar</code><div class="acts"><a class="btn y" href="/fichar#key=${encodeURIComponent(claveEmp)}" target="_blank" rel="noopener">Abrir ↗</a><button class="btn" data-copy="${base}/fichar#key=${encodeURIComponent(claveEmp)}">Copiar link con acceso</button></div></div>
     <div class="card"><b>👑 Panel del dueño</b><p>Este panel. Usá tu clave de dueño; no se la pases a los empleados.</p><code class="url">${base}/dueno</code></div>
     <div class="card"><b>🔑 Clave del local</b><p>La que usan los empleados para pedidos y fichaje.</p><code class="url">${esc(claveEmp)}</code></div>
   </div>
   <h2>Datos de prueba</h2>
   <div class="card big-tog"><p class="help" style="margin:0;flex:1">Borra todos los pedidos, la caja, el stock, el personal y los fichajes. Usalo solo para dejar la demo en cero.</p><button class="btn r" id="resetB">Borrar todo</button></div>`;
   $("t-ajustes").querySelectorAll("[data-copy]").forEach((b) => (b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); toast("Link copiado ✓"); } catch { prompt("Copiá este link:", b.dataset.copy); } }));
+  $("t-ajustes").querySelectorAll("[data-aviso]").forEach((c) => (c.onchange = async () => {
+    const a = Object.fromEntries([...$("t-ajustes").querySelectorAll("[data-aviso]")].map((x) => [x.dataset.aviso, x.checked]));
+    try { await post({ op: "avisos", avisos: a }); toast("Avisos guardados ✓"); } catch (e) { toast(e.message, 1); }
+  }));
   $("botT").onclick = async () => { try { await post({ op: "bot", on: !d.botOn }); verAjustes(); toast(d.botOn ? "Bot apagado" : "Bot prendido"); } catch (e) { toast(e.message, 1); } };
   $("resetB").onclick = async () => {
     if (!confirm("¿Seguro? Se borra TODO y no se puede deshacer.")) return;
     if (prompt('Escribí BORRAR para confirmar') !== "BORRAR") return;
-    const r = await fetch(`/api/reset?key=${encodeURIComponent(KEY)}&confirmar=si`); toast(r.ok ? "Datos borrados" : "No se pudo borrar", !r.ok);
+    const r = await fetch("/api/reset", { method: "POST", headers: { "Content-Type": "application/json", "x-flama-key": KEY }, body: JSON.stringify({ confirmar: "si" }) }); toast(r.ok ? "Datos borrados" : "No se pudo borrar", !r.ok);
   };
-  $("topPanel").href = `/pedidos?key=${encodeURIComponent(claveEmp)}`;
+  $("topPanel").href = `/pedidos#key=${encodeURIComponent(claveEmp)}`;
 }
 
 const VISTAS = { resumen: verResumen, stock: verStock, personal: verPersonal, menu: verMenu, ajustes: verAjustes };
@@ -529,9 +548,9 @@ async function abrir(t) {
 }
 document.querySelectorAll(".tabs button").forEach((b) => (b.onclick = () => abrir(b.dataset.t)));
 (async () => {
-  KEY = await sesion("flama_dueno", async (k) => (await fetch(`/api/dueno?key=${encodeURIComponent(k)}&op=ajustes`)).ok, "Panel del dueño");
+  KEY = await sesion("flama_dueno", async (k) => (await fetch("/api/dueno?op=ajustes", { headers: { "x-flama-key": k } })).ok, "Panel del dueño");
   abrir(VISTAS[location.hash.slice(1)] ? location.hash.slice(1) : "resumen");
-  api("ajustes").then((d) => { claveEmp = d.claveEmpleados; $("topPanel").href = `/pedidos?key=${encodeURIComponent(claveEmp)}`; }).catch(() => {});
+  api("ajustes").then((d) => { claveEmp = d.claveEmpleados; $("topPanel").href = `/pedidos#key=${encodeURIComponent(claveEmp)}`; }).catch(() => {});
 })();
 </script>
 </body>

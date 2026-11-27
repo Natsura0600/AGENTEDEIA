@@ -3,13 +3,14 @@ import { redis } from "./redis.js";
 
 export async function sendToClient(chat, text) {
   if (chat.startsWith("web:")) {
-    let q = [];
-    try { q = JSON.parse((await redis.get(`flama:outbox:${chat}`)) || "[]"); } catch {}
-    q.push({ text, at: Date.now() });
-    await redis.set(`flama:outbox:${chat}`, JSON.stringify(q), { ex: 86400 });
+    // Lista de Redis: agregar es 1 comando y no se pisa si llegan dos avisos juntos
+    const k = `flama:ob:${chat}`;
+    if ((await redis.rpush(k, JSON.stringify({ text, at: Date.now() }))) === 1) await redis.expire(k, 86400);
     return;
   }
+  if (!process.env.WHATSAPP_TOKEN) return console.warn("WhatsApp no configurado");
   const res = await fetch(`https://graph.facebook.com/v23.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+    signal: AbortSignal.timeout(10000),
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify({ messaging_product: "whatsapp", to: chat.replace(/^wa:/, ""), type: "text", text: { body: text.slice(0, 4000) } }),
@@ -18,11 +19,10 @@ export async function sendToClient(chat, text) {
 }
 
 export async function takeOutbox(chat) {
-  const key = `flama:outbox:${chat}`;
-  let q = [];
-  try { q = JSON.parse((await redis.get(key)) || "[]"); } catch {}
-  if (q.length) await redis.del(key);
-  return q;
+  const k = `flama:ob:${chat}`;
+  const q = await redis.lrange(k, 0, 49);
+  if (q.length) await redis.del(k);
+  return q.map((x) => { try { return JSON.parse(x); } catch { return null; } }).filter(Boolean);
 }
 
 export const STATUS_MSG = {

@@ -559,12 +559,12 @@ addEventListener("scroll", () => {
   if (r.bottom > 0 && r.top < innerHeight) p.style.transform = `translateY(${(r.top / innerHeight) * -60}px)`;
 }, { passive: true });
 
-$("zona").innerHTML = `<option value="">Elegí tu zona</option>` + ZONAS.map(([id, n, p]) => `<option value="${id}">${n} · ${money(p)}</option>`).join("");
+$("zona").innerHTML = `<option value="">Elegí tu zona</option>` + ZONAS.map(([id, n, p]) => `<option value="${esc(id)}">${esc(n)} · ${money(p)}</option>`).join("");
 const subtotal = () => cart.reduce((s, x) => s + x.price * x.qty, 0);
 const entrega = () => document.querySelector("[name=entrega]:checked").value;
 // Zona automática por dirección: GEO = { estado: "vacio"|"buscando"|"ok"|"fuera"|"manual", r }
 let GEO = { estado: "vacio" }, geoT = 0, geoN = 0, ultimaDir = "";
-const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function esc(t) { return String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
 const kmTxt = (n) => String(n).replace(".", ",") + " km";
 const zonaActual = () => GEO.estado === "ok" ? ZONAS.find((z) => z[0] === GEO.r.zona.id) : GEO.estado === "manual" ? ZONAS.find((z) => z[0] === $("zona").value) : null;
 const envio = () => (entrega() === "envio" && zonaActual() ? zonaActual()[2] : 0);
@@ -647,7 +647,7 @@ $("wab").onclick = () => { if ($("wawin").classList.contains("open")) { $("wawin
 $("sendtry").onclick = () => { if (validate()) { const q = `&msg=${encodeURIComponent(message())}&name=${encodeURIComponent($("nombre").value)}`; vaciar(); openChat(q); } };
 function pintarZonas() {
   ZONAS = CARTA.zonas.map((z) => [z.id, z.nombre, z.precio]);
-  const v = $("zona").value; $("zona").innerHTML = `<option value="">Elegí tu zona</option>` + ZONAS.map(([id, n, p]) => `<option value="${id}">${n} · ${money(p)}</option>`).join(""); if (v) $("zona").value = v;
+  const v = $("zona").value; $("zona").innerHTML = `<option value="">Elegí tu zona</option>` + ZONAS.map(([id, n, p]) => `<option value="${esc(id)}">${esc(n)} · ${money(p)}</option>`).join(""); if (v) $("zona").value = v;
 }
 renderTabs(); renderMenu(); pintarExtrasNota(); observe(); updateCart();
 // Carta, precios, agotados y fotos que el dueño edita desde su panel

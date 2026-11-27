@@ -5,7 +5,7 @@ import { systemPrompt } from "./prompt.js";
 import { LOCAL, abierto, calcular, getMenu } from "./menu.js";
 import { sincronizarStock } from "./stock.js";
 import { detectarZona } from "./geo.js";
-import { nextId, saveOrder, activeOrder, claimOperation, jornada, ESTADOS } from "./orders.js";
+import { nextId, saveOrder, activeOrder, getOrder, claimOperation, jornada, ESTADOS, conCandado, guardarComprobante } from "./orders.js";
 
 const MODEL = process.env.AI_MODEL || "openai/gpt-5-mini";
 const fast = { openai: { reasoningEffort: "minimal" } };
@@ -80,7 +80,14 @@ export async function reply({ chat, text, image, mediaType, name }) {
   // Si manda una imagen y hay un pedido esperando pago → verificar comprobante
   if (image && order && order.estado === "pago_pendiente") {
     const v = await verificarComprobante(order, image, mediaType);
-    order.comprobante = { datos: v.datos, motivos: v.motivos, imagen: image.length < 900000 ? `data:${mediaType || "image/jpeg"};base64,${image}` : null };
+    // La imagen se guarda aparte: el panel la baja solo cuando alguien la abre
+    const conImg = image.length < 900000;
+    if (conImg) await guardarComprobante(order.id, `data:${mediaType || "image/jpeg"};base64,${image}`);
+    await conCandado(order.id, async () => {
+      const actual = await getOrder(order.id);
+      if (actual && actual.estado !== "pago_pendiente") { order = actual; v.ok = false; v.yaCambio = true; return; } // el local ya lo movió a mano
+      order = actual || order;
+      order.comprobante = { datos: v.datos, motivos: v.motivos, imagen: conImg };
     if (v.ok) {
       order.estado = isOpen ? "en_preparacion" : "programado";
       order.pagoVerificadoPor = "bot";
@@ -91,15 +98,18 @@ export async function reply({ chat, text, image, mediaType, name }) {
       order.estado = "pago_a_verificar";
       nota = `[SISTEMA: ${detalle(order)} El comprobante quedó para revisión manual del local (${v.motivos.join("; ")}). Decile al cliente, amablemente, que el local lo revisa y le confirma en unos minutos. Si el problema es claro (por ejemplo el monto), explicáselo.]`;
     }
-    await sincronizarStock(order);
-    await saveOrder(order);
+      await sincronizarStock(order);
+      await saveOrder(order);
+    });
+    if (v.yaCambio) nota = `[SISTEMA: ${detalle(order)} El local ya actualizó este pedido (${ESTADOS[order.estado]}). Agradecele el comprobante.]`;
   } else if (image) {
     nota = "[SISTEMA: el cliente mandó una imagen, pero no hay un pedido esperando pago.]";
   }
 
+  const limpio = String(text || "").slice(0, 1500).replace(/\[\s*(SISTEMA|SYSTEM)[^\]]*\]?/gi, "(texto quitado)");
   const userContent = [
-    historial.length === 0 && name ? `[Nombre de perfil: ${name}]` : "",
-    text || (image ? "(envió una imagen)" : ""),
+    historial.length === 0 && name ? `[Nombre de perfil: ${String(name).slice(0, 40).replace(/[\[\]]/g, "")}]` : "",
+    limpio || (image ? "(envió una imagen)" : ""),
     nota,
   ].filter(Boolean).join("\n");
   const messages = [...historial, { role: "user", content: userContent }];
@@ -110,6 +120,8 @@ export async function reply({ chat, text, image, mediaType, name }) {
     instructions: systemPrompt(isOpen, menu),
     messages,
     stopWhen: stepCountIs(4),
+    maxOutputTokens: 700,
+    abortSignal: AbortSignal.timeout(45000),
     prepareStep: ({ stepNumber }) => (esPedidoWeb && stepNumber === 0 ? { toolChoice: { type: "tool", toolName: "crear_pedido" } } : {}),
     tools: {
       crear_pedido: tool({
@@ -148,13 +160,13 @@ export async function reply({ chat, text, image, mediaType, name }) {
             id: reuse ? prev.id : await nextId(),
             chat, createdAt: reuse ? prev.createdAt : Date.now(), updatedAt: Date.now(), jornada: reuse ? prev.jornada : jornada(),
             ...(reuse ? { _saved: true } : {}),
-            nombre: i.nombre, telefono: chat.startsWith("wa:") ? chat.slice(3) : null,
-            entrega: i.entrega, zona: i.entrega === "envio" ? i.zona : null, direccion: i.direccion || null,
+            nombre: String(i.nombre || "").slice(0, 40), telefono: chat.startsWith("wa:") ? chat.slice(3) : null,
+            entrega: i.entrega, zona: i.entrega === "envio" ? i.zona : null, direccion: i.direccion ? String(i.direccion).slice(0, 160) : null,
             zonaNombre: i.entrega === "envio" ? menu.zonas.find((z) => z.id === i.zona)?.nombre || null : null,
             geo: geo?.encontrada ? { km: geo.km, lat: geo.lat, lng: geo.lng, texto: geo.texto, exacta: geo.exacta, fuente: geo.fuente } : null,
             zonaAConfirmar,
-            lineas: calc.lineas, envio: calc.envio, total: calc.total, items: i.items, canal: chat.startsWith("wa:") ? "whatsapp" : "web",
-            comentarios: i.comentarios || "", estado: "pago_pendiente", paraMasTarde: !isOpen,
+            lineas: calc.lineas, envio: calc.envio, total: calc.total, items: calc.items, canal: chat.startsWith("wa:") ? "whatsapp" : "web",
+            comentarios: String(i.comentarios || "").slice(0, 300), estado: "pago_pendiente", paraMasTarde: !isOpen,
           };
           await saveOrder(o);
           return {

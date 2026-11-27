@@ -167,9 +167,13 @@ export function abierto(d = new Date()) {
 // Calcula el total a partir de los ítems (precios de la carta, nunca del modelo)
 export function calcular(items, entrega, zonaId, c = cartaBase()) {
   let total = 0;
-  const lineas = [];
+  const lineas = [], limpios = [];
+  // Topes para que nadie arme un pedido absurdo (por error o a propósito)
+  if (!Array.isArray(items) || items.length > 40) throw new Error("El pedido tiene demasiados productos: para pedidos grandes hablá con el local");
   for (const it of items) {
-    const cant = Math.max(1, Number(it.cantidad) || 1);
+    const cant = Math.floor(Number(it?.cantidad) || 1);
+    if (cant < 1 || cant > 50) throw new Error("Para más de 50 unidades de un producto hablá con el local");
+    if (Array.isArray(it.extras) && it.extras.length > 12) throw new Error("Demasiados extras en un producto");
     const p = visibles(c).find((x) => x.id === it.id);
     if (!p) throw new Error(`No existe el producto ${it.id}`);
     if (p.estado === "agotado") throw new Error(`${p.nombre} está agotado hoy`);
@@ -183,7 +187,9 @@ export function calcular(items, entrega, zonaId, c = cartaBase()) {
     precio += extras.reduce((s, e) => s + e.precio, 0);
     const cnt = {}; extras.forEach((e) => (cnt[e.nombre] = (cnt[e.nombre] || 0) + 1));
     const ext = extras.length ? ` + ${Object.entries(cnt).map(([n, k]) => `${k > 1 ? k + " " : ""}${n.toLowerCase()}`).join(", ")}` : "";
-    const nota = it.nota ? ` (${it.nota})` : "";
+    const notaTxt = String(it.nota || "").replace(/[\r\n]+/g, " ").slice(0, 80).trim();
+    const nota = notaTxt ? ` (${notaTxt})` : "";
+    limpios.push({ id: p.id, cantidad: cant, ...(p.tipo === "tamanos" ? { tamano: it.tamano === "doble" ? "doble" : "simple", veggie: !!(it.veggie && p.veggie) } : {}), extras: extras.map((e) => e.id), ...(notaTxt ? { nota: notaTxt } : {}) });
     lineas.push({ texto: `${cant}x ${nombre}${ext}${nota}`, subtotal: precio * cant });
     total += precio * cant;
   }
@@ -193,5 +199,5 @@ export function calcular(items, entrega, zonaId, c = cartaBase()) {
     if (!z) throw new Error("Falta la zona de envío");
     envio = z.precio;
   }
-  return { lineas, envio, total: total + envio };
+  return { lineas, envio, total: total + envio, items: limpios };
 }

@@ -105,7 +105,17 @@ async function ubicar(direccion) {
   return mejor;
 }
 
+// Freno en memoria: 30 búsquedas por minuto por conexión (la caché de Vercel absorbe las repetidas)
+const vistos = new Map();
+function frenar(ip) {
+  const m = Math.floor(Date.now() / 60000), k = ip + ":" + m, n = (vistos.get(k) || 0) + 1;
+  if (vistos.size > 5000) vistos.clear();
+  vistos.set(k, n); return n > 30;
+}
+
 export default async function handler(req, res) {
+  const ip = String(req.headers["x-forwarded-for"] || "x").split(",")[0].trim();
+  if (frenar(ip)) { res.setHeader("Cache-Control", "no-store"); return res.status(429).json({ error: "Muchas consultas, probá en un minuto" }); }
   const dir = String(req.query.dir || "").slice(0, 160);
   if (dir.trim().length < 4) return res.status(400).json({ error: "Escribí calle y número" });
   try {

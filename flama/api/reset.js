@@ -1,14 +1,15 @@
 // Mantenimiento de datos de Flama en Upstash (solo con la clave del dueño).
-//   /api/reset?key=CLAVE_DUENO&confirmar=si                  → borra TODO (menú, stock, personal, pedidos...)
-//   /api/reset?key=CLAVE_DUENO&confirmar=si&solo=pedidos     → borra pedidos, chats y caja, y devuelve al stock
+// POST /api/reset (encabezado x-flama-key con la clave del dueño), cuerpo JSON:
+//   {confirmar:"si"}                  → borra TODO (menú, stock, personal, pedidos...)
+//   {confirmar:"si", solo:"pedidos"}  → borra pedidos, chats y caja, y devuelve al stock
 //                                                             lo que esos pedidos descontaron (menú, recetas,
 //                                                             personal y movimientos manuales de stock quedan)
-//   /api/reset?key=CLAVE_DUENO&confirmar=si&quitar_foto=ID   → saca la foto de un producto
-//   /api/reset?key=CLAVE_DUENO&confirmar=si&solo=direcciones → olvida las direcciones ya buscadas (se vuelven a buscar) del menú
+//   {confirmar:"si", quitar_foto:ID}  → saca la foto de un producto
+//   {confirmar:"si", solo:"direcciones"} → olvida las direcciones ya buscadas (se vuelven a buscar) del menú
 import { redis } from "../lib/redis.js";
-import { rol } from "../lib/auth.js";
+import { autorizar } from "../lib/auth.js";
 
-const DE_PEDIDOS = /^flama:(order|orders|active|hist|outbox|seen|op|caja):/;
+const DE_PEDIDOS = /^flama:(order|orders|ped|chg|active|hist|outbox|ob|comp|lock|seen|op|caja):/;
 
 async function todasLasClaves() {
   let cursor = "0";
@@ -73,9 +74,11 @@ async function quitarFoto(id) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Cache-Control", "no-store");
-  if (rol(req.query.key) !== "dueno") return res.status(401).json({ error: "Clave incorrecta" });
-  if (req.query.confirmar !== "si") return res.status(400).json({ error: "Agregá &confirmar=si" });
+  // Solo POST con la clave del dueño en el encabezado: un link o una vista previa nunca puede borrar nada
+  if (req.method !== "POST") return res.status(405).json({ error: "Usá POST" });
+  if (!(await autorizar(req, res, "dueno"))) return;
+  req.query = { ...(req.body || {}) };
+  if (req.query.confirmar !== "si") return res.status(400).json({ error: "Falta confirmar" });
   if (typeof redis.scan !== "function") return res.json({ borradas: 0, nota: "Upstash no está conectado" });
 
   if (req.query.quitar_foto) {

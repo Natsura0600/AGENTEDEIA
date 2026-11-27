@@ -23,8 +23,10 @@ export async function guardarEmpleado(e) {
   const pin = String(e.pin || "").replace(/\D/g, "");
   if (pin.length < 4) throw new Error("El PIN tiene que tener 4 números o más");
   if (lista.some((x) => x.pin === pin && x.id !== e.id && x.activo !== false)) throw new Error("Ese PIN ya lo usa otro empleado");
-  const limpio = { id: e.id || nid(), nombre: String(e.nombre || "").trim().slice(0, 40), puesto: String(e.puesto || "").trim().slice(0, 30), pin, valorHora: Number(e.valorHora) || 0, activo: e.activo !== false };
+  const limpio = { id: e.id || nid(), nombre: String(e.nombre || "").trim().slice(0, 40), puesto: String(e.puesto || "").trim().slice(0, 30), pin, valorHora: Math.min(1e6, Math.max(0, Number(e.valorHora) || 0)), activo: e.activo !== false };
   if (!limpio.nombre) throw new Error("Falta el nombre");
+  if (pin.length > 8) throw new Error("El PIN puede tener hasta 8 números");
+  if (!lista.some((x) => x.id === limpio.id) && lista.length >= 80) throw new Error("Máximo 80 empleados");
   const i = lista.findIndex((x) => x.id === limpio.id);
   i >= 0 ? (lista[i] = limpio) : lista.push(limpio);
   await redis.set(K("emp"), JSON.stringify(lista));
@@ -80,6 +82,9 @@ export async function editarFichaje({ mes, id, inT, outT, emp, borrar }) {
   if (borrar) { await guardarFichajes(mes, l.filter((x) => x.id !== id)); return; }
   const inN = Number(inT), outN = outT ? Number(outT) : null;
   if (!inN) throw new Error("Falta la hora de entrada");
+  const min = Date.UTC(2024, 0, 1), max = Date.now() + 864e5;
+  if (inN < min || inN > max || (outN && outN > max)) throw new Error("Fecha u hora fuera de rango");
+  if (outN && outN - inN > 24 * 36e5) throw new Error("Un turno no puede durar más de 24 horas");
   if (outN && outN <= inN) throw new Error("La salida tiene que ser después de la entrada");
   if (id) { const f = l.find((x) => x.id === id); if (!f) throw new Error("No existe ese fichaje"); f.in = inN; f.out = outN; f.editado = true; }
   else l.push({ id: nid(), emp, in: inN, out: outN, editado: true });

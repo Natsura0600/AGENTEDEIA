@@ -1,10 +1,10 @@
 // Exporta la caja del mes en un archivo que abre Excel (CSV con ; y acentos)
 import { cajaMes } from "../lib/orders.js";
-import { rol } from "../lib/auth.js";
+import { autorizar } from "../lib/auth.js";
 import { resumenMes } from "../lib/personal.js";
 
 export default async function handler(req, res) {
-  if (rol(req.query.key) !== "dueno") return res.status(401).send("Clave incorrecta");
+  if (!(await autorizar(req, res, "dueno"))) return;
   const mes = /^\d{4}-\d{2}$/.test(req.query.mes || "") ? req.query.mes
     : new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).slice(0, 7);
   if (req.query.tipo === "horas") return horas(res, mes);
@@ -21,13 +21,14 @@ export default async function handler(req, res) {
   }
   rows.push([]);
   rows.push(["TOTAL MES", tot.pedidos, tot.retiro, tot.delivery, tot.mostrador, tot.cancelados, tot.envios, tot.efectivo, tot.transferencia, tot.tarjeta, tot.ventas, tot.pedidos ? Math.round(tot.ventas / tot.pedidos) : 0, ""]);
-  const csv = "\ufeff" + rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="flama-caja-${mes}.csv"`);
-  res.send(csv);
+  res.send(csv(rows));
 }
 
-const csv = (rows) => "\ufeff" + rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
+// Celdas que empiezan con = + - @ se anteponen con ' para que Excel no las ejecute como fórmula
+const celda = (v) => { const s = String(v ?? ""); return /^[=+\-@\t\r]/.test(s) && !/^-?\d+([.,]\d+)?$/.test(s) ? "'" + s : s; };
+const csv = (rows) => "\ufeff" + rows.map((r) => r.map((v) => `"${celda(v).replace(/"/g, '""')}"`).join(";")).join("\r\n");
 const TZ = "America/Argentina/Buenos_Aires";
 const f = (t) => (t ? new Date(t).toLocaleString("es-AR", { timeZone: TZ, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "sin salida");
 async function horas(res, mes) {

@@ -2,6 +2,7 @@
 // Todo lo puede editar el dueño desde su panel (nombres, unidades, mínimos y recetas).
 import { redis } from "./redis.js";
 import { getMenu } from "./menu.js";
+import { moverStock } from "./atomico.js";
 
 const K = (s) => `flama:${s}`;
 const hoyAR = () => new Date(Date.now() - 6 * 3600e3).toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
@@ -56,18 +57,15 @@ export function consumo(items = [], rec) {
   return out;
 }
 
-// Aplica un movimiento (+ ingreso, − consumo/merma) y lo registra en el día
+// Aplica un movimiento (+ ingreso, − consumo/merma) y lo registra en el día, en un solo paso atómico
 export async function mover(delta, tipo, nota = "") {
-  const { ing } = await getStock();
-  for (const [k, v] of Object.entries(delta)) if (ing[k]) ing[k].cant = Math.round((Number(ing[k].cant) + v) * 100) / 100;
-  await guardarIngredientes(ing);
-  const lk = K(`stocklog:${hoyAR()}`);
-  let log = [];
-  try { log = JSON.parse((await redis.get(lk)) || "[]"); } catch {}
-  log.unshift({ t: Date.now(), tipo, delta, nota });
-  await redis.set(lk, JSON.stringify(log.slice(0, 400)), { ex: 60 * 60 * 24 * 40 });
-  await redis.incr(K("ver"));
-  return ing;
+  const entrada = { t: Date.now(), tipo, delta, nota };
+  try { return await moverStock(K("stock"), K(`stocklog:${hoyAR()}`), delta, entrada, 60 * 60 * 24 * 40); }
+  catch (e) {
+    if (!/SIN_STOCK/.test(e.message)) throw e;
+    await getStock(); // primera vez: crea el stock de ejemplo y reintenta
+    return moverStock(K("stock"), K(`stocklog:${hoyAR()}`), delta, entrada, 60 * 60 * 24 * 40);
+  }
 }
 export async function movimientos(dia = hoyAR()) {
   try { return JSON.parse((await redis.get(K(`stocklog:${dia}`))) || "[]"); } catch { return []; }

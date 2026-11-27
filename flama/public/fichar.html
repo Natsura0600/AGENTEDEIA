@@ -81,8 +81,10 @@ body{margin:0;background:var(--k);color:var(--w);font-family:Archivo,system-ui,s
 let KEY = "";
 // ---- Ingreso con clave (se guarda en este dispositivo, así el link queda limpio) ----
 function sesion(store, probar, titulo) {
-  const qs = new URLSearchParams(location.search); let k = qs.get("key");
-  if (k) { try { localStorage.setItem(store, k); } catch {} qs.delete("key"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "") + location.hash); }
+  // El link de acceso trae la clave después de "#" (nunca llega al servidor) o, en links viejos, en ?key=
+  const qs = new URLSearchParams(location.search), hs = new URLSearchParams(location.hash.slice(1));
+  let k = hs.get("key") || qs.get("key");
+  if (k) { try { localStorage.setItem(store, k); } catch {} qs.delete("key"); history.replaceState(null, "", location.pathname + (qs.toString() ? "?" + qs : "")); }
   else { try { k = localStorage.getItem(store); } catch {} }
   return (async () => (k && (await probar(k).catch(() => false))) ? k : pedirClave(store, probar, titulo))();
 }
@@ -124,7 +126,7 @@ async function enviar() {
   if (pin.length < 4) { $("msg").textContent = "El PIN tiene 4 números o más"; return; }
   busy = true;
   try {
-    const r = await fetch(`/api/fichar?key=${encodeURIComponent(KEY)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin }) });
+    const r = await fetch("/api/fichar", { method: "POST", headers: { "Content-Type": "application/json", "x-flama-key": KEY }, body: JSON.stringify({ pin }) });
     const d = await r.json(); if (!r.ok) throw new Error(d.error || "Error");
     const entra = d.tipo === "entrada";
     $("res").className = "res on " + (entra ? "in" : "out");
@@ -141,14 +143,14 @@ async function enviar() {
 }
 async function cargar() {
   try {
-    const d = await (await fetch(`/api/fichar?key=${encodeURIComponent(KEY)}`)).json();
+    const d = await (await fetch("/api/fichar", { headers: { "x-flama-key": KEY } })).json();
     $("now").innerHTML = d.ahora?.length ? d.ahora.map((a) => `<span>🟢 ${a.nombre.replace(/[<>&]/g, "")} · ${hora(a.desde)}</span>`).join("") : "<p>Nadie fichó todavía.</p>";
   } catch {}
 }
 dots();
 (async () => {
-  KEY = await sesion("flama_local", async (k) => (await fetch(`/api/fichar?key=${encodeURIComponent(k)}`)).ok, "Fichero de personal");
-  cargar(); setInterval(cargar, 60000);
+  KEY = await sesion("flama_local", async (k) => (await fetch("/api/fichar", { headers: { "x-flama-key": k } })).ok, "Fichero de personal");
+  cargar(); setInterval(() => { if (!document.hidden) cargar(); }, 60000);
 })();
 </script>
 </body>
