@@ -1,7 +1,7 @@
 // Panel de empleados (y del dueño): pedidos del día, cambios de estado, venta de mostrador.
 // Consumo: si nada cambió, 1 comando por consulta. Si cambió, baja solo los pedidos que cambiaron.
 import { listOrders, cambiosDesde, getOrder, saveOrder, sumarCaja, contarCancelado, nextId, jornada, ESTADOS, conCandado, avisos, leerComprobanteImg } from "../lib/orders.js";
-import { sendToClient, STATUS_MSG } from "../lib/notify.js";
+import { sendToClient, STATUS_MSG, PAGO_CONFIRMADO } from "../lib/notify.js";
 import { sincronizarStock, bajos } from "../lib/stock.js";
 import { getMenu, calcular } from "../lib/menu.js";
 import { redis } from "../lib/redis.js";
@@ -61,6 +61,7 @@ export default async function handler(req, res) {
       if (!o) return { error: "Ese pedido ya no existe", status: 404 };
       const antes = o.estado;
       if (antes === estado) return { o, igual: true };
+      const pagoManual = ["pago_pendiente", "pago_a_verificar"].includes(antes) && ["en_preparacion", "programado"].includes(estado);
       o.estado = estado;
       if (["pago_pendiente", "pago_a_verificar"].includes(antes) && ["en_preparacion", "programado"].includes(estado) && !o.pagoVerificadoPor) o.pagoVerificadoPor = "local";
       if (antes === "pago_a_verificar" && estado === "en_preparacion") o.pagoVerificadoPor = "local";
@@ -69,10 +70,11 @@ export default async function handler(req, res) {
       if (estado === "cancelado") { if (o.enCaja) { o.enCaja = false; await sumarCaja(o, -1); } await contarCancelado(o); }
       await sincronizarStock(o);
       await saveOrder(o);
-      return { o };
+      return { o, pagoManual };
     });
     if (r.error) return res.status(r.status).json({ error: r.error });
-    if (!r.igual && STATUS_MSG[estado] && !String(r.o.chat).startsWith("local:") && (await avisos())[estado]) await sendToClient(r.o.chat, STATUS_MSG[estado](r.o));
+    if (r.pagoManual && !String(r.o.chat).startsWith("local:")) await sendToClient(r.o.chat, PAGO_CONFIRMADO(r.o));
+    else if (!r.igual && STATUS_MSG[estado] && !String(r.o.chat).startsWith("local:") && (await avisos())[estado]) await sendToClient(r.o.chat, STATUS_MSG[estado](r.o));
     res.json({ ok: true, estado });
   } catch (e) { res.status(409).json({ error: e.message }); }
 }

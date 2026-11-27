@@ -25,6 +25,10 @@ export async function takeOutbox(chat) {
   return q.map((x) => { try { return JSON.parse(x); } catch { return null; } }).filter(Boolean);
 }
 
+export const URL_PUBLICA = (process.env.PUBLIC_URL || "https://flama-demo.vercel.app").replace(/\/$/, "");
+export const linkSeguimiento = (o) => (o.seg ? `${URL_PUBLICA}/pedido/${o.seg}` : null);
+// Cuando el local confirma el pago a mano: siempre se avisa (con el link), porque el cliente está esperando eso
+export const PAGO_CONFIRMADO = (o) => `¡Pago confirmado${o.nombre ? ", " + String(o.nombre).split(" ")[0] : ""}! ✅ Tu pedido #${o.id} ${o.estado === "programado" ? "queda confirmado para cuando abramos" : "ya está en la cocina 🔥"}.` + (linkSeguimiento(o) ? `\n\n📍 Seguí tu pedido en vivo acá: ${linkSeguimiento(o)}` : "");
 export const STATUS_MSG = {
   en_preparacion: (o) => `¡Listo, ${o.nombre}! Tu pedido #${o.id} ya está en preparación 🔥`,
   listo: (o) => `Tu pedido #${o.id} ya está listo para retirar en Mitre 670. ¡Te esperamos!`,

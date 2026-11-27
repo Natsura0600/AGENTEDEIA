@@ -1,3 +1,4 @@
+import { URL_PUBLICA } from "./notify.js";
 import { randomBytes } from "node:crypto";
 import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
@@ -63,7 +64,6 @@ export async function verificarComprobante(order, imageBase64, mediaType) {
 // ---------- Conversación ----------
 export const botApagado = async () => (await redis.get("flama:bot_off")) === "1";
 
-const URL_PUBLICA = (process.env.PUBLIC_URL || "https://flama-demo.vercel.app").replace(/\/$/, "");
 export async function reply({ chat, text, image, mediaType, name }) {
   let aprobado = false;
   const history = await getHistory(chat);
@@ -108,6 +108,10 @@ export async function reply({ chat, text, image, mediaType, name }) {
     if (v.yaCambio) nota = `[SISTEMA: ${detalle(order)} El local ya actualizó este pedido (${ESTADOS[order.estado]}). Agradecele el comprobante.]`;
   } else if (image) {
     nota = "[SISTEMA: el cliente mandó una imagen, pero no hay un pedido esperando pago.]";
+  }
+  // Estado real del pedido en cada mensaje: si el local lo cambió desde el panel, el bot lo sabe
+  if (!nota && order && !esPedidoWeb) {
+    nota = `[SISTEMA: estado ACTUAL de ${detalle(order)} → ${ESTADOS[order.estado] || order.estado}.${["pago_pendiente", "pago_a_verificar"].includes(order.estado) ? "" : " El pago ya está confirmado: no pidas comprobante ni digas que falta confirmar."}${order.seg && !["pago_pendiente", "pago_a_verificar"].includes(order.estado) ? ` Link de seguimiento: ${URL_PUBLICA}/pedido/${order.seg}` : ""} Si esto contradice lo que dijiste antes, vale esto.]`;
   }
 
   const limpio = String(text || "").slice(0, 1500).replace(/\[\s*(SISTEMA|SYSTEM)[^\]]*\]?/gi, "(texto quitado)");
