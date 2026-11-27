@@ -287,7 +287,7 @@ async function verResumen() {
     <div class="kpi"><span class="mono">Cancelados</span><b>${h.cancelados}</b></div>
   </div>
   <div class="breakdown"><section class="card"><h3>Medios de pago</h3><div class="chips">
-    <span class="chip">💵 Efectivo<b>${money(pp.efectivo)}</b></span><span class="chip">🏦 Transferencia<b>${money(pp.transferencia)}</b></span><span class="chip">💳 Tarjeta<b>${money(pp.tarjeta)}</b></span>
+    <span class="chip">Mercado Pago<b>${money(pp.mercado_pago)}</b></span><span class="chip">💵 Efectivo<b>${money(pp.efectivo)}</b></span><span class="chip">🏦 Transferencia<b>${money(pp.transferencia)}</b></span><span class="chip">💳 Tarjeta<b>${money(pp.tarjeta)}</b></span>
   </div></section><section class="card"><h3>Tipos de pedido</h3><div class="chips">
     <span class="chip">🏪 Retiro<b>${h.retiro}</b></span><span class="chip">🛵 Delivery<b>${h.delivery}</b></span><span class="chip">🧾 Mostrador<b>${h.mostrador || 0}</b></span>
   </div></section></div>

@@ -59,7 +59,7 @@ const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", m
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const token = (location.pathname.match(/\/pedido\/([A-Za-z0-9_-]{16})/) || new URLSearchParams(location.search).get("t")?.match(/^([A-Za-z0-9_-]{16})$/) || [])[1];
 const TIT = {
-  pago_pendiente: ["Esperando el pago", "Mandá el comprobante por el chat para que lo empecemos."],
+  pago_pendiente: ["Esperando el pago", "Si todavía no pagaste, abrí el link de Mercado Pago que te enviamos por el chat."],
   pago_a_verificar: ["Revisando tu pago", "El local está chequeando la transferencia."],
   programado: ["Pagado ✓", "Lo preparamos apenas abramos."],
   en_preparacion: ["En la cocina 🔥", "Tu pedido se está preparando."],

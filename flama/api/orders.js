@@ -62,6 +62,7 @@ export default async function handler(req, res) {
       const antes = o.estado;
       if (antes === estado) return { o, igual: true };
       const pagoManual = ["pago_pendiente", "pago_a_verificar"].includes(antes) && ["en_preparacion", "programado"].includes(estado);
+      if (o.mp && antes === "pago_pendiente" && estado !== "cancelado") return { error: "Este pago lo confirma Mercado Pago", status: 409 };
       o.estado = estado;
       if (["pago_pendiente", "pago_a_verificar"].includes(antes) && ["en_preparacion", "programado"].includes(estado) && !o.pagoVerificadoPor) o.pagoVerificadoPor = "local";
       if (antes === "pago_a_verificar" && estado === "en_preparacion") o.pagoVerificadoPor = "local";

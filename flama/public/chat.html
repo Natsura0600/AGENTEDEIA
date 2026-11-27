@@ -60,7 +60,7 @@ function add(text, who, img) {
   if (img) { const i = document.createElement("img"); i.src = img; i.alt = "Imagen enviada"; d.append(i); }
   // Los links https se muestran como links (se abren en otra pestaña); el resto, como texto
   if (text) String(text).split(/(https:\/\/[^\s]+)/).forEach((parte, i) => {
-    if (i % 2) { const a = document.createElement("a"); a.href = parte; a.textContent = parte; a.target = "_blank"; a.rel = "noopener"; d.append(a); }
+    if (i % 2) { const a = document.createElement("a"); a.href = parte; a.textContent = parte.startsWith("https://www.mercadopago.com.ar/") ? "Pagar con Mercado Pago" : parte; a.target = "_blank"; a.rel = "noopener"; d.append(a); }
     else d.append(document.createTextNode(parte));
   });
   box.append(d); box.scrollTop = box.scrollHeight;
@@ -71,7 +71,7 @@ async function send(body, shown, img) {
   try {
     const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session, name, ...body }) });
     const d = await r.json(); add(d.reply || "Error", "bot");
-    if (/alias|#\d{3}/i.test(d.reply || "")) { try { localStorage.setItem("flama_order", "1"); } catch {} startPoll(); }
+    if (/mercadopago\.com\.ar|#\d{3}/i.test(d.reply || "")) { try { localStorage.setItem("flama_order", "1"); } catch {} startPoll(); }
   } catch { add("No pude conectarme, probá de nuevo.", "bot"); }
   document.getElementById("typing").hidden = true;
 }
@@ -104,7 +104,7 @@ try { if (localStorage.getItem("flama_order")) startPoll(); } catch {}
 if (q.get("msg")) send({ text: q.get("msg") }, q.get("msg"));
 else {
   const w = document.createElement("div"); w.className = "welcome";
-  w.innerHTML = '<div>¡Hola! 👋 Soy el asistente de <b>Flama</b>.<br>Contame qué querés pedir y te paso el total y el alias para transferir.</div>';
+  w.innerHTML = '<div>¡Hola! 👋 Soy el asistente de <b>Flama</b>.<br>Contame qué querés pedir y te paso el total y el link de Mercado Pago.</div>';
   box.append(w);
   const qk = document.createElement("div"); qk.className = "quick";
   ["Una Oklahoma doble", "¿Qué burgers tienen?", "¿Hacen delivery?"].forEach((t) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.onclick = () => { qk.remove(); send({ text: t }, t); }; qk.append(b); });

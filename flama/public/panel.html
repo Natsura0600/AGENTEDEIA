@@ -391,8 +391,9 @@ function card(o, nuevo) {
   const t = el("div", "tot"); const tl = el("span", null, "Total "); if (o.envio) tl.append(el("small", null, `(envío ${money(o.envio)})`)); t.append(tl, el("b", null, money(o.total))); c.append(t);
 
   let pay = null;
-  if (o.estado === "pago_pendiente") pay = ["warn", "⏳ Esperando comprobante"];
+  if (o.estado === "pago_pendiente") pay = ["warn", o.mp ? "Esperando acreditación de Mercado Pago" : "Esperando comprobante"];
   else if (o.estado === "pago_a_verificar") pay = ["bad", "⚠️ Revisar pago: " + (o.comprobante?.motivos || []).join(", ")];
+  else if (o.pagoVerificadoPor === "mercado_pago") pay = ["ok", "✓ Acreditado por Mercado Pago"];
   else if (o.pagoVerificadoPor === "bot") pay = ["ok", "✓ Pago verificado por el bot"];
   else if (o.canal === "mostrador") pay = ["ok", "✓ Cobrado en mostrador · " + (o.pago || "efectivo")];
   else if (o.pagoVerificadoPor === "local") pay = ["ok", "✓ Pago verificado por el local"];
@@ -414,7 +415,7 @@ function card(o, nuevo) {
     listo: ["Entregado", "entregado", "green"],
     en_camino: ["Entregado", "entregado", "green"],
   }[o.estado];
-  if (next) c.append(btn(next[0], "go " + (next[2] || ""), () => setEstado(o.id, next[1])));
+  if (next && !(o.mp && o.estado === "pago_pendiente")) c.append(btn(next[0], "go " + (next[2] || ""), () => setEstado(o.id, next[1])));
   if (ACTIVOS.includes(o.estado)) c.append(btn("Cancelar pedido", "cancel", () => { if (confirm(`¿Cancelar el pedido #${o.id}?`)) setEstado(o.id, "cancelado"); }));
   return c;
 }
