@@ -60,6 +60,7 @@ export function consumo(items = [], rec) {
 // Aplica un movimiento (+ ingreso, − consumo/merma) y lo registra en el día, en un solo paso atómico
 export async function mover(delta, tipo, nota = "") {
   const entrada = { t: Date.now(), tipo, delta, nota };
+  redis.incr(K("ver")).catch(() => {});
   try { return await moverStock(K("stock"), K(`stocklog:${hoyAR()}`), delta, entrada, 60 * 60 * 24 * 40); }
   catch (e) {
     if (!/SIN_STOCK/.test(e.message)) throw e;

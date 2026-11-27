@@ -27,8 +27,17 @@ const DIA = 60 * 60 * 30; // los pedidos se borran solos al día siguiente
 // - la lista del día es una lista de Redis (LPUSH), no un JSON que se lee y se reescribe
 // - "chg" marca qué pedidos cambiaron y cuándo, para que el panel baje solo esos
 // - la versión se sube al final: si el panel la ve, el cambio ya está guardado
+// Lo que ve el cliente en su link de seguimiento (sin teléfono ni datos internos)
+function publico(o) {
+  return { id: o.id, estado: o.estado, entrega: o.entrega, nombre: String(o.nombre || "").split(" ")[0], lineas: (o.lineas || []).map((l) => l.texto),
+    envio: o.envio || 0, total: o.total, zona: o.zonaNombre || null, hist: o.hist || [], createdAt: o.createdAt, updatedAt: o.updatedAt, paraMasTarde: !!o.paraMasTarde };
+}
+export const leerSeguimiento = async (t) => { try { return JSON.parse(await redis.get(K(`seg:${t}`))); } catch { return null; } };
+
 export async function saveOrder(o) {
   o.updatedAt = Date.now();
+  o.hist = Array.isArray(o.hist) ? o.hist : [];
+  if (o.hist.at(-1)?.e !== o.estado) o.hist.push({ e: o.estado, t: o.updatedAt });
   const nuevo = !o._saved; delete o._saved;
   o.jornada = o.jornada || jornada(o.createdAt);
   await redis.set(K(`order:${o.id}`), JSON.stringify(o), { ex: DIA });
@@ -38,6 +47,7 @@ export async function saveOrder(o) {
     else await redis.zadd(K(`chg:${o.jornada}`), { score: o.updatedAt, member: o.id });
     if (!String(o.chat || "").startsWith("local:")) await redis.set(K(`active:${o.chat}`), o.id, { ex: 60 * 60 * 24 * 2 });
   } else await redis.zadd(K(`chg:${o.jornada}`), { score: o.updatedAt, member: o.id });
+  if (o.seg) await redis.set(K(`seg:${o.seg}`), JSON.stringify(publico(o)), { ex: DIA });
   await redis.incr(K("ver"));
   o._saved = true;
   return o;
@@ -111,7 +121,8 @@ export async function conCandado(id, fn) {
 }
 
 // Avisos al cliente que el dueño elige mandar (cada aviso por WhatsApp se paga). Caché de 30 s.
-export const AVISOS_BASE = { en_preparacion: true, listo: true, en_camino: true, entregado: true, cancelado: true };
+// Con el link de seguimiento, por WhatsApp solo va el aviso que importa: "listo" o "salió el delivery" (y si se cancela)
+export const AVISOS_BASE = { en_preparacion: false, listo: true, en_camino: true, entregado: false, cancelado: true };
 let avisosCache = { t: 0, v: null };
 export async function avisos(fresh) {
   if (!fresh && avisosCache.v && Date.now() - avisosCache.t < 30e3) return avisosCache.v;

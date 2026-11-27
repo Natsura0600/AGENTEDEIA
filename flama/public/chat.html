@@ -33,6 +33,7 @@ form{display:flex;gap:8px;padding:8px;background:#202c33;align-items:center}
 input[type=text]{flex:1;background:#2a3942;border:0;border-radius:20px;padding:12px 14px;color:#e9edef;font:inherit}
 button,label.att{background:#00a884;border:0;color:#0b141a;border-radius:50%;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;font-size:18px;flex:none}
 label.att{background:#2a3942;color:#8696a0}
+.m a{color:#027eb5;word-break:break-all;font-weight:700}
 </style>
 </head>
 <body>
@@ -57,7 +58,11 @@ const box = document.getElementById("msgs");
 function add(text, who, img) {
   const d = document.createElement("div"); d.className = "m " + who;
   if (img) { const i = document.createElement("img"); i.src = img; i.alt = "Imagen enviada"; d.append(i); }
-  if (text) d.append(document.createTextNode(text));
+  // Los links https se muestran como links (se abren en otra pestaña); el resto, como texto
+  if (text) String(text).split(/(https:\/\/[^\s]+)/).forEach((parte, i) => {
+    if (i % 2) { const a = document.createElement("a"); a.href = parte; a.textContent = parte; a.target = "_blank"; a.rel = "noopener"; d.append(a); }
+    else d.append(document.createTextNode(parte));
+  });
   box.append(d); box.scrollTop = box.scrollHeight;
 }
 async function send(body, shown, img) {

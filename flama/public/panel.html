@@ -465,7 +465,17 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) { do
   const tick = () => {
     const activos = [...ORD.values()].some((o) => ACTIVOS.includes(o.estado));
     const espera = activos || Date.now() - ultimoCambio < 10 * 60e3 ? 8000 : 30000;
-    setTimeout(async () => { if (!document.hidden) await load(); tick(); }, espera);
+    // Primero pregunta a la caché de Vercel si hubo cambios (no gasta Upstash); solo si cambió, pide los pedidos
+    setTimeout(async () => {
+      if (!document.hidden) {
+        try {
+          const e = await (await fetch("/api/estado")).json();
+          if (e.bot !== botOn) { botOn = e.bot; paintBot(); }
+          if (e.v !== ver) await load();
+        } catch { await load(); }
+      }
+      tick();
+    }, espera);
   };
   tick();
 })();

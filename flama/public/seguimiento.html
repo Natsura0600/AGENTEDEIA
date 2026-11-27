@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0c0b0a">
+<title>Tu pedido · Flama</title>
+<link rel="icon" type="image/png" href="/img/favicon.png">
+<link rel="preload" href="/fonts/anton.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:Anton;src:url(/fonts/anton.woff2) format("woff2");font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:Archivo;src:url(/fonts/archivo-900.woff2) format("woff2");font-weight:900;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url(/fonts/jbm-700.woff2) format("woff2");font-weight:700;font-display:swap}
+:root{--y:#f6c91c;--k:#0c0b0a;--k2:#161412;--k3:#211e1b;--w:#f4efe6;--mut:#9b948a;--line:#2c2824;--ok:#5ad67d;--bad:#ff5a47}
+*{box-sizing:border-box}
+body{margin:0;background:var(--k);color:var(--w);font-family:Archivo,system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+.wrap{max-width:520px;margin:0 auto;padding:22px 18px 40px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+header img{width:46px;height:46px;border-radius:50%}
+header b{font-family:Anton;font-weight:400;font-size:30px;letter-spacing:.04em;line-height:1;display:block}
+.mono{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--y)}
+.hero{background:var(--y);color:var(--k);padding:20px 20px 18px}
+.hero .mono{color:#0c0b0aa8}
+.hero h1{font-family:Anton;font-weight:400;font-size:clamp(34px,10vw,48px);line-height:.95;margin:8px 0 6px;text-transform:uppercase}
+.hero p{margin:0;font-weight:700}
+.live{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:900;margin-top:12px}
+.live i{width:9px;height:9px;border-radius:50%;background:var(--k);animation:p 1.6s infinite}
+@keyframes p{50%{opacity:.25}}
+.steps{list-style:none;margin:0;padding:18px 20px;background:var(--k2);border:1.5px solid var(--line);border-top:0}
+.steps li{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:10px 0;color:var(--mut);font-weight:700;position:relative}
+.steps li .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;background:var(--k)}
+.steps li.ok{color:var(--w)}.steps li.ok .dot{background:var(--ok);border-color:var(--ok);color:var(--k)}
+.steps li.now{color:var(--y)}.steps li.now .dot{border-color:var(--y);background:var(--y);color:var(--k);animation:p 1.6s infinite}
+.steps li time{font-family:"JetBrains Mono";font-size:12px;color:var(--mut)}
+.card{margin-top:16px;background:var(--k2);border:1.5px solid var(--line);padding:16px 18px}
+.card h2{font-family:Anton;font-weight:400;font-size:22px;text-transform:uppercase;margin:0 0 10px}
+.card ul{list-style:none;margin:0;padding:0;line-height:1.6}
+.tot{display:flex;justify-content:space-between;align-items:baseline;border-top:1px dashed var(--line);margin-top:10px;padding-top:10px;font-weight:900}
+.tot b{font-family:Anton;font-weight:400;font-size:26px;color:var(--y)}
+.muted{color:var(--mut);font-size:13px;line-height:1.5}
+.err{text-align:center;padding:60px 10px}
+.err b{font-family:Anton;font-weight:400;font-size:34px;display:block;margin-bottom:8px}
+a{color:var(--y)}
+.cancel .hero{background:var(--bad);color:#fff}.cancel .hero .mono{color:#ffffffb0}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+<header><img src="/img/logo-round.webp" alt=""><div><b>FLAMA</b><span class="mono">Seguimiento de tu pedido</span></div></header>
+<div id="main"><p class="muted">Cargando tu pedido…</p></div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const money = (n) => "$" + Number(n || 0).toLocaleString("es-AR");
+const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const token = (location.pathname.match(/\/pedido\/([A-Za-z0-9_-]{16})/) || new URLSearchParams(location.search).get("t")?.match(/^([A-Za-z0-9_-]{16})$/) || [])[1];
+const TIT = {
+  pago_pendiente: ["Esperando el pago", "Mandá el comprobante por el chat para que lo empecemos."],
+  pago_a_verificar: ["Revisando tu pago", "El local está chequeando la transferencia."],
+  programado: ["Pagado ✓", "Lo preparamos apenas abramos."],
+  en_preparacion: ["En la cocina 🔥", "Tu pedido se está preparando."],
+  listo: ["¡Listo para retirar!", "Pasá por Mitre 670."],
+  en_camino: ["¡Va en camino! 🛵", "El delivery ya salió."],
+  entregado: ["Entregado ✓", "¡Gracias por pedir en Flama! 🍔"],
+  cancelado: ["Pedido cancelado", "Si tenés dudas, escribinos."],
+};
+function pasos(o) {
+  const fin = o.entrega === "envio" ? ["en_camino", "Salió el delivery"] : ["listo", "Listo para retirar"];
+  return [["pago", "Pago confirmado"], ["en_preparacion", "En la cocina"], fin, ["entregado", "Entregado"]];
+}
+function cuando(o, e) {
+  const h = o.hist || [];
+  const x = e === "pago" ? h.find((s) => ["en_preparacion", "programado"].includes(s.e)) : h.find((s) => s.e === e);
+  return x ? x.t : null;
+}
+let ultimo = null;
+function pintar(o) {
+  ultimo = o;
+  const main = $("main"); main.replaceChildren();
+  document.body.classList.toggle("cancel", o.estado === "cancelado");
+  const [t1, t2] = TIT[o.estado] || [o.estado, ""];
+  const hero = el("section", "hero");
+  hero.append(el("span", "mono", `Pedido #${o.id}${o.nombre ? " · " + o.nombre : ""}`), el("h1", null, t1), el("p", null, t2));
+  if (!["entregado", "cancelado"].includes(o.estado)) { const l = el("span", "live"); l.append(el("i"), document.createTextNode("Se actualiza solo")); hero.append(l); }
+  main.append(hero);
+  if (o.estado !== "cancelado") {
+    // Pasos hechos y paso actual (el que titila)
+    const hechos = { pago_pendiente: 0, pago_a_verificar: 0, programado: 1, en_preparacion: 1, listo: 2, en_camino: 2, entregado: 4 }[o.estado] ?? 0;
+    const ul = el("ol", "steps");
+    pasos(o).forEach(([e, txt], i) => {
+      const hecho = i < hechos, ahora = i === hechos;
+      const li = el("li", hecho ? "ok" : ahora ? "now" : ""); li.append(el("span", "dot", hecho ? "✓" : ""), el("span", null, txt));
+      const t = cuando(o, e); li.append(el("time", null, (hecho || ahora) && t ? hhmm(t) : "")); ul.append(li);
+    });
+    main.append(ul);
+  }
+  const c = el("section", "card"); c.append(el("h2", null, "Tu pedido"));
+  const ul = el("ul"); o.lineas.forEach((l) => ul.append(el("li", null, l))); c.append(ul);
+  if (o.entrega === "envio") c.append(el("p", "muted", "🛵 Envío" + (o.zona ? " · " + o.zona : "") + (o.envio ? " · " + money(o.envio) : "")));
+  else c.append(el("p", "muted", "🏪 Retiro en Mitre 670, Luján"));
+  const t = el("div", "tot"); t.append(el("span", null, "Total"), el("b", null, money(o.total))); c.append(t);
+  main.append(c);
+  main.append(el("p", "muted", `Hiciste el pedido a las ${hhmm(o.createdAt)}. Guardá este link: podés volver a abrirlo cuando quieras.`));
+}
+function error(msg) { $("main").replaceChildren(); const d = el("div", "err"); d.append(el("b", null, "Uy"), el("p", "muted", msg)); $("main").append(d); }
+
+// Consultas: primero la versión general (caché de Vercel, gratis); solo si cambió, el pedido
+let ver = null;
+async function traer() {
+  const r = await fetch("/api/estado?t=" + token);
+  if (r.status === 404) { error("Este link ya no está disponible. Si tenés dudas sobre tu pedido, escribinos."); return false; }
+  pintar(await r.json()); return true;
+}
+async function vuelta() {
+  if (ultimo && ["entregado", "cancelado"].includes(ultimo.estado)) return; // ya terminó: no consulta más
+  if (!document.hidden) {
+    try {
+      const e = await (await fetch("/api/estado")).json();
+      if (e.v !== ver) { ver = e.v; await traer(); }
+    } catch {}
+  }
+  setTimeout(vuelta, 15000);
+}
+(async () => {
+  if (!token) return error("El link está incompleto.");
+  try { if (await traer()) { try { ver = (await (await fetch("/api/estado")).json()).v; } catch {} setTimeout(vuelta, 15000); } }
+  catch { error("No pudimos cargar tu pedido. Probá de nuevo en un rato."); }
+})();
+document.addEventListener("visibilitychange", () => { if (!document.hidden && ultimo && !["entregado", "cancelado"].includes(ultimo.estado)) traer().catch(() => {}); });
+</script>
+</body>
+</html>

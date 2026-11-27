@@ -11,6 +11,10 @@
     {
       "source": "/admin",
       "destination": "/dueno"
+    },
+    {
+      "source": "/pedido/:t",
+      "destination": "/seguimiento"
     }
   ],
   "headers": [

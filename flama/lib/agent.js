@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { generateText, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { redis } from "./redis.js";
@@ -62,7 +63,9 @@ export async function verificarComprobante(order, imageBase64, mediaType) {
 // ---------- Conversación ----------
 export const botApagado = async () => (await redis.get("flama:bot_off")) === "1";
 
+const URL_PUBLICA = (process.env.PUBLIC_URL || "https://flama-demo.vercel.app").replace(/\/$/, "");
 export async function reply({ chat, text, image, mediaType, name }) {
+  let aprobado = false;
   const history = await getHistory(chat);
   const isOpen = process.env.RESPETAR_HORARIO === "1" ? abierto() : true; // demo: siempre abierto
   const VIEJO = 3 * 3600e3;
@@ -89,6 +92,7 @@ export async function reply({ chat, text, image, mediaType, name }) {
       order = actual || order;
       order.comprobante = { datos: v.datos, motivos: v.motivos, imagen: conImg };
     if (v.ok) {
+      aprobado = true;
       order.estado = isOpen ? "en_preparacion" : "programado";
       order.pagoVerificadoPor = "bot";
       nota = isOpen
@@ -167,6 +171,7 @@ export async function reply({ chat, text, image, mediaType, name }) {
             zonaAConfirmar,
             lineas: calc.lineas, envio: calc.envio, total: calc.total, items: calc.items, canal: chat.startsWith("wa:") ? "whatsapp" : "web",
             comentarios: String(i.comentarios || "").slice(0, 300), estado: "pago_pendiente", paraMasTarde: !isOpen,
+            seg: (reuse && prev.seg) || randomBytes(12).toString("base64url"), hist: reuse ? prev.hist : [], // link privado de seguimiento
           };
           await saveOrder(o);
           return {
@@ -186,7 +191,9 @@ export async function reply({ chat, text, image, mediaType, name }) {
     },
   });
 
-  const answer = result.text.trim() || "Perdón, no te entendí. ¿Me lo repetís?";
+  let answer = result.text.trim() || "Perdón, no te entendí. ¿Me lo repetís?";
+  // Pago aprobado: va el link de seguimiento en este mismo mensaje (así no hacen falta más avisos)
+  if (aprobado && order?.seg) answer += `\n\n📍 Seguí tu pedido en vivo acá: ${URL_PUBLICA}/pedido/${order.seg}`;
   await saveHistory(chat, [...messages, { role: "assistant", content: answer }]);
   return answer;
 }
