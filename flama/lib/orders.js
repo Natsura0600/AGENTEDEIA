@@ -111,7 +111,7 @@ export async function conCandado(id, fn) {
 }
 
 // Avisos al cliente que el dueño elige mandar (cada aviso por WhatsApp se paga). Caché de 30 s.
-export const AVISOS_BASE = { en_preparacion: true, listo: true, en_camino: true, entregado: false, cancelado: true };
+export const AVISOS_BASE = { en_preparacion: true, listo: true, en_camino: true, entregado: true, cancelado: true };
 let avisosCache = { t: 0, v: null };
 export async function avisos(fresh) {
   if (!fresh && avisosCache.v && Date.now() - avisosCache.t < 30e3) return avisosCache.v;
