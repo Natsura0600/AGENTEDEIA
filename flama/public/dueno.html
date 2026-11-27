@@ -157,6 +157,28 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 .login input:focus{border-color:#f6c91c;outline:0}
 .login button{width:100%;margin-top:10px;background:#f6c91c;color:#0c0b0a;border:0;min-height:50px;font:inherit;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
 .login p{color:#ff5a47;font-weight:800;min-height:20px;margin:6px 0 0}
+:root{--k:#11100f;--k2:#1c1a18;--k3:#25221f;--line:#38332e;--mut:#b0a69a}
+header{border-bottom:1px solid var(--line)}
+.top,.tabs{max-width:1320px;margin-inline:auto}
+.top{min-height:68px}
+.tabs{gap:6px;padding-bottom:10px}
+.tabs button{border:1px solid transparent;border-radius:8px;margin:0;padding:9px 14px}
+.tabs button[aria-selected="true"]{background:#342b12;border-color:#685526;color:#ffe174}
+main{max-width:1320px;padding-top:28px}
+.btn,input,select,.card,.kpi,.scroll,.alert{border-radius:9px}
+.summary-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.summary-head h1{font:400 clamp(37px,5vw,60px)/1 Anton,Impact,sans-serif;text-transform:uppercase;margin:0}
+.kpi{min-width:0;padding:18px 16px}
+.kpi b{font-size:clamp(24px,3vw,40px);overflow-wrap:anywhere}
+.kpi.main{background:#f6c91c}
+.breakdown{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.breakdown h3{margin:0;font-size:14px}
+.breakdown .chips{margin-top:8px}
+.chip{border-radius:7px}
+.month-head{padding-top:20px;border-top:1px solid var(--line)}
+.chart{background:repeating-linear-gradient(to top,transparent 0,transparent 43px,#ffffff13 44px,#ffffff13 45px)}
+.bar i,.toplist i{border-radius:4px 4px 0 0}
+@media(max-width:760px){.breakdown{grid-template-columns:1fr}.tabs button{padding-inline:10px}.kpi{padding:12px 10px}.kpi b{font-size:clamp(20px,5vw,29px)}}
 </style>
 </head>
 <body>
@@ -257,18 +279,19 @@ async function verResumen() {
   const max = Math.max(1, ...d.dias.map((x) => x.ventas));
   const topMax = Math.max(1, ...d.top.map((x) => x[1]));
   $("t-resumen").innerHTML = `
-  <h2>Hoy <span class="sp"></span><button type="button" class="btn" id="irStock">Ver stock bajo</button></h2>
+  <div class="summary-head"><h1>Caja de hoy</h1><button type="button" class="btn" id="irStock">Ver stock bajo</button></div>
   <div class="kpis">
-    <div class="kpi main"><span class="mono">Caja de hoy</span><b>${money(h.ventas)}</b><small>${h.pedidos} pedidos entregados</small></div>
+    <div class="kpi main"><span class="mono">Ventas cobradas</span><b>${money(h.ventas)}</b><small>${h.pedidos} pedidos entregados</small></div>
     <div class="kpi"><span class="mono">Ticket promedio</span><b>${money(h.pedidos ? h.ventas / h.pedidos : 0)}</b></div>
     <div class="kpi"><span class="mono">Envíos cobrados</span><b>${money(h.envios)}</b></div>
     <div class="kpi"><span class="mono">Cancelados</span><b>${h.cancelados}</b></div>
   </div>
-  <div class="chips">
+  <div class="breakdown"><section class="card"><h3>Medios de pago</h3><div class="chips">
     <span class="chip">💵 Efectivo<b>${money(pp.efectivo)}</b></span><span class="chip">🏦 Transferencia<b>${money(pp.transferencia)}</b></span><span class="chip">💳 Tarjeta<b>${money(pp.tarjeta)}</b></span>
+  </div></section><section class="card"><h3>Tipos de pedido</h3><div class="chips">
     <span class="chip">🏪 Retiro<b>${h.retiro}</b></span><span class="chip">🛵 Delivery<b>${h.delivery}</b></span><span class="chip">🧾 Mostrador<b>${h.mostrador || 0}</b></span>
-  </div>
-  <h2>Mes <input type="month" id="mesR" value="${d.mes}" aria-label="Mes"><span class="sp"></span>
+  </div></section></div>
+  <h2 class="month-head">Resumen mensual <input type="month" id="mesR" value="${d.mes}" aria-label="Mes"><span class="sp"></span>
     <button type="button" class="btn y" data-xls="mes=${d.mes}">⬇ Excel de caja</button><button type="button" class="btn" data-xls="tipo=horas&mes=${d.mes}">⬇ Excel de horas</button></h2>
   <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
     <div class="kpi"><span class="mono">Ventas del mes</span><b>${money(totMes)}</b></div>

@@ -185,6 +185,34 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 .board.focused .col{display:block}
 .board.focused .col h2{display:flex}
 .board.focused .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));align-items:start}
+:root{--k:#11100f;--k2:#1c1a18;--k3:#25221f;--line:#38332e;--mut:#b0a69a}
+header{padding-inline:clamp(16px,3vw,36px);border-bottom:1px solid var(--line)}
+.brand b{font-size:30px}
+.tbtn,.filters input,.filters select,.mtabs button{border-radius:9px}
+.live{padding:7px 10px;border-radius:99px;background:var(--k3);white-space:nowrap}
+.live i{width:7px;height:7px}
+.shift{padding:24px clamp(16px,3vw,36px) 0}
+.shift h1{font:400 clamp(32px,4vw,50px)/1 Anton,Impact,sans-serif;text-transform:uppercase;margin:0}
+.kpis,.board,.filters,.mtabs{padding-inline:clamp(16px,3vw,36px)}
+.kpi{border-radius:12px;min-width:0}
+.kpi.main{background:#342b12;border-color:#6a5420;color:#ffe174}
+.kpi.main .mono{color:#ecd794}
+.board{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.col{background:#151311;border:1px solid var(--line);border-radius:14px;padding:10px;min-width:0}
+.col h2{font-size:20px;min-height:35px;justify-content:space-between;padding:0 3px}
+.col h2 span{border-radius:8px}
+#col-pago h2{color:#ffe174}#col-cocina h2{color:#7ee59b}#col-listos h2{color:#91cbff}
+.card{border-radius:10px;border-left-width:4px;padding:12px;animation:none;overflow-wrap:anywhere}
+.card.nuevo{animation:flash 2.6s ease}
+.num{font-size:34px}
+.chip,.pay,.nota,.ago.late,.go,.cancel,.maplink{border-radius:6px}
+.ago.late{background:#752821;color:#fff0ec;animation:none}
+.items{background:#141210;border:0;border-radius:8px;padding:9px 10px;display:grid;gap:6px}
+.items li+li{border-top:1px solid var(--line);padding-top:6px}
+.empty{border-radius:9px}
+@media(max-width:1250px){.board{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.board{grid-template-columns:minmax(0,1fr)}.shift{padding-top:17px}.tools{gap:5px}.tools .tbtn{padding-inline:9px}.col{padding:8px}}
+@media(prefers-reduced-motion:reduce){.live i,.card.nuevo{animation:none}}
 </style>
 </head>
 <body>
@@ -199,6 +227,7 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 </div>
 </header>
 
+<div class="shift"><h1>Comandas</h1></div>
 <section class="kpis" aria-label="Resumen de hoy">
 <div class="kpi main" id="k-curso-box"><span class="mono">En curso</span><b id="k-curso">0</b></div>
 <div class="kpi"><span class="mono">Esperando pago</span><b id="k-pago">0</b></div>
@@ -253,7 +282,7 @@ const COLS = [
   { id: "pago", title: "Pagos", estados: ["pago_pendiente", "pago_a_verificar"] },
   { id: "cocina", title: "En cocina", estados: ["en_preparacion", "programado"] },
   { id: "listos", title: "Listos / en camino", estados: ["listo", "en_camino"] },
-  { id: "fin", title: "Entregados", estados: ["entregado", "cancelado"] },
+  { id: "fin", title: "Cerrados", estados: ["entregado", "cancelado"] },
 ];
 const ACTIVOS = ["pago_pendiente", "pago_a_verificar", "programado", "en_preparacion", "listo", "en_camino"];
 const money = (n) => "$" + Number(n || 0).toLocaleString("es-AR");
