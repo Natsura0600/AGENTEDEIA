@@ -93,7 +93,9 @@ function pintar(o) {
     const ul = el("ol", "steps");
     pasos(o).forEach(([e, txt], i) => {
       const hecho = i < hechos, ahora = i === hechos;
-      const li = el("li", hecho ? "ok" : ahora ? "now" : ""); li.append(el("span", "dot", hecho ? "✓" : ""), el("span", null, txt));
+      const li = el("li", hecho ? "ok" : ahora ? "now" : "");
+      if (ahora) li.setAttribute("aria-current", "step");
+      li.append(el("span", "dot", hecho ? "✓" : ""), el("span", null, txt));
       const t = cuando(o, e); li.append(el("time", null, (hecho || ahora) && t ? hhmm(t) : "")); ul.append(li);
     });
     main.append(ul);
@@ -113,6 +115,7 @@ let ver = null;
 async function traer() {
   const r = await fetch("/api/estado?t=" + token);
   if (r.status === 404) { error("Este link ya no está disponible. Si tenés dudas sobre tu pedido, escribinos."); return false; }
+  if (!r.ok) throw new Error("No se pudo actualizar el pedido");
   pintar(await r.json()); return true;
 }
 async function vuelta() {
@@ -120,14 +123,17 @@ async function vuelta() {
   if (!document.hidden) {
     try {
       const e = await (await fetch("/api/estado")).json();
-      if (e.v !== ver) { ver = e.v; await traer(); }
+      if (e.v !== ver) {
+        if (!(await traer())) return;
+        ver = e.v;
+      }
     } catch {}
   }
   setTimeout(vuelta, 15000);
 }
 (async () => {
   if (!token) return error("El link está incompleto.");
-  try { if (await traer()) { try { ver = (await (await fetch("/api/estado")).json()).v; } catch {} setTimeout(vuelta, 15000); } }
+  try { if (await traer()) setTimeout(vuelta, 15000); }
   catch { error("No pudimos cargar tu pedido. Probá de nuevo en un rato."); }
 })();
 document.addEventListener("visibilitychange", () => { if (!document.hidden && ultimo && !["entregado", "cancelado"].includes(ultimo.estado)) traer().catch(() => {}); });

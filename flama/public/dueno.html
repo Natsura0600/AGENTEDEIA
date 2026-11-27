@@ -257,7 +257,7 @@ async function verResumen() {
   const max = Math.max(1, ...d.dias.map((x) => x.ventas));
   const topMax = Math.max(1, ...d.top.map((x) => x[1]));
   $("t-resumen").innerHTML = `
-  <h2>Hoy</h2>
+  <h2>Hoy <span class="sp"></span><button type="button" class="btn" id="irStock">Ver stock bajo</button></h2>
   <div class="kpis">
     <div class="kpi main"><span class="mono">Caja de hoy</span><b>${money(h.ventas)}</b><small>${h.pedidos} pedidos entregados</small></div>
     <div class="kpi"><span class="mono">Ticket promedio</span><b>${money(h.pedidos ? h.ventas / h.pedidos : 0)}</b></div>
@@ -283,6 +283,7 @@ async function verResumen() {
       ${d.top.length ? d.top.map(([n, c]) => `<div><span>${esc(n)}</span><span class="mono">${c}</span><i style="width:${(c / topMax) * 100}%"></i></div>`).join("") : `<p style="color:var(--mut)">Todavía no hay ventas este mes.</p>`}
     </div>
   </div>`;
+  $("irStock").onclick = () => abrir("stock");
   $("mesR").onchange = (e) => { estado.mes = e.target.value; verResumen(); };
 }
 
@@ -293,7 +294,7 @@ async function verStock(d) {
   const ingIds = Object.keys(d.ing);
   const filas = d.productos.flatMap((p) => p.tams.map((t) => ({ p, t })));
   $("t-stock").innerHTML = `
-  ${d.bajos.length ? `<div class="alert">⚠️ Stock bajo: ${d.bajos.map((b) => `${esc(b.nombre)} (${num(b.cant)} ${esc(b.unidad)})`).join(" · ")}</div>` : ""}
+  <div class="${d.bajos.length ? "alert" : "card"}" role="status">${d.bajos.length ? `Stock bajo · ${d.bajos.map((b) => `${esc(b.nombre)} (${num(b.cant)} ${esc(b.unidad)})`).join(" · ")}` : "Sin alertas de stock"}</div>
   <h2>Ingredientes <span class="sp"></span><button class="btn y" id="nuevoIng">＋ Nuevo ingrediente</button></h2>
   <p class="help">Cada pedido que entra a cocina descuenta solo lo que usa según la receta. Con <b>Ingreso</b> cargás mercadería, con <b>Merma</b> lo que se tira o se rompe y con <b>Conteo</b> ponés lo que contaste al cierre.</p>
   <div class="ings">${ingIds.map((id) => { const x = d.ing[id], c = Number(x.cant), m = Number(x.min) || 0;

@@ -177,6 +177,14 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 .login input:focus{border-color:#f6c91c;outline:0}
 .login button{width:100%;margin-top:10px;background:#f6c91c;color:#0c0b0a;border:0;min-height:50px;font:inherit;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
 .login p{color:#ff5a47;font-weight:800;min-height:20px;margin:6px 0 0}
+.filters{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px 0}
+.filters input,.filters select{min-height:44px;padding:0 12px;background:var(--k2);color:var(--w);border:1.5px solid var(--line);font:inherit}
+.filters input{flex:1 1 240px;min-width:0}
+.filters button[aria-pressed="true"]{background:var(--y);color:var(--k)}
+.board.focused{grid-template-columns:minmax(0,1fr)}
+.board.focused .col{display:block}
+.board.focused .col h2{display:flex}
+.board.focused .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));align-items:start}
 </style>
 </head>
 <body>
@@ -199,8 +207,15 @@ header{position:sticky;top:0;z-index:10;background:#0c0b0af2;backdrop-filter:blu
 </section>
 <div class="stockalert" id="stockalert" hidden></div>
 
+<div class="filters" role="group" aria-label="Filtros de pedidos">
+<input id="buscar" type="search" placeholder="Pedido, nombre o mesa" aria-label="Buscar por pedido, nombre o mesa">
+<select id="canal" aria-label="Tipo de pedido">
+<option value="">Todos los tipos</option><option value="envio">Delivery</option><option value="retiro">Retiro</option><option value="mostrador">Mostrador</option>
+</select>
+<button id="cocina" type="button" class="tbtn" aria-pressed="false">Solo cocina</button>
+</div>
 <nav class="mtabs" id="mtabs" role="tablist" aria-label="Columnas"></nav>
-<main class="board" id="board" aria-live="polite"></main>
+<main class="board" id="board" aria-label="Tablero de pedidos"></main>
 <div class="lb" id="lb" role="dialog" aria-label="Comprobante"><img id="lbimg" alt="Comprobante de transferencia"></div>
 <div class="mdlg" id="mdlg" role="dialog" aria-modal="true" aria-label="Venta de mostrador"><div class="bd" id="mbd"></div>
 <div class="mbox"><div class="mcat"><h3>Venta de mostrador</h3><div id="mcat"></div></div>
@@ -246,7 +261,7 @@ const hhmm = (t) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", m
 const $ = (id) => document.getElementById(id);
 // La clave va en un encabezado, nunca en la dirección
 const api = (url, o = {}) => fetch(url, { ...o, headers: { ...(o.headers || {}), "x-flama-key": key } });
-let ver = "", jor = "", desde = 0, ORD = new Map(), stockBajo = [], ultimoCambio = Date.now(), known = new Set(), first = true, sound = false, botOn = true, actx, activeCol = "pago", lastData = null;
+let ver = "", jor = "", desde = 0, ORD = new Map(), stockBajo = [], ultimoCambio = Date.now(), known = new Set(), first = true, sound = false, botOn = true, actx, activeCol = "pago", soloCocina = false;
 
 function ding() {
   if (!sound) return;
@@ -357,7 +372,6 @@ function card(o, nuevo) {
     if (o.comprobante?.imagen) {
       const th = btn("🧾", "thumb", async () => { const src = await imgComprobante(o); if (src) { $("lbimg").src = src; $("lb").classList.add("open"); } else tst("La imagen ya no está disponible", 1); });
       th.setAttribute("aria-label", "Ver comprobante del pedido " + o.id); p.append(th);
-      if (o.estado === "pago_a_verificar") imgComprobante(o).then((src) => { if (src) { th.textContent = ""; th.style.backgroundImage = `url("${src}")`; } });
     }
     p.append(el("span", null, pay ? pay[1] : "Comprobante recibido")); c.append(p);
   }
@@ -375,28 +389,49 @@ function card(o, nuevo) {
   if (ACTIVOS.includes(o.estado)) c.append(btn("Cancelar pedido", "cancel", () => { if (confirm(`¿Cancelar el pedido #${o.id}?`)) setEstado(o.id, "cancelado"); }));
   return c;
 }
+function normalizar(texto) {
+  return String(texto ?? "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").trim();
+}
 function render(d) {
+  const nuevos = new Set(d.orders.filter((o) => !known.has(o.id)).map((o) => o.id));
+  for (const id of nuevos) known.add(id);
+  const busqueda = normalizar($("buscar").value).replace(/^#/, "").trim();
+  const canal = $("canal").value;
+  const visibles = d.orders.filter((o) => {
+    const tipo = o.canal === "mostrador" ? "mostrador" : o.entrega === "envio" ? "envio" : "retiro";
+    return (!canal || canal === tipo) &&
+      (!busqueda || normalizar(o.id).includes(busqueda) || normalizar(o.nombre).includes(busqueda));
+  });
   const board = $("board"); board.replaceChildren(); const tabs = $("mtabs"); tabs.replaceChildren();
-  let nuevo = false;
-  for (const col of COLS) {
-    const items = d.orders.filter((o) => col.estados.includes(o.estado));
+  board.classList.toggle("focused", soloCocina);
+  tabs.hidden = soloCocina;
+  for (const col of soloCocina ? COLS.filter((c) => c.id === "cocina") : COLS) {
+    const items = visibles.filter((o) => col.estados.includes(o.estado));
     if (col.id !== "fin") items.sort((a, b) => a.createdAt - b.createdAt); // los más viejos primero
     else items.sort((a, b) => b.updatedAt - a.updatedAt);
     const total = items.length; if (col.id === "fin" && items.length > 40) items.length = 40;
     const s = el("section", "col" + (col.id === activeCol ? " active" : "")); s.id = "col-" + col.id;
     const h = el("h2", null, col.title); h.append(el("span", null, String(total))); s.append(h);
     const list = el("div", "list");
-    if (!items.length) { const e = el("div", "empty"); e.append(el("b", null, col.id === "fin" ? "🍔" : "—"), document.createTextNode("Sin pedidos por ahora")); list.append(e); }
-    items.forEach((o) => { const isNew = !known.has(o.id) && !first; if (!known.has(o.id)) { nuevo = true; known.add(o.id); } list.append(card(o, isNew)); });
+    if (!items.length) { const e = el("div", "empty"); e.append(el("b", null, col.id === "fin" ? "🍔" : "—"), document.createTextNode(busqueda || canal ? "No hay pedidos que coincidan" : "Sin pedidos por ahora")); list.append(e); }
+    items.forEach((o) => list.append(card(o, !first && nuevos.has(o.id))));
     s.append(list); board.append(s);
     const tb = el("button"); tb.type = "button"; tb.setAttribute("role", "tab"); tb.setAttribute("aria-selected", String(col.id === activeCol));
     tb.append(document.createTextNode(col.title), el("span", null, String(total)));
     tb.onclick = () => { activeCol = col.id; document.querySelectorAll(".col").forEach((x) => x.classList.toggle("active", x.id === "col-" + col.id)); tabs.querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", String(x === tb))); };
-    tabs.append(tb);
+    if (!soloCocina) tabs.append(tb);
   }
-  if (nuevo && !first) { document.title = "🔔 Nuevo pedido · Flama"; ding(); }
-  first = false;
+  if (nuevos.size && !first) { document.title = "🔔 Nuevo pedido · Flama"; ding(); }
+  if (d.inicializado !== false) first = false;
 }
+function aplicarFiltros() { render({ orders: [...ORD.values()], inicializado: Boolean(ver) }); }
+$("buscar").addEventListener("input", aplicarFiltros);
+$("canal").addEventListener("change", aplicarFiltros);
+$("cocina").onclick = () => {
+  soloCocina = !soloCocina;
+  $("cocina").setAttribute("aria-pressed", String(soloCocina));
+  aplicarFiltros();
+};
 // ---- Venta de mostrador ----
 let carta = null, ticket = [], pago = "efectivo";
 function tst(msg, err) { const t = el("div", "tst" + (err ? " err" : ""), msg); document.body.append(t); setTimeout(() => t.remove(), 2600); }

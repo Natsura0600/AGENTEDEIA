@@ -62,6 +62,8 @@ body{margin:0;background:var(--k);color:var(--w);font-family:Archivo,system-ui,s
 .login input:focus{border-color:#f6c91c;outline:0}
 .login button{width:100%;margin-top:10px;background:#f6c91c;color:#0c0b0a;border:0;min-height:50px;font:inherit;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer}
 .login p{color:#ff5a47;font-weight:800;min-height:20px;margin:6px 0 0}
+.pad button:disabled{opacity:.55;cursor:default}
+@media(max-width:760px){.pad{width:min(100%,360px)}.clock{font-size:clamp(45px,14vw,68px)}}
 </style>
 </head>
 <body>
@@ -72,7 +74,7 @@ body{margin:0;background:var(--k);color:var(--w);font-family:Archivo,system-ui,s
 </div>
 <div class="right">
 <h1>Poné tu PIN</h1>
-<div class="dots" id="dots" aria-live="polite"><i></i><i></i><i></i><i></i></div>
+<div class="dots" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 <div class="pad" id="pad"></div>
 <div class="msg" id="msg" role="alert"></div>
 </div>
@@ -108,9 +110,9 @@ const hora = (t) => new Date(t).toLocaleTimeString("es-AR", { timeZone: TZ, hour
 let pin = "", busy = false;
 function tick() { const d = new Date(); $("clock").textContent = hora(d); $("date").textContent = d.toLocaleDateString("es-AR", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" }); }
 tick(); setInterval(tick, 5000);
-function dots() { const n = Math.max(4, pin.length); $("dots").innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < pin.length ? "on" : ""}"></i>`).join(""); }
+function dots() { $("pad").querySelector(".ok").disabled = !KEY || busy || pin.length < 4; const n = Math.max(4, pin.length); $("dots").innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < pin.length ? "on" : ""}"></i>`).join(""); }
 function press(k) {
-  if (busy) return; $("msg").textContent = "";
+  if (!KEY || busy) return; $("msg").textContent = "";
   if (k === "borrar") pin = pin.slice(0, -1);
   else if (k === "ok") return enviar();
   else if (pin.length < 8) pin += k;
@@ -121,20 +123,28 @@ function press(k) {
   b.textContent = k === "borrar" ? "⌫ Borrar" : k === "ok" ? "Fichar" : k; if (k === "borrar") b.className = "fn"; if (k === "ok") b.className = "ok";
   b.setAttribute("aria-label", k === "borrar" ? "Borrar" : k === "ok" ? "Fichar" : k); b.onclick = () => press(k); $("pad").append(b);
 });
-addEventListener("keydown", (e) => { if (/^\d$/.test(e.key)) press(e.key); else if (e.key === "Backspace") press("borrar"); else if (e.key === "Enter") press("ok"); });
+addEventListener("keydown", (e) => {
+  if (!KEY || e.altKey || e.ctrlKey || e.metaKey) return;
+  if (/^\d$/.test(e.key)) press(e.key);
+  else if (e.key === "Backspace") press("borrar");
+  else if (e.key === "Enter" && !(e.target instanceof HTMLButtonElement)) press("ok");
+});
 async function enviar() {
   if (pin.length < 4) { $("msg").textContent = "El PIN tiene 4 números o más"; return; }
-  busy = true;
+  busy = true; dots();
+  $("msg").textContent = "Registrando…";
   try {
     const r = await fetch("/api/fichar", { method: "POST", headers: { "Content-Type": "application/json", "x-flama-key": KEY }, body: JSON.stringify({ pin }) });
     const d = await r.json(); if (!r.ok) throw new Error(d.error || "Error");
+    $("msg").textContent = "";
     const entra = d.tipo === "entrada";
     $("res").className = "res on " + (entra ? "in" : "out");
     $("ric").textContent = entra ? "👋" : "✌️";
     $("rh").textContent = entra ? `¡Hola ${d.nombre}!` : `¡Chau ${d.nombre}!`;
     $("rp").textContent = entra ? `Entrada ${hora(d.hora)}` : `Salida ${hora(d.hora)} · trabajaste ${Math.floor(d.minutos / 60)} h ${d.minutos % 60} min`;
     $("rs").textContent = d.repetido ? "Ya habías fichado la entrada" : entra ? "Buen turno 🔥" : "Gracias por hoy";
-    setTimeout(() => ($("res").className = "res"), 3500);
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+    $("res").className = "res";
     cargar();
   } catch (e) {
     $("msg").textContent = e.message === "Clave incorrecta" ? "Este link no es válido. Pedile el link al encargado." : e.message;
